@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Components\Section;
 
 class UserResource extends Resource
 {
@@ -23,7 +24,13 @@ class UserResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
+
+
+                Section::make('Personal Information')
+                ->columns(4)
+                // ->description('Prevent abuse by limiting the number of requests per period')
+                ->schema([
+                     Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('email')
@@ -35,6 +42,18 @@ class UserResource extends Resource
                     ->password()
                     ->required()
                     ->maxLength(255),
+                Forms\Components\Select::make('Role')
+                    // ->label('Seleccione el rol')
+                    ->placeholder('Seleccione el rol')
+                    ->options([
+                        'Veterinario' => 'veterinario',
+                        'Administrador' => 'admin',
+                    ])
+                    ->required(),
+
+                
+
+                ])
             ]);
     }
 
