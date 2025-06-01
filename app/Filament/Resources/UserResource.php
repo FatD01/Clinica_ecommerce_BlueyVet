@@ -1,4 +1,5 @@
 <?php
+// que quieres emo jajjaj
 
 namespace App\Filament\Resources;
 
@@ -42,18 +43,46 @@ class UserResource extends Resource
                     ->password()
                     ->required()
                     ->maxLength(255),
-                Forms\Components\Select::make('Role')
+                Forms\Components\Select::make('role')
                     // ->label('Seleccione el rol')
                     ->placeholder('Seleccione el rol')
                     ->options([
                         'Veterinario' => 'veterinario',
-                        'Administrador' => 'admin',
+                        'Administrador' => 'puto',
                     ])
                     ->required(),
 
-                
+                    ])
 
-                ])
+                // Section::make('Mascotas')
+                // ->columns(4)
+                // // ->description('Prevent abuse by limiting the number of requests per period')
+                // ->schema([
+                //      Forms\Components\TextInput::make('name')
+                //     ->required()
+                //     ->maxLength(255),
+                // Forms\Components\TextInput::make('email')
+                //     ->email()
+                //     ->required()
+                //     ->maxLength(255),
+                // Forms\Components\DateTimePicker::make('email_verified_at'),
+                // Forms\Components\TextInput::make('password')
+                //     ->password()
+                //     ->required()
+                //     ->maxLength(255),
+                // Forms\Components\Select::make('role')
+                //     // ->label('Seleccione el rol')
+                //     ->placeholder('Seleccione el rol')
+                //     ->options([
+                //         'Veterinario' => 'veterinario',
+                //         'Administrador' => 'puto',
+                //     ])
+                //     ->required(),
+
+                // ])
+
+
+
             ]);
     }
 
@@ -63,6 +92,12 @@ class UserResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
+
+
+                Tables\Columns\TextColumn::make('role')
+                    ->searchable(),
+
+
                 Tables\Columns\TextColumn::make('email')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email_verified_at')
@@ -89,6 +124,9 @@ class UserResource extends Resource
                 ]),
             ]);
     }
+    
+    
+
 
     public static function getRelations(): array
     {
