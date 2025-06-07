@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer('duration_minutes')->nullable();
             $table->string('status')->default('active'); // O un enum si prefieres
             $table->timestamps();
+             $table->softDeletes(); // ¡Añade esto!
         });
     }
 

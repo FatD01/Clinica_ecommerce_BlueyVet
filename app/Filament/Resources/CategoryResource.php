@@ -1,6 +1,10 @@
 <?php
 namespace App\Filament\Resources;
 
+use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\RestoreAction;
+use Filament\Tables\Actions\ForceDeleteAction; // Para eliminar permanentemente si es necesario
+use Filament\Tables\Filters\TrashedFilter;
 use App\Filament\Resources\CategoryResource\Pages;
 use App\Filament\Resources\CategoryResource\RelationManagers;
 use App\Models\Category;
@@ -77,17 +81,21 @@ class CategoryResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+
+                TrashedFilter::make(),
                 Tables\Filters\SelectFilter::make('parent_id')
                     ->label('Filtrar por Categoría Padre')
                     ->options(Category::whereNull('parent_id')->pluck('name', 'id')), // Solo muestra categorías raíz como filtros
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                DeleteAction::make(),
+                RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
     }

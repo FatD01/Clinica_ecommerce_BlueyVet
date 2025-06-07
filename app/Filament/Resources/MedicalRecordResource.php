@@ -2,12 +2,17 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\RestoreAction;
+use Filament\Tables\Actions\ForceDeleteAction; // Para eliminar permanentemente si es necesario
+use Filament\Tables\Filters\TrashedFilter;
 use App\Filament\Resources\MedicalRecordResource\Pages;
 use App\Models\MedicalRecord;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\RestoreBulkAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
@@ -42,26 +47,26 @@ class MedicalRecordResource extends Resource
                     ->required()
                     ->helperText('Selecciona el veterinario que atendió la consulta (solo se muestran cuentas de veterinario).'),
 
-                // Forms\Components\Select::make('veterinarian_id')
-                //     ->label('Veterinario')
-                //     ->required()
-                //     ->searchable()
-                //     ->options(function () {
-                //         return \App\Models\Veterinarian::query()
-                //             ->join('users', 'veterinarians.user_id', '=', 'users.id')
-                //             ->where('users.role', 'veterinario')
-                //             ->pluck('users.name', 'veterinarians.id');
-                //     })
-                //     ->getSearchResultsUsing(function (string $searchQuery) {
-                //         return \App\Models\Veterinarian::query()
-                //             ->join('users', 'veterinarians.user_id', '=', 'users.id')
-                //             ->where('users.role', 'veterinario')
-                //             ->where('users.name', 'like', "%{$searchQuery}%")
-                //             ->pluck('users.name', 'veterinarians.id')
-                //             ->toArray();
-                //     })
-                //     ->getOptionLabelUsing(fn($value): ?string => \App\Models\Veterinarian::find($value)?->user?->name ?? 'N/A')
-                //     ->preload(),
+                Forms\Components\Select::make('veterinarian_id')
+                    ->label('Veterinario')
+                    ->required()
+                    ->searchable()
+                    ->options(function () {
+                        return \App\Models\Veterinarian::query()
+                            ->join('users', 'veterinarians.user_id', '=', 'users.id')
+                            ->where('users.role', 'veterinario')
+                            ->pluck('users.name', 'veterinarians.id');
+                    })
+                    ->getSearchResultsUsing(function (string $searchQuery) {
+                        return \App\Models\Veterinarian::query()
+                            ->join('users', 'veterinarians.user_id', '=', 'users.id')
+                            ->where('users.role', 'veterinario')
+                            ->where('users.name', 'like', "%{$searchQuery}%")
+                            ->pluck('users.name', 'veterinarians.id')
+                            ->toArray();
+                    })
+                    ->getOptionLabelUsing(fn($value): ?string => \App\Models\Veterinarian::find($value)?->user?->name ?? 'N/A')
+                    ->preload(),
 
                 Forms\Components\Select::make('service_id')
                     ->relationship('service', 'name')
@@ -92,12 +97,15 @@ class MedicalRecordResource extends Resource
                     ->label('Notas Adicionales')
                     ->maxLength(255),
 
-                // Forms\Components\Select::make('appointment_id')
-                //     ->relationship('appointment', 'date')
-                //     ->label('Cita Asociada')
-                //     ->nullable()
-                //     ->searchable()
-                //     ->preload(),
+                Forms\Components\Select::make('appointment_id')
+                    // Cambia 'date' por 'id' si solo quieres mostrar el ID de la cita
+                    // o cualquier otra columna que siempre tenga un valor de cadena
+                    ->relationship('appointment', 'id') // O cualquier otra columna que no sea nula
+                    ->getOptionLabelFromRecordUsing(fn(\App\Models\Appointment $record) => 'Cita #' . $record->id . ' - ' . ($record->date?->format('Y-m-d H:i A') ?? 'Fecha no disponible'))
+                    ->label('Cita Asociada')
+                    ->nullable()
+                    ->searchable()  
+                    ->preload(),
 
                 Forms\Components\FileUpload::make('pfd_file')
                     ->label('Archivo PDF Adjunto')
@@ -187,6 +195,8 @@ class MedicalRecordResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+
+                TrashedFilter::make(),
                 Tables\Filters\SelectFilter::make('veterinarian_id')
                     ->relationship(
                         'veterinarian',
@@ -210,10 +220,12 @@ class MedicalRecordResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
     }

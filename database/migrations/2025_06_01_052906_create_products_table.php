@@ -21,6 +21,7 @@ return new class extends Migration
                   ->onDelete('set null'); // Si una categoría se elimina, el producto no pierde su categoría (queda null)
             $table->string('image', 255)->nullable();
             $table->timestamps();
+             $table->softDeletes(); // ¡Añade esto!
         });
 
     }

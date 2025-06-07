@@ -24,6 +24,7 @@ return new class extends Migration
             $table->text('notes')->nullable(); // General notes/observations
 
             $table->timestamps();
+             $table->softDeletes(); // ¡Añade esto!
         });
     }
 

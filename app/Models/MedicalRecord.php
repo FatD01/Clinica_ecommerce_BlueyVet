@@ -14,14 +14,18 @@ class MedicalRecord extends Model
     protected $table = 'medical_records';
 
     protected $fillable = [
-        'mascota_id', // Keep 'mascota_id' as per your existing table
+        'mascota_id',
         'veterinarian_id',
         'service_id',
         'consultation_date',
         'reason_for_consultation',
         'diagnosis',
         'treatment',
+        'prescription', //
+        'observations',//
         'notes',
+        'appointment_id', // ¡Asegúrate de que este campo está en tu tabla y en fillable!
+        'pfd_file', //
     ];
 
     protected $casts = [
@@ -44,5 +48,11 @@ class MedicalRecord extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class); // Assuming you have a Service model
+    }
+
+    public function appointment(): BelongsTo
+    {
+        // Asegúrate de que App\Models\Appointment es la ruta correcta a tu modelo Appointment
+        return $this->belongsTo(Appointment::class);
     }
 }

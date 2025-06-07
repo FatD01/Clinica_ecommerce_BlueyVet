@@ -12,11 +12,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // Links to the user account
             $table->string('license_number')->unique()->nullable(); // Professional license/college number
-            $table->string('specialty')->nullable(); 
+            $table->string('specialty')->nullable();
             $table->string('phone')->nullable();
-            $table->string('address')->nullable(); 
+            $table->string('address')->nullable();
             $table->text('bio')->nullable();
             $table->timestamps();
+            $table->softDeletes(); // ¡Añade esto!
         });
     }
 

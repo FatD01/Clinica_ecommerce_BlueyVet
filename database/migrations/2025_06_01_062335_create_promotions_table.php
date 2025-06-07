@@ -34,6 +34,7 @@ return new class extends Migration
             $table->boolean('is_enabled')->default(true);
 
             $table->timestamps();
+             $table->softDeletes(); // ¡Añade esto!
         });
     }
 

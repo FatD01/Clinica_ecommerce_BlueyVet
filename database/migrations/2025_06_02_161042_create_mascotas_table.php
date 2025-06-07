@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('image', 255)->nullable(); //imagen para la moscota
             // user_id ya no es FK aquí, la relación es a través de clientes
             $table->timestamps();
+             $table->softDeletes(); // ¡Añade esto!
         });
     }
 

@@ -2,6 +2,10 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\RestoreAction;
+use Filament\Tables\Actions\ForceDeleteAction; // Para eliminar permanentemente si es necesario
+use Filament\Tables\Filters\TrashedFilter;
 use App\Filament\Resources\MascotaResource\Pages;
 use App\Filament\Resources\MascotaResource\RelationManagers;
 use App\Models\Mascota;
@@ -21,6 +25,7 @@ use App\Models\Cliente; // Asegúrate de importar el modelo Cliente
 use Filament\Forms\Components\Tabs\Tab;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Tables\Actions\RestoreBulkAction;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 
 class MascotaResource extends Resource
@@ -131,15 +136,17 @@ class MascotaResource extends Resource
                     ->dateTime(),
             ])
             ->filters([
-                //
+                TrashedFilter::make(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ]);
     }

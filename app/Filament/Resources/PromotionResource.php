@@ -1,6 +1,10 @@
 <?php
 namespace App\Filament\Resources;
 
+use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\RestoreAction;
+use Filament\Tables\Actions\ForceDeleteAction; // Para eliminar permanentemente si es necesario
+use Filament\Tables\Filters\TrashedFilter;
 use App\Filament\Resources\PromotionResource\Pages;
 use App\Models\Promotion;
 use App\Models\Product; // Asegúrate de importar el modelo Product
@@ -14,6 +18,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
+use Filament\Tables\Actions\RestoreBulkAction;
 
 class PromotionResource extends Resource
 {
@@ -207,6 +212,10 @@ class PromotionResource extends Resource
                     ->limit(50),
             ])
             ->filters([
+
+
+                TrashedFilter::make(),
+
                 Tables\Filters\SelectFilter::make('apply_to')
                     ->label('Aplica a')
                     ->options([
@@ -233,10 +242,12 @@ class PromotionResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ]);
     }

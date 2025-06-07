@@ -2,6 +2,10 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\RestoreAction;
+use Filament\Tables\Actions\ForceDeleteAction; // Para eliminar permanentemente si es necesario
+use Filament\Tables\Filters\TrashedFilter;
 use App\Filament\Resources\ClienteResource\Pages;
 use App\Filament\Resources\ClienteResource\RelationManagers;
 use App\Models\Cliente;
@@ -16,6 +20,7 @@ use Filament\Forms\Components\Select;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Models\User;
+use Filament\Tables\Actions\RestoreBulkAction;
 
 class ClienteResource extends Resource
 {
@@ -93,13 +98,19 @@ class ClienteResource extends Resource
             ])
             ->filters([
                 // Puedes agregar filtros si lo necesitas, por ejemplo, por nombre o apellido
+
+                TrashedFilter::make(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                DeleteAction::make(),
+                RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
+
                 ]),
             ]);
     }

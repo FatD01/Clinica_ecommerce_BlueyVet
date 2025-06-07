@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('direccion')->nullable();
             // Otros campos específicos del cliente
             $table->timestamps();
+             $table->softDeletes(); // ¡Añade esto!
         });
     }
 

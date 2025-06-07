@@ -15,6 +15,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\Section;
 use Filament\Tables\View\TablesRenderHook;
+use Filament\Tables\Actions\ForceDeleteAction;
+use Filament\Tables\Actions\RestoreAction;
+use Filament\Tables\Filters\TrashedFilter;
 
 class UserResource extends Resource
 {
@@ -29,30 +32,30 @@ class UserResource extends Resource
 
 
                 Section::make('Personal Information')
-                ->columns(4)
-                // ->description('Prevent abuse by limiting the number of requests per period')
-                ->schema([
-                     Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('email')
-                    ->email()
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\DateTimePicker::make('email_verified_at'),
-                Forms\Components\TextInput::make('password')
-                    ->password()
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\Select::make('role')
-                    // ->label('Seleccione el rol')
-                    ->placeholder('Seleccione el rol')
-                    ->options([
-                        'Veterinario' => 'veterinario',
-                        'Administrador' => 'Administrador',
-                        'Cliente' => 'Cliente',
-                    ])
-                    ->required(),
+                    ->columns(4)
+                    // ->description('Prevent abuse by limiting the number of requests per period')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('email')
+                            ->email()
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\DateTimePicker::make('email_verified_at'),
+                        Forms\Components\TextInput::make('password')
+                            ->password()
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\Select::make('role')
+                            // ->label('Seleccione el rol')
+                            ->placeholder('Seleccione el rol')
+                            ->options([
+                                'Veterinario' => 'veterinario',
+                                'Administrador' => 'Administrador',
+                                'Cliente' => 'Cliente',
+                            ])
+                            ->required(),
 
                     ])
 
@@ -115,20 +118,22 @@ class UserResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                TrashedFilter::make(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),    // Restaurar en masa
                 ]),
             ]);
     }
-    
-    
+
+
 
 
     public static function getRelations(): array

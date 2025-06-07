@@ -18,6 +18,7 @@ return new class extends Migration
             $table->timestamps(); 
             
             $table->unique(['promotion_id', 'service_id']);
+             $table->softDeletes(); // ¡Añade esto!
         });
     }
 
