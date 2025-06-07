@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -10,16 +11,18 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 255)->nullable(false);           
-            $table->text('description')->nullable();           
-            $table->decimal('price', 8, 2)->nullable(false);          
-            $table->integer('stock')->default(0)->nullable(false);         
-            $table->string('category', 100);
-            $table->boolean('promotion_active')->default(false);
+            $table->string('name', 255)->nullable(false);
+            $table->text('description')->nullable();
+            $table->decimal('price', 8, 2)->nullable(false);
+            $table->integer('stock')->default(0)->nullable(false);
+            $table->foreignId('category_id')
+                  ->nullable()
+                  ->constrained('categories')
+                  ->onDelete('set null'); // Si una categoría se elimina, el producto no pierde su categoría (queda null)
             $table->string('image', 255)->nullable();
             $table->timestamps();
         });
-        
+
     }
     public function down(): void
     {
