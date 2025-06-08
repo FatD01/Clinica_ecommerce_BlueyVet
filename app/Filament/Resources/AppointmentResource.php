@@ -38,13 +38,17 @@ class AppointmentResource extends Resource
                     ->preload(),
                 Forms\Components\Select::make('veterinarian_id')
                     ->label('Veterinario')
-                    ->options(
-                        \App\Models\User::where('role', 'veterinario')
-                            ->pluck('name', 'id')
-                    )
+                    ->relationship('veterinarian', 'id', function (Builder $query) {
+                        $query->with('user');
+                    })
+                    ->getOptionLabelFromRecordUsing(function (\App\Models\Veterinarian $record) {
+                        // *** TEMPORALMENTE: Muestra AMBOS IDs para depuración ***
+                        return "VET_ID: {$record->id} - USER_ID: {$record->user->id} - Nombre: {$record->user->name}";
+                    })
                     ->searchable()
                     ->preload()
                     ->required(),
+                    
                 Forms\Components\DateTimePicker::make('date')
                     ->label('Fecha y Hora de la Cita')
                     ->required()
@@ -133,7 +137,7 @@ class AppointmentResource extends Resource
                         // Opción 1: Más segura
                         //return $record->user?->name ?? 'Veterinario Desconocido'; // Si user->name es nulo, usa esta cadena.
                         // O si quieres ser más específico y ver si el veterinario existe pero el usuario no:
-                         return $record->user?->name ?? ($record->id ? 'Veterinario ID: ' . $record->id . ' (Usuario no asociado)' : 'Veterinario Desconocido');
+                        return $record->user?->name ?? ($record->id ? 'Veterinario ID: ' . $record->id . ' (Usuario no asociado)' : 'Veterinario Desconocido');
                     })
                     ->label('Filtrar por Veterinario')
                     ->searchable()
