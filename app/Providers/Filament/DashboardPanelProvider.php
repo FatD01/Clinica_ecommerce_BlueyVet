@@ -18,6 +18,9 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
+// ¡IMPORTA TU WIDGET AQUÍ!
+use App\Filament\Widgets\AppointmentsChart; //
+
 class DashboardPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -37,8 +40,10 @@ class DashboardPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                // Widgets\AccountWidget::class,
+                // Widgets\FilamentInfoWidget::class, // Descomenta si quieres el widget de info de Filament
+                // ¡AÑADE TU WIDGET DE GRÁFICO AQUÍ!
+                AppointmentsChart::class, //
             ])
             ->middleware([
                 EncryptCookies::class,

@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MedicalRecord extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     // Ensure the model uses the correct table name (plural of snake_case model name by default)
     protected $table = 'medical_records';
@@ -25,7 +26,7 @@ class MedicalRecord extends Model
         'observations',//
         'notes',
         'appointment_id', // ¡Asegúrate de que este campo está en tu tabla y en fillable!
-        'pfd_file', //
+        'pfd_file', // esto permitir exportarse, no subir.
     ];
 
     protected $casts = [

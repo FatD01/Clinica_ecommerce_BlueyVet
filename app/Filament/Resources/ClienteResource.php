@@ -47,11 +47,11 @@ class ClienteResource extends Resource
                     ->required()
                     ->helperText('Selecciona la cuenta de usuario asociada a este cliente (solo se muestran cuentas de cliente).'),
                 TextInput::make('nombre')
-                    ->label('Nombre del Dueño')
+                    ->label('Nombres')
                     ->required()
                     ->maxLength(255),
                 TextInput::make('apellido')
-                    ->label('Apellido del Dueño')
+                    ->label('Apellidos')
                     ->maxLength(255),
                 TextInput::make('telefono')
                     ->label('Teléfono')
@@ -72,11 +72,11 @@ class ClienteResource extends Resource
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('nombre')
-                    ->label('Nombre del Dueño')
+                    ->label('Nombres') 
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('apellido')
-                    ->label('Apellido del Dueño')
+                    ->label('Apellidos')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('telefono')

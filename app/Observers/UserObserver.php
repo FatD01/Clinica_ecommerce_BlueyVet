@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Models\Cliente;
 use App\Models\User;
 use App\Models\Veterinarian; // Asegúrate de importar el modelo Veterinarian
 use Illuminate\Support\Facades\Log;
@@ -43,7 +44,32 @@ class UserObserver
         } else {
             Log::info("UserObserver: Rol NO es 'veterinario'. No se crea registro Veterinarian para User ID: {$user->id}");
         }
+
+        // ¡NUEVA LÓGICA PARA CLIENTE!
+        if ($user->role === 'Cliente') { // O 'Cliente' si tu rol usa mayúscula inicial
+            Log::info("UserObserver: Rol es 'cliente'. Procesando creación de Cliente para User ID: {$user->id}");
+
+            $cliente = $user->cliente()->withTrashed()->first(); // O $user->client()
+
+            if (!$cliente) {
+                Cliente::create([ // O Client::create()
+                    'user_id' => $user->id,
+                    'nombre' => $user->name,    // recordar luego psarlo a que acepte null
+                    'apellido' => null,
+                    'telefono' => null,
+                    'direccion' => null,
+                    // ... otros campos que tengas para clientes, todos en null
+                ]);
+                Log::info("UserObserver: CREADO nuevo registro Cliente para User ID: {$user->id}");
+            } else if ($cliente->trashed()) {
+                $cliente->restore();
+                Log::info("UserObserver: RESTAURADO registro Cliente existente para User ID: {$user->id}");
+            } else {
+                Log::info("UserObserver: REGISTRO Cliente ya existe (activo) para User ID: {$user->id}. No se crea duplicado.");
+            }
+        }
     }
+    
 
 
     
@@ -79,6 +105,30 @@ class UserObserver
                 Log::info("UserObserver: Soft-deleted registro Veterinarian para User ID: {$user->id}");
             }
         }
+
+
+        // ¡NUEVA LÓGICA PARA CLIENTE!
+         if ($user->isDirty('role') && $user->role === 'Cliente') { // O 'Cliente'
+            $cliente = $user->cliente()->withTrashed()->first(); // O $user->client()
+            if (!$cliente) {
+                Cliente::create([ // O Client::create()
+                    'user_id' => $user->id,
+                    'nombre' => $user->name, // recordar luego psarlo a que acepte null
+                    'apellido' => null,
+                    'telefono' => null,
+                    'direccion' => null,
+                ]);
+                Log::info("UserObserver: CREATED new Cliente (on role change) for User ID: {$user->id}");
+            } elseif ($cliente->trashed()) {
+                $cliente->restore();
+                Log::info("UserObserver: RESTORED existing Cliente (on role change) for User ID: {$user->id}");
+            }
+        } elseif ($user->isDirty('role') && $user->getOriginal('role') === 'cliente' && $user->role !== 'Cliente') { // O 'Cliente'
+            if ($user->cliente) { // O $user->client
+                $user->cliente->delete(); // O $user->client->delete()
+                Log::info("UserObserver: SOFT-DELETED Cliente for User ID: {$user->id}");
+            }
+        }
     }
 
     /**
@@ -89,6 +139,9 @@ class UserObserver
         // Cuando un usuario se "elimina" (soft delete), también "elimina" suavemente su registro de veterinario.
         if ($user->veterinarian) { // Asegura que existe el registro de veterinario (no soft-deleted)
             $user->veterinarian->delete();
+        }
+        if ($user->cliente) { // Asegura que existe el registro de cliente (no soft-deleted)
+            $user->cliente->delete();
         }
     }
 
@@ -101,6 +154,9 @@ class UserObserver
         // Asegúrate de que solo intentas restaurar si realmente estaba soft-deleted.
         if ($user->veterinarian()->onlyTrashed()->first()) {
             $user->veterinarian()->restore();
+        }
+        if ($user->cliente()->onlyTrashed()->first()) {
+            $user->cliente()->restore();
         }
     }
 }

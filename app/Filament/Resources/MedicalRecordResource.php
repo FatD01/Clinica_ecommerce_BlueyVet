@@ -36,16 +36,16 @@ class MedicalRecordResource extends Resource
                     ->searchable()
                     ->preload(),
 
-                Forms\Components\Select::make('veterinarian_id')
-                    ->label('Veterinario')
-                    ->options(
-                        \App\Models\User::where('role', 'veterinario')
-                            ->pluck('name', 'id')
-                    )
-                    ->searchable()
-                    ->preload()
-                    ->required()
-                    ->helperText('Selecciona el veterinario que atendió la consulta (solo se muestran cuentas de veterinario).'),
+                // Forms\Components\Select::make('veterinarian_id')
+                //     ->label('Veterinario')
+                //     ->options(
+                //         \App\Models\User::where('role', 'veterinario')
+                //             ->pluck('name', 'id')
+                //     )
+                //     ->searchable()
+                //     ->preload()
+                //     ->required()
+                //     ->helperText('Selecciona el veterinario que atendió la consulta (solo se muestran cuentas de veterinario).'),
 
                 Forms\Components\Select::make('veterinarian_id')
                     ->label('Veterinario')
@@ -54,13 +54,13 @@ class MedicalRecordResource extends Resource
                     ->options(function () {
                         return \App\Models\Veterinarian::query()
                             ->join('users', 'veterinarians.user_id', '=', 'users.id')
-                            ->where('users.role', 'veterinario')
+                            ->where('users.role', 'Veterinario')
                             ->pluck('users.name', 'veterinarians.id');
                     })
                     ->getSearchResultsUsing(function (string $searchQuery) {
                         return \App\Models\Veterinarian::query()
                             ->join('users', 'veterinarians.user_id', '=', 'users.id')
-                            ->where('users.role', 'veterinario')
+                            ->where('users.role', 'Veterinario')
                             ->where('users.name', 'like', "%{$searchQuery}%")
                             ->pluck('users.name', 'veterinarians.id')
                             ->toArray();
@@ -197,6 +197,7 @@ class MedicalRecordResource extends Resource
             ->filters([
 
                 TrashedFilter::make(),
+                
                 Tables\Filters\SelectFilter::make('veterinarian_id')
                     ->relationship(
                         'veterinarian',

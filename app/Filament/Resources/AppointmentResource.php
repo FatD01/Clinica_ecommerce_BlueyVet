@@ -48,7 +48,7 @@ class AppointmentResource extends Resource
                     ->searchable()
                     ->preload()
                     ->required(),
-                    
+
                 Forms\Components\DateTimePicker::make('date')
                     ->label('Fecha y Hora de la Cita')
                     ->required()
@@ -128,20 +128,14 @@ class AppointmentResource extends Resource
                     ->relationship(
                         'veterinarian',
                         'id',
-                        fn(Builder $query) =>
-                        $query->join('users', 'veterinarians.user_id', '=', 'users.id')
+                        fn(Builder $query) => $query->join('users', 'veterinarians.user_id', '=', 'users.id')
                             ->select('veterinarians.id', 'users.name')
                             ->orderBy('users.name')
                     )
-                    ->getOptionLabelFromRecordUsing(function ($record) {
-                        // Opción 1: Más segura
-                        //return $record->user?->name ?? 'Veterinario Desconocido'; // Si user->name es nulo, usa esta cadena.
-                        // O si quieres ser más específico y ver si el veterinario existe pero el usuario no:
-                        return $record->user?->name ?? ($record->id ? 'Veterinario ID: ' . $record->id . ' (Usuario no asociado)' : 'Veterinario Desconocido');
-                    })
+                    ->getOptionLabelFromRecordUsing(fn($record) => $record->name)
                     ->label('Filtrar por Veterinario')
                     ->searchable()
-                    ->preload()
+                    ->preload(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
