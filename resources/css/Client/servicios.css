@@ -1,0 +1,274 @@
+
+:root {
+    /* Variables de colores (paleta Bluey), ahora con tus colores originales */
+    --bluey-blue: #1e3a8a;       /* Correspondiente a tu --primary (Azul oscuro) */
+    --bluey-light-blue: #7dd3fc; /* Correspondiente a tu --accent (Azul claro) */
+    --bluey-dark-blue: #1e3a8a;  /* Puedes usar --primary de nuevo o un tono más oscuro de tu primario si lo tienes */
+    --bluey-yellow: #f59e0b;     /* Correspondiente a tu --secondary (Ámbar) */
+    --bluey-orange: #f59e0b;     /* Si no tienes un naranja específico, puedes usar --secondary */
+    --bluey-green: #28a745;      /* No tenías un verde, si necesitas uno, este es un verde Bootstrap común, o dame el tuyo */
+
+    --bg-light: #e0f2fe;         /* Correspondiente a tu --background (Fondo azul claro) */
+    --text-dark: #1f2937;        /* Correspondiente a tu --text (Texto oscuro) */
+    --text-light: #6b7280;       /* Correspondiente a tu --light-text (Texto gris) */
+    --white: #ffffff;            /* Mismo blanco */
+    --border-light: #e5e7eb;     /* Correspondiente a tu --border (Borde gris claro) */
+
+    /* Puedes mantener --error si lo usas en alguna parte del CSS */
+    --error: #ef4444; /* Rojo */
+
+    /* Las variables originales de la otra IA NO se incluyen aquí para evitar duplicidad y confusión. */
+}
+
+/* Estilos generales */
+body {
+    font-family: 'Nunito', sans-serif;
+    color: var(--text-dark);
+    background-color: var(--bg-light);
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    color: var(--bluey-dark-blue);
+}
+
+/* Hero Section */
+.hero-section {
+    position: relative;
+    height: 70vh;
+    overflow: hidden;
+    margin-bottom: 3rem;
+}
+
+.hero-container {
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.7);
+}
+
+.hero-content {
+    position: absolute;
+    text-align: center;
+    color: var(--white);
+    max-width: 800px;
+    padding: 2rem;
+    z-index: 10;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    color: var(--white);
+}
+
+.hero-text {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.hero-button {
+    display: inline-block;
+    padding: 1rem 2.5rem;
+    background-color: var(--bluey-blue);
+    color: var(--white);
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-radius: 50px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.hero-button:hover {
+    background-color: var(--bluey-dark-blue);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Sección de Equipo */
+.section-team {
+    background-color: var(--bg-light);
+}
+
+.section-title {
+    font-size: 2.5rem;
+    margin-bottom: 3rem;
+    position: relative;
+    display: inline-block;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background-color: var(--bluey-yellow);
+}
+
+.team-card {
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background-color: var(--white);
+    border-radius: 15px;
+    overflow: hidden;
+    border-top: 5px solid var(--bluey-blue);
+}
+
+.team-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.team-img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border: 5px solid var(--bluey-light-blue);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.team-card .card-title {
+    color: var(--bluey-dark-blue);
+    font-weight: 700;
+}
+
+.team-card .card-text {
+    color: var(--text-light);
+}
+
+/* Sección de Precios */
+.section-prices {
+    background-color: var(--white);
+}
+
+.table {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.table thead th {
+    background-color: var(--bluey-dark-blue);
+    color: var(--white);
+    font-weight: 600;
+    padding: 1.2rem;
+    text-align: center;
+}
+
+.table tbody td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: var(--bg-light);
+}
+
+.table tbody tr:hover {
+    background-color: var(--bluey-light-blue);
+    color: var(--white);
+}
+
+.table tbody td:first-child {
+    font-weight: 500;
+    color: var(--bluey-dark-blue);
+}
+
+.table tbody td:last-child {
+    font-weight: 600;
+    color: var(--bluey-orange);
+}
+
+/* Formulario de Contacto */
+.section-contact {
+    background-color: var(--bg-light);
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.card-header {
+    background-color: var(--bluey-dark-blue);
+    color: var(--white);
+    padding: 1.5rem;
+}
+
+.form-control, .form-select {
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--border-light);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--bluey-blue);
+    box-shadow: 0 0 0 0.25rem rgba(29, 161, 242, 0.25);
+}
+
+.custom-btn-primary {
+    background-color: var(--bluey-blue);
+    border: none;
+    border-radius: 50px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+}
+
+.custom-btn-primary:hover {
+    background-color: var(--bluey-dark-blue);
+}
+
+.custom-btn-secondary {
+    background-color: var(--text-light);
+    border: none;
+    border-radius: 50px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 991.98px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    .hero-text {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .hero-section {
+        height: 50vh;
+    }
+    .hero-title {
+        font-size: 2rem;
+    }
+    .hero-text {
+        font-size: 1rem;
+    }
+    .hero-button {
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+    }
+    .section-title {
+        font-size: 2rem;
+    }
+}
