@@ -41,10 +41,15 @@ class ServiceResource extends Resource
                 Forms\Components\TextInput::make('duration_minutes')
                     ->numeric()
                     ->default(null),
-                Forms\Components\TextInput::make('status')
-                    ->required()
-                    ->maxLength(255)
-                    ->default('active'),
+
+                 Forms\Components\Select::make('status')
+                ->label('Estado del Servicio')
+                ->options([
+                    'active' => 'Activo',
+                    'inactive' => 'Inactivo', 
+                ])
+                ->default('active') 
+                ->required(),
             ]);
     }
 

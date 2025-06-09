@@ -1,6 +1,7 @@
 @import './client/navbar.css'; /* Ruta corregida */
 @import './Client/servicios.css';
 @import './Client/citas.css';
+@import './Client/index.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

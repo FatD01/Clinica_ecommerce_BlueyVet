@@ -3,7 +3,7 @@
 @section('title', 'Inicio')
 
 @push('css') {{-- CAMBIADO A @push --}}
-    <link rel="stylesheet" href="{{ asset('css/client/index.css') }}"> {{-- DESCOMENTADO --}}
+
 @endpush
 
 @section('content')
