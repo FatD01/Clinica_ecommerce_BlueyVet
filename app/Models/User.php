@@ -32,6 +32,8 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
         "role", // Asegúrate de que "role" esté aquí
+         'google_id', // ¡Añade esta línea!
+        'email_verified_at', // Añade esta línea si la manejas con Google
     ];
 
     /**

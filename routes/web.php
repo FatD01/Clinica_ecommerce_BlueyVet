@@ -8,6 +8,13 @@ use App\Http\Controllers\Client\CitaController;
 use App\Http\Controllers\Client\ServicioController;
 use App\Http\Controllers\PaymentController; // Asegúrate de que esta línea esté presente
 
+use Laravel\Socialite\Facades\Socialite;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash; // Asegúrate de importar Hash
+use Illuminate\Support\Facades\Log; // Importa Log para evitar el error de tipo indefinido
+
 Route::get('/client/home', [HomeController::class, 'index'])->name('client.home');
 
 Route::get('/', function () {
@@ -71,6 +78,46 @@ Route::middleware(['auth'])->group(function () {
     // Asegúrate de que el 'order' que pasas aquí sea tu 'ServiceOrder' local.
     Route::get('/reservar-cita/{order}', [PaymentController::class, 'showAppointmentForm'])->name('appointments.show_form');
     Route::post('/reservar-cita/{order}', [PaymentController::class, 'storeAppointment'])->name('appointments.store');
+});
+
+// Rutas para autenticación con Google Socialite
+Route::get('/auth/google/redirect', function () {
+    return Socialite::driver('google')->redirect();
+})->name('auth.google.redirect');
+
+Route::get('/auth/google/callback', function () {
+    try {
+        $googleUser = Socialite::driver('google')->user();
+
+        // Buscar al usuario por su ID de Google
+        $user = User::where('google_id', $googleUser->id)->first();
+
+        if ($user) {
+                \Illuminate\Support\Facades\Log::info('User found by email, linking Google ID.', ['email' => $googleUser->email]);
+                $user->google_id = $googleUser->id;
+                $user->email_verified_at = now();
+                $user->save();
+        } else {
+                \Illuminate\Support\Facades\Log::info('Creating new user with Google data.', ['email' => $googleUser->email]);
+                $user = User::create([
+                    'name' => $googleUser->name,
+                    'email' => $googleUser->email,
+                    'google_id' => $googleUser->id,
+                    'password' => Hash::make(Str::random(24)),
+                    'email_verified_at' => now(),
+                    'role' => 'Cliente', // <--- ¡AÑADE ESTA LÍNEA AQUÍ! O el rol que consideres por defecto.
+                                        // Asegúrate de que este 'client' exista en tu lógica de roles si tienes.
+                ]);
+        }
+        Auth::login($user); // Iniciar sesión al usuario
+
+        // Redirige a la página de inicio del cliente (client.welcome como acordamos)
+        return redirect()->route('client.home')->with('success', '¡Has iniciado sesión con Google correctamente!');
+
+    } catch (\Exception $e) {
+        Log::error('Error al iniciar sesión con Google: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+        return redirect('/login')->with('error', 'No se pudo iniciar sesión con Google. Inténtalo de nuevo.');
+    }
 });
 
 require __DIR__.'/auth.php';

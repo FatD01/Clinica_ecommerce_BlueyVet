@@ -63,7 +63,7 @@
                     <i class="bi bi-cart"></i>
                     <span class="cart-badge">0</span>
                 </div>
-
+<!-- 
             </div>
             <div id="carritoWindow" class="carrito-windows">
                 <div class="head-carrito">
@@ -105,7 +105,7 @@
                 <div class="botones-carrito">
                     <button>Realizar pedido</button>
                     <button>Vaciar Carrito</button>
-                </div>
+                </div> -->
             </div>
         </div>
     </nav>
@@ -124,7 +124,7 @@
 
     });
 </script>
-<script>
+<!-- <script>
     const carritoWindow = document.getElementById('carritoWindow');
     const carritoIcono = document.getElementById('carrito-icono');
 
@@ -136,6 +136,6 @@
     document.querySelector('.head-carrito i.bi-x').addEventListener('click', () => {
         carritoWindow.classList.remove('visible');
     });
-</script>
+</script> -->
 
 </html>

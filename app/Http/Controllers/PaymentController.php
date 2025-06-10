@@ -9,6 +9,7 @@ use App\Models\Veterinarian;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ServiceContactMail;
+use App\Mail\OrderConfirmationMail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 
@@ -18,6 +19,7 @@ use PayPalCheckoutSdk\Core\SandboxEnvironment;
 use PayPalCheckoutSdk\Core\ProductionEnvironment;
 use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
 use PayPalCheckoutSdk\Orders\OrdersCaptureRequest;
+use PayPalCheckoutSdk\Orders\OrdersGetRequest;
 use PayPalHttp\HttpException; // <--- ¡¡¡AÑADE ESTA LÍNEA AQUÍ!!!
 
 
@@ -156,15 +158,12 @@ class PaymentController extends Controller
 
         $client = $this->client(); // Obtener el cliente de PayPal
 
-        // $requestCapture = new OrdersCaptureRequest($token);
-        // $requestCapture->prefer('return=representation');
-
         try {
-            $requestGetOrder = new \PayPalCheckoutSdk\Orders\OrdersGetRequest($token);
+            $requestGetOrder = new OrdersGetRequest($token); // Usamos OrdersGetRequest
             $response = $client->execute($requestGetOrder);
 
             // Log la respuesta completa de la captura
-            Log::info('Respuesta de PayPal (OrdersCaptureRequest):', ['response' => json_encode($response->result, JSON_PRETTY_PRINT)]);
+            Log::info('Respuesta de PayPal (OrdersGetRequest):', ['response' => json_encode($response->result, JSON_PRETTY_PRINT)]);
 
             if ($response->statusCode == 200 && $response->result->status == 'COMPLETED') {
                 $paypalOrderId = $response->result->id; // El mismo token
@@ -174,30 +173,56 @@ class PaymentController extends Controller
                 // Buscar tu orden local por el reference_id (el ID de tu ServiceOrder)
                 $order = ServiceOrder::find($referenceId);
 
+                // Verificamos si la orden existe, pertenece al usuario autenticado, y está pendiente
                 if ($order && $order->user_id === Auth::id() && $order->status === 'pending') {
                     $order->status = 'completed';
                     $order->paypal_order_id = $paypalOrderId; // Guardar el ID de PayPal
                     $order->payer_id = $payerId; // Guardar el PayerID
                     $order->save();
 
-                    // Aquí podrías enviar correos electrónicos de confirmación, etc.
-                    // Mail::to(Auth::user()->email)->send(new ServiceContactMail($order)); // Asegúrate de que ServiceContactMail existe
+                    // ******************************************************
+                    // LÓGICA PARA ENVIAR EL CORREO ELECTRÓNICO DE CONFIRMACIÓN
+                    // ******************************************************
+                    // Asegúrate de que el usuario tiene un correo electrónico asociado a la orden
+                    // $order->user es la relación (ServiceOrder belongsTo User)
+                    if ($order->user && $order->user->email) {
+                        try {
+                            Mail::to($order->user->email)->send(new OrderConfirmationMail($order));
+                            Log::info('Correo de confirmación de orden ' . $order->id . ' enviado a: ' . $order->user->email);
+                        } catch (\Exception $mailEx) {
+                            Log::error('Error al enviar correo de confirmación para orden ' . $order->id . ': ' . $mailEx->getMessage(), ['trace' => $mailEx->getTraceAsString()]);
+                            // No queremos que el fallo del correo impida que el usuario vea la página de éxito
+                            Session::flash('warning', 'Tu pago fue procesado correctamente, pero no pudimos enviar el correo de confirmación. Por favor, revisa tu bandeja de spam o contacta a soporte.');
+                        }
+                    } else {
+                        Log::warning('No se pudo enviar correo de confirmación: usuario o email no encontrado para orden ' . $order->id);
+                        Session::flash('warning', 'Tu pago fue procesado correctamente, pero no pudimos enviar el correo de confirmación porque no se encontró el email del usuario.');
+                    }
+                    // ******************************************************
+                    // FIN LÓGICA PARA ENVIAR EL CORREO ELECTRÓNICO
+                    // ******************************************************
 
                     Session::flash('success', '¡Pago realizado con éxito! Tu orden ha sido confirmada.');
                     return redirect()->route('checkout.success_page'); // Una página de éxito real que debes crear
-                } else {
-                    Log::warning('Orden local no encontrada, usuario no coincide, o ya procesada en payments.success. Reference ID: ' . $referenceId . ', User: ' . Auth::id());
+                } else if ($order && $order->status === 'completed') {
+                    // La orden ya estaba completada (posible reintento o doble notificación)
+                    Log::info('Orden local ' . $referenceId . ' ya estaba completada. No se realizó ninguna acción.');
+                    Session::flash('info', 'Tu pago ya había sido confirmado previamente.');
+                    return redirect()->route('checkout.success_page');
+                }
+                else {
+                    Log::warning('Orden local no encontrada, usuario no coincide, o estado incorrecto en payments.success. Reference ID: ' . $referenceId . ', User: ' . Auth::id());
                     Session::flash('warning', 'El pago fue procesado en PayPal, pero hubo un problema al actualizar el estado de tu orden local. Por favor, contacta a soporte.');
                     return redirect()->route('checkout.error_page'); // Redirige a una página de error
                 }
             } else {
                 // La orden de PayPal no está en estado COMPLETED (puede ser PENDING, VOIDED, etc.)
-                Log::warning('Captura de PayPal no completada. Estado: ' . ($response->result->status ?? 'N/A') . ', PayPal Order ID: ' . $token);
+                Log::warning('Orden de PayPal no completada. Estado: ' . ($response->result->status ?? 'N/A') . ', PayPal Order ID: ' . $token);
                 Session::flash('error', 'El pago no se pudo completar. Por favor, intenta de nuevo o contacta a soporte.');
                 return redirect()->route('checkout.failed');
             }
         } catch (HttpException $ex) {
-            Log::error('Error de PayPal (HttpException) al capturar orden:', [
+            Log::error('Error de PayPal (HttpException) al obtener orden:', [
                 'status' => $ex->statusCode,
                 'message' => $ex->getMessage(),
                 'details' => json_decode($ex->getMessage(), true)
@@ -205,7 +230,7 @@ class PaymentController extends Controller
             Session::flash('error', 'Error al procesar el pago con PayPal: ' . $ex->getMessage());
             return redirect()->route('checkout.failed');
         } catch (\Exception $ex) {
-            Log::error('Error general al capturar orden de PayPal:', [
+            Log::error('Error general al obtener orden de PayPal:', [
                 'message' => $ex->getMessage(),
                 'trace' => $ex->getTraceAsString()
             ]);
