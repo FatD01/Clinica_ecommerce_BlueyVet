@@ -20,7 +20,7 @@ return new class extends Migration
                   ->onDelete('cascade'); // Si una categoría padre se elimina, sus hijos también se eliminan (o 'set null' si prefieres que los hijos se conviertan en raíces)
 
             $table->timestamps();
-             $table->softDeletes(); 
+             $table->softDeletes(); // ¡Añade esto!
         });
     }
 
