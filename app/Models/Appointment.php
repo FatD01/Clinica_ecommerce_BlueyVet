@@ -17,6 +17,7 @@ class Appointment extends Model
         'veterinarian_id',
         'date',
         'reason',
+        'service_id', 
         'status',
     ];
 
@@ -33,6 +34,11 @@ class Appointment extends Model
     public function veterinarian(): BelongsTo
     {
         return $this->belongsTo(Veterinarian::class);
+    }
+
+     public function service(): BelongsTo // Nueva relación para el servicio asociado
+    {
+        return $this->belongsTo(Service::class);
     }
 
     // Una cita puede tener muchos historiales médicos (opcional, si los ligas así)

@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     {{-- Considera usar @vite para tu CSS de navbar.css si lo procesas con Tailwind --}}
     {{-- Ejemplo: @vite(['resources/css/client/navbar.css']) --}}
-    <link rel="stylesheet" href="{{ asset('css/Client/navbar.css')}}?v=1.1" />
 </head>
 
 <body>
@@ -48,6 +47,11 @@
                 <a href="{{ route('client.servicios.index') }}" class="menu-link">
                     <i class="bi bi-heart-pulse"></i> SERVICIOS
                 </a>
+
+                <a href="{{ route('client.mascotas.index') }}" class="menu-link">
+                    <i class="bi bi-clipboard-heart"></i> MASCOTAS
+                </a>
+
                 {{-- CAMBIADO A #: client.citas.index --}}
                 <a href="{{ route('client.citas.index') }}" class="menu-link">
                     <i class="bi bi-calendar-check"></i> CITAS
@@ -59,6 +63,7 @@
                 </a>
                 <!-- <div id="carrito-icono" class="icon-btn cart-icon" title="Carrito" onclick="toggleCart()">
                     <i class="bi bi-cart"></i>
+
                     <span id="cart-count" class="cart-badge">{{ count(session('cart', [])) }}</span>
                 </div> -->
 
@@ -66,6 +71,31 @@
                     <i class="bi bi-cart"></i>
                     <span id="cart-count" class="cart-badge">{{ count(session('cart', [])) }}</span>
                 </div> -->
+                    <span class="cart-badge">0</span>
+                </div>
+<!-- 
+            </div>
+            <div id="carritoWindow" class="carrito-windows">
+                <div class="head-carrito">
+                    <h2>Productos en Carrito</h2>
+                    <div>
+                        <i class="bi bi-x"></i>
+                    </div>
+                </div>
+                <div class="ps-carrito">
+                    <div class="producto-c">
+                        <div class="eliminar-de-carrito">
+                            <i class="bi bi-trash-fill"></i>
+                        </div>
+                        <img src="https://picsum.photos/40/40" alt="Imagen aleatoria de prueba">
+                        <p>Nombre Producto</p>
+                        <Span class="precio-unidad">S/. 0.00</Span>
+                        <div class="contadores">
+                            <div class="contador-p"> <i class="bi bi-chevron-up"></i></div>
+                            <div class="contador-p"> <i class="bi bi-chevron-down"></i></div>
+                        </div>
+                        <span class="cantidad">1</span>
+                    </div>
 
                 <div id="carrito-icono" class="icon-btn cart-icon" title="Carrito" onclick="toggleCart()">
                     <i class="bi bi-cart"></i>
@@ -76,7 +106,14 @@
             </div>
 
 
-            
+                    <p>Total:</p>
+                    <p class="valor-calculo">S/. 99.93</p>
+                </div>
+                <div class="botones-carrito">
+                    <button>Realizar pedido</button>
+                    <button>Vaciar Carrito</button>
+                </div> -->
+            </div>
         </div>
     </nav>
 </body>
@@ -95,4 +132,17 @@
     });
 </script>
 
+<!-- <script>
+    const carritoWindow = document.getElementById('carritoWindow');
+    const carritoIcono = document.getElementById('carrito-icono');
+
+    // Open cart window
+    carritoIcono.addEventListener('click', function() {
+        carritoWindow.classList.add('visible');
+    });
+
+    document.querySelector('.head-carrito i.bi-x').addEventListener('click', () => {
+        carritoWindow.classList.remove('visible');
+    });
+</script> -->
 </html>

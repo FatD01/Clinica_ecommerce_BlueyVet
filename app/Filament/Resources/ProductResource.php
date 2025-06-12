@@ -107,7 +107,7 @@ class ProductResource extends Resource
                 // Columna para mostrar la(s) promoción(es) activa(s)
                 TextColumn::make('activePromotions')
                     ->label('Promoción(es) Activa(s)')
-                    ->state(function (Product $record): string {
+                    ->formatStateUsing(function (Product $record): string {
                         $activePromos = $record->promotions()
                             ->whereDate('start_date', '<=', Carbon::now())
                             ->whereDate('end_date', '>=', Carbon::now())
