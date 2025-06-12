@@ -8,6 +8,9 @@ use App\Http\Controllers\Client\CitaController;
 use App\Http\Controllers\Client\ServicioController;
 use App\Http\Controllers\PaymentController; // ¡Importa este PaymentController de la raíz!
 
+use App\Http\Controllers\Client\CartController; //fabricio estuvo aquí
+use App\Http\Controllers\Client\Products\Petshop\ProductController;
+
 Route::get('/client/home', [HomeController::class, 'index'])->name('client.home');
 
 Route::get('/', function () {
@@ -47,4 +50,49 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/reservar-cita/{order}', [PaymentController::class, 'storeAppointment'])->name('appointments.store');
 });
 
-require __DIR__.'/auth.php';
+
+
+// Rutas de productos y carrito (las que definiste y se mantienen)
+// Route::post('/cart/add/{id}', [CartController::class, 'add'])->name('cart.add');
+// Route::post('/cart/update/{product}', [CartController::class, 'update'])->name('cart.update');
+// Route::delete('/cart/remove/{product}', [CartController::class, 'remove'])->name('cart.remove');
+
+// // 2. Luego: ruta dinámica de productos por categoría
+// Route::get('/productos/categoria/{id}', [ProductController::class, 'porCategoriaPadre'])->name('productos.por_categoria');
+
+// // Ruta para obtener el componente del carrito flotante (la que ya tenías)
+// Route::get('/cart/component', function () {
+//     return response()->json([
+//         'html' => view('components.cart-floating')->render()
+//     ]);
+// });
+
+
+// Route::post('/cart/add/{productId}', [CartController::class, 'add'])->name('cart.add');
+// Route::post('/cart/update/{product}', [CartController::class, 'update'])->name('cart.update');
+// Route::delete('/cart/remove/{product}', [CartController::class, 'remove'])->name('cart.remove');
+// // 2. Luego: ruta dinámica de productos por categoría
+// Route::get('/productos/categoria/{id}', [ProductController::class, 'porCategoriaPadre'])->name('productos.por_categoria');
+// // Ruta para obtener el componente del carrito flotante (¡AHORA USA EL MÉTODO DEL CONTROLADOR!)
+// Route::get('/cart/component', [CartController::class, 'getCartComponent'])->name('cart.component');
+
+
+// Rutas del carrito (mantener como están)
+Route::post('/cart/add/{productId}', [CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/update/{product}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/remove/{product}', [CartController::class, 'remove'])->name('cart.remove');
+Route::get('/cart/component', [CartController::class, 'getCartComponent'])->name('cart.component');
+
+// Ruta principal para la página de productos de Petshop (ej. /productos/petshop)
+// Esta ruta apunta al método 'index' que muestra Petshop por defecto.
+Route::get('/productos/petshop', [ProductController::class, 'index'])->name('client.products.petshop');
+
+// Ruta dinámica para productos por categoría (ej. /productos/categoria/1 o /productos/categoria/3)
+// Esta es la ruta a la que apuntan los enlaces del navbar y el formulario de filtro.
+Route::get('/productos/categoria/{id}', [ProductController::class, 'porCategoriaPadre'])->name('productos.por_categoria');
+
+// ... otras rutas de tu aplicación
+
+
+
+require __DIR__ . '/auth.php';

@@ -1,10 +1,12 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Category extends Model
 {
     use HasFactory, SoftDeletes;
@@ -51,7 +53,7 @@ class Category extends Model
     /**
      * Método para obtener el nombre completo de la categoría, incluyendo sus ancestros.
      * Ej: "Común - Veterinaria"
-     */ 
+     */
     public function getFullPathAttribute()
     {
         $path = $this->name;
@@ -63,5 +65,21 @@ class Category extends Model
         }
 
         return $path;
+    }
+
+
+    /**
+     * Obtener todos los IDs de subcategorías recursivamente.
+     */
+    public function allDescendantIds()
+    {
+        $ids = collect();
+
+        foreach ($this->children as $child) {
+            $ids->push($child->id);
+            $ids = $ids->merge($child->allDescendantIds());
+        }
+
+        return $ids;
     }
 }
