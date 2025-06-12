@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\RestoreAction;
 use Filament\Tables\Actions\ForceDeleteAction; // Para eliminar permanentemente si es necesario
 use Filament\Tables\Filters\TrashedFilter;
@@ -79,7 +80,7 @@ class MascotaResource extends Resource
                     ->schema([
                         Select::make('cliente_id')
                             ->label('Cliente')
-                            ->options(Cliente::all()->pluck('nombre', 'id')) // Carga los clientes existentes
+                            ->options(Cliente::all()->pluck('nombre', 'id')->toArray()) // Carga los clientes existentes
                             ->searchable()
                             ->preload()
                             ->required()
