@@ -30,7 +30,7 @@ class ServiceOrderResource extends Resource
     {
         return $form
             ->schema([
-               Select::make('user_id')
+                Select::make('user_id')
                     ->label('Cliente (Usuario)')
                     ->options(
                         User::where('role', 'Cliente') // Filtra los usuarios donde la columna 'role' sea 'cliente'
@@ -89,12 +89,18 @@ class ServiceOrderResource extends Resource
                 TextColumn::make('service.name')->label('Servicio')->sortable()->searchable(),
                 TextColumn::make('amount')->label('Monto')->money('PEN')->sortable(),
                 TextColumn::make('paypal_order_id')->label('ID PayPal')->searchable()->copyable(),
-                TextColumn::make('status')->label('Estado')->badge()->color(fn (string $state): string => match ($state) {
-                    'pending' => 'warning',
-                    'completed' => 'success',
-                    'failed' => 'danger',
-                    'refunded' => 'info',
-                })->sortable(),
+                TextColumn::make('status')
+                    ->label('Estado')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'completed' => 'success',
+                        'failed' => 'danger',
+                        'refunded' => 'info',
+                        'cancelled' => 'gray', // O el color que quieras, 'gray' o 'secondary' suelen funcionar bien
+                        default => 'primary', // Agrega un caso por defecto para cualquier otro estado inesperado
+                    })
+                    ->sortable(),
                 TextColumn::make('created_at')->label('Fecha Creación')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')->label('Última Actualización')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -119,32 +125,32 @@ class ServiceOrderResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\ForceDeleteBulkAction::make(),
-                Tables\Actions\RestoreBulkAction::make(),
-            ])
-             ]);
-        }
-
-        public static function getRelations(): array
-        {
-            return [
-                //
-            ];
-        }
-
-        public static function getPages(): array
-        {
-            return [
-                'index' => Pages\ListServiceOrders::route('/'),
-                'create' => Pages\CreateServiceOrder::route('/create'),
-                'edit' => Pages\EditServiceOrder::route('/{record}/edit'),
-            ];
-        }
-
-        public static function getEloquentQuery(): Builder
-        {
-            return parent::getEloquentQuery()
-                ->withoutGlobalScopes([
-                    SoftDeletingScope::class,
-                ]);
-        }
+                    Tables\Actions\RestoreBulkAction::make(),
+                ])
+            ]);
     }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListServiceOrders::route('/'),
+            'create' => Pages\CreateServiceOrder::route('/create'),
+            'edit' => Pages\EditServiceOrder::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+    }
+}

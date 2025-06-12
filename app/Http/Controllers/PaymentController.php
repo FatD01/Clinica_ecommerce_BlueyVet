@@ -12,6 +12,7 @@ use App\Mail\ServiceContactMail;
 use App\Mail\OrderConfirmationMail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use App\Services\ExchangeRateService; // <--- Asegúrate de que este use esté presente y correcto
 
 // ¡ASEGÚRATE DE TENER ESTAS LÍNEAS EXACTAMENTE ASÍ!
 use PayPalCheckoutSdk\Core\PayPalHttpClient;
@@ -25,6 +26,14 @@ use PayPalHttp\HttpException; // <--- ¡¡¡AÑADE ESTA LÍNEA AQUÍ!!!
 
 class PaymentController extends Controller
 {
+
+
+     protected $exchangeRateService; // Declara la propiedad
+
+    public function __construct(ExchangeRateService $exchangeRateService) // Inyecta en el constructor
+    {
+        $this->exchangeRateService = $exchangeRateService;
+    }
     /**
      * Configura el cliente de PayPal.
      * @return PayPalHttpClient
@@ -56,6 +65,7 @@ class PaymentController extends Controller
                 'user_id' => Auth::id(),
                 'service_id' => $service->id,
                 'amount' => $service->price,
+                'currency' => config('services.paypal.local_currency', 'PEN'),
                 'status' => 'pending',
             ]);
         }
@@ -90,6 +100,34 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Acceso no autorizado o datos inválidos para la orden.'], 403);
         }
 
+        // --- INICIO DE LA LÓGICA DE CONVERSIÓN DE MONEDA (PEN a USD) ---
+        $localCurrency = config('services.paypal.local_currency', 'PEN'); // Esto debería ser 'PEN'
+        $paypalCurrency = config('services.paypal.currency', 'USD'); // Esto debería ser 'USD'
+
+        $amountInLocalCurrency = $service->price; // Monto original en PEN (ej. 46.00)
+        $amountForPayPal = $amountInLocalCurrency; // Se inicializa con el monto local
+
+        // SOLO si la moneda local es diferente a la de PayPal (PEN vs USD)
+        if ($localCurrency !== $paypalCurrency) {
+            $exchangeRate = $this->exchangeRateService->getExchangeRate($localCurrency, $paypalCurrency);
+
+            if (is_null($exchangeRate)) {
+                Log::error('No se pudo obtener la tasa de cambio entre ' . $localCurrency . ' y ' . $paypalCurrency . '. Asegúrate de que OPENEXCHANGERATES_API_KEY esté configurada correctamente y sea válida.');
+                return response()->json(['error' => 'No se pudo obtener la tasa de cambio para procesar el pago.'], 500);
+            }
+            // ¡Esta es la línea clave que hace la conversión de PEN a USD!
+            $amountForPayPal = round($amountInLocalCurrency * $exchangeRate, 2); // Convertir PEN a USD y redondear a 2 decimales
+        }
+
+        Log::info('Detalles de la conversión de moneda para PayPal:', [
+            'local_amount' => $amountInLocalCurrency,
+            'local_currency' => $localCurrency,
+            'paypal_currency' => $paypalCurrency,
+            'exchange_rate' => $exchangeRate ?? 'N/A', // Mostrar N/A si no hubo conversión (ej. si local y paypal currency son iguales)
+            'amount_sent_to_paypal' => $amountForPayPal // ¡Este es el monto que se enviará a PayPal!
+        ]);
+        // --- FIN DE LA LÓGICA DE CONVERSIÓN ---
+
         $requestPayPal = new OrdersCreateRequest();
         $requestPayPal->prefer('return=representation');
         $requestPayPal->body = [
@@ -98,8 +136,8 @@ class PaymentController extends Controller
                 "reference_id" => $order->id,
                 "description" => $service->name,
                 "amount" => [
-                    "currency_code" => config('services.paypal.currency'),
-                    "value" => number_format($service->price, 2, '.', ''),
+                    "currency_code" => $paypalCurrency, // <--- ¡AQUÍ USA LA MONEDA OBJETIVO!
+                    "value" => number_format($amountForPayPal, 2, '.', ''), // <--- ¡¡¡AQUÍ USA LA VARIABLE CONVERTIDA!!!
                 ]
             ]],
             "application_context" => [
@@ -143,7 +181,6 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Error interno del servidor al crear la orden.'], 500);
         }
     }
-
     public function success(Request $request)
     {
         Log::info('Acceso a payments.success', $request->all()); // Log para ver qué llega

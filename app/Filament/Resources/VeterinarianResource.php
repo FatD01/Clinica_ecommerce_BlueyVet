@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\VeterinarianResource\Pages;
+use App\Filament\Resources\VeterinarianResource\RelationManagers;
 use App\Models\Veterinarian;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -16,6 +17,7 @@ use Filament\Tables\Actions\RestoreAction;
 use Filament\Tables\Actions\ForceDeleteAction; // Para eliminar permanentemente si es necesario
 use Filament\Tables\Actions\RestoreBulkAction;
 use Filament\Tables\Filters\TrashedFilter;
+use App\Filament\Resources\RelationManagers\SchedulesRelationManager;
 
 class VeterinarianResource extends Resource
 {
@@ -111,6 +113,9 @@ class VeterinarianResource extends Resource
         return [
             // Aquí puedes añadir un RelationManager para MedicalRecords si un veterinario tiene muchos historiales
             // RelationManagers\MedicalRecordsRelationManager::class,
+            // RelationManagers\SchedulesRelationManager::class,
+            // RelationManagers\ExceptionsRelationManager::class,
+            // RelationManagers\ScheduleProposalsRelationManager::class,
         ];
     }
 
