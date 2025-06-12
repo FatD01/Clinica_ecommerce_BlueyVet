@@ -18,7 +18,6 @@
                 <img src="{{ asset('img/logo-blueyvet.png') }}" alt="BlueyVet" class="logo-img">
                 <span class="logo-text">BLUEYVET</span>
             </a>
-
             <div class="menu">
                 <div class="dropdown">
                     <button class="menu-link dropdown-toggle">
@@ -26,16 +25,16 @@
                     </button>
                     <div class="dropdown-menu">
                         {{-- CAMBIADO A #: client.productos.farmacia --}}
-                        <a href="#" class="dropdown-item">
+                        <!-- {{ route('productos.por_categoria', ['id' => 2]) }}  poner el id de la categoria farmacika-->
+                        <!-- normalmente sería 2 primero ccreariamos petshop y clinica, en la bd,este no debe cambiar -->
+                        <a href="{{ route('productos.por_categoria', ['id' => 3]) }}" class="dropdown-item">
                             <i class="bi bi-capsule"></i> Farmacia
                         </a>
-                        {{-- CAMBIADO A #: client.productos.petshop --}}
-                        <a href="#" class="dropdown-item">
+                        <a href="{{ route('productos.por_categoria', ['id' => 1]) }}" class="dropdown-item">
                             <i class="bi bi-bag-heart"></i> Petshop
                         </a>
                     </div>
                 </div>
-
                 {{-- CAMBIADO A #: client.home. Si quieres que vaya a la ruta raíz, usa url('/') --}}
                 <a href="{{ url('/') }}" class="menu-link {{ request()->routeIs('home') ? 'active' : '' }}">
                     <i class="bi bi-house"></i> INICIO
@@ -58,14 +57,20 @@
                     <i class="bi bi-calendar-check"></i> CITAS
                 </a>
             </div>
-
             <div class="action-icons">
                 <a href="{{ route('login') }}" class="icon-btn user-icon" title="Mi cuenta">
                     <i class="bi bi-person"></i>
                 </a>
-
-                <div id="carrito-icono" class="icon-btn cart-icon" title="Carrito">
+                <!-- <div id="carrito-icono" class="icon-btn cart-icon" title="Carrito" onclick="toggleCart()">
                     <i class="bi bi-cart"></i>
+
+                    <span id="cart-count" class="cart-badge">{{ count(session('cart', [])) }}</span>
+                </div> -->
+
+                <!-- <div id="carrito-icono" class="icon-btn cart-icon" title="Carrito">
+                    <i class="bi bi-cart"></i>
+                    <span id="cart-count" class="cart-badge">{{ count(session('cart', [])) }}</span>
+                </div> -->
                     <span class="cart-badge">0</span>
                 </div>
 <!-- 
@@ -92,17 +97,14 @@
                         <span class="cantidad">1</span>
                     </div>
 
+                <div id="carrito-icono" class="icon-btn cart-icon" title="Carrito" onclick="toggleCart()">
+                    <i class="bi bi-cart"></i>
+                    <span id="cart-count" class="cart-badge">{{ count(session('cart', [])) }}</span>
                 </div>
-                <hr>
-                <div class="calculos-carrito">
-                    <p>SubTotal:</p>
-                    <p class="valor-calculo">S/. 99.90</p>
 
-                    <p>Descuento:</p>
-                    <p class="valor-calculo">S/. 99.91</p>
+                <x-cart-floating :cart="$cart" :total="$total" />
+            </div>
 
-                    <p>Envío:</p>
-                    <p class="valor-calculo">S/. 99.92</p>
 
                     <p>Total:</p>
                     <p class="valor-calculo">S/. 99.93</p>
@@ -129,6 +131,7 @@
 
     });
 </script>
+
 <!-- <script>
     const carritoWindow = document.getElementById('carritoWindow');
     const carritoIcono = document.getElementById('carrito-icono');
@@ -142,5 +145,4 @@
         carritoWindow.classList.remove('visible');
     });
 </script> -->
-
 </html>
