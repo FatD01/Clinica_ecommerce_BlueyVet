@@ -48,6 +48,11 @@
                 <a href="{{ route('client.servicios.index') }}" class="menu-link">
                     <i class="bi bi-heart-pulse"></i> SERVICIOS
                 </a>
+
+                <a href="{{ route('client.mascotas.index') }}" class="menu-link">
+                    <i class="bi bi-clipboard-heart"></i> MASCOTAS
+                </a>
+
                 {{-- CAMBIADO A #: client.citas.index --}}
                 <a href="{{ route('client.citas.index') }}" class="menu-link">
                     <i class="bi bi-calendar-check"></i> CITAS

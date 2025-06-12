@@ -14,6 +14,8 @@ class ServiceOrder extends Model
         'user_id' ,
         'service_id',
         'amount',
+        'currency',
+        'status',
         'paypal_order_id',
         'status',
         'payment_details',
