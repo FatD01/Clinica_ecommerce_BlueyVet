@@ -24,8 +24,7 @@ class CitaController extends Controller
             'auth',
         ];
     }
-
-    public function index(): \Illuminate\Contracts\View\View|\Illuminate\Http\RedirectResponse
+public function index(): \Illuminate\Contracts\View\View|\Illuminate\Http\RedirectResponse
     {
         $cliente = Auth::user()->cliente;
 
@@ -35,13 +34,19 @@ class CitaController extends Controller
         }
 
         // Recuperar citas vinculadas a las mascotas del usuario
+        // ¡¡¡CAMBIO EN with() AHORA!!!
         $citas = Appointment::whereHas('mascota', function ($query) {
             $query->where('cliente_id', Auth::user()->cliente->id);
-        })->orderBy('date', 'desc')->get();
+        })
+        // Cargamos 'veterinarian' y DENTRO de 'veterinarian' cargamos 'user'
+        ->with(['mascota', 'service', 'veterinarian.user', 'serviceOrder']) 
+        ->orderBy('date', 'desc')
+        ->get();
 
-        return view('client.citas.index', compact('citas'));
+        $groupedAppointments = $citas->groupBy('mascota_id');
+
+        return view('client.citas.index', compact('groupedAppointments'));
     }
-
     /**
      * Muestra el formulario para crear una nueva cita.
      * Permite la preselección de un servicio si viene de una compra directa.
@@ -221,6 +226,28 @@ class CitaController extends Controller
             return redirect()->back()->with('error', 'Hubo un error al procesar tu cita. Inténtalo de nuevo.');
         }
     }
+
+    public function show(Appointment $appointment): View|\Illuminate\Http\RedirectResponse
+    {
+        // Seguridad: Asegúrate de que la cita pertenece al cliente autenticado
+        // o a una mascota de ese cliente.
+        // Carga la relación 'mascota' si no está ya cargada
+        $appointment->loadMissing('mascota'); 
+
+        if (Auth::user()->cliente->id !== $appointment->mascota->cliente_id) {
+            Log::warning('Intento de acceso no autorizado a cita.', [
+                'user_id' => Auth::id(),
+                'attempted_appointment_id' => $appointment->id,
+                'mascota_cliente_id' => $appointment->mascota->cliente_id,
+                'auth_cliente_id' => Auth::user()->cliente->id ?? 'N/A'
+            ]);
+            return redirect()->route('Client.citas.index')->with('error', 'No tienes permiso para ver los detalles de esta cita.');
+        }
+
+        // Si todo está bien, pasa la cita a la vista
+        return view('Client.citas.show', compact('appointment'));
+    }
+
 
     /**
      * Maneja el callback de pago exitoso (llamado después de que PayPal confirma el pago

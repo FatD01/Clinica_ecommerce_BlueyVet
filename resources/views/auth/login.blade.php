@@ -1,52 +1,100 @@
 <x-guest-layout>
-    <x-auth-session-status class="mb-4" :status="session('status')" />
-
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
-
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
-
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
-
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
+    <div class="min-h-screen flex items-center justify-center bg-bluey-light py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-xl border border-bluey-light">
+            <div class="text-center">
+                <a href="{{ url('/') }}">
+                    <img src="{{ asset('img/logo-blueyvet.png') }}" alt="BlueyVet Logo" class="mx-auto h-20 w-auto">
                 </a>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-bluey-dark">
+                    {{ __('Inicia sesión en tu cuenta') }}
+                </h2>
+            </div>
+
+            <x-auth-session-status class="mb-4 text-center text-sm font-medium text-bluey-primary" :status="session('status')" />
+
+            <form method="POST" action="{{ route('login') }}" class="space-y-6">
+                @csrf
+
+                <div>
+                    <x-input-label for="email" :value="__('Correo Electrónico')" class="block text-sm font-medium text-bluey-dark" />
+                    <x-text-input
+                        id="email"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-bluey-primary focus:border-bluey-primary sm:text-sm"
+                        type="email"
+                        name="email"
+                        :value="old('email')"
+                        required
+                        autofocus
+                        autocomplete="username"
+                        placeholder="tu_email@ejemplo.com"
+                    />
+                    <x-input-error :messages="$errors->get('email')" class="mt-2 text-sm text-red-600" />
+                </div>
+
+                <div class="mt-4">
+                    <x-input-label for="password" :value="__('Contraseña')" class="block text-sm font-medium text-bluey-dark" />
+                    <x-text-input
+                        id="password"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-bluey-primary focus:border-bluey-primary sm:text-sm"
+                        type="password"
+                        name="password"
+                        required
+                        autocomplete="current-password"
+                        placeholder="••••••••"
+                    />
+                    <x-input-error :messages="$errors->get('password')" class="mt-2 text-sm text-red-600" />
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <label for="remember_me" class="flex items-center">
+                        <input
+                            id="remember_me"
+                            type="checkbox"
+                            class="h-4 w-4 text-bluey-primary border-gray-300 rounded focus:ring-bluey-primary"
+                            name="remember"
+                        >
+                        <span class="ml-2 text-sm text-gray-700">{{ __('Recordarme') }}</span>
+                    </label>
+
+                    @if (Route::has('password.request'))
+                        <a class="font-medium text-bluey-primary hover:text-bluey-dark text-sm" href="{{ route('password.request') }}">
+                            {{ __('¿Olvidaste tu contraseña?') }}
+                        </a>
+                    @endif
+                </div>
+
+                <div>
+                    <x-primary-button class="w-full justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-bluey-primary hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-bluey-primary transition-colors duration-200">
+                        {{ __('Iniciar Sesión') }}
+                    </x-primary-button>
+                </div>
+            </form>
+
+            <div class="relative">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-300"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-2 bg-white text-gray-500">{{ __('O') }}</span>
+                </div>
+            </div>
+
+            {{-- Botón para iniciar sesión con Google --}}
+            <div class="flex items-center justify-center">
+                <a href="{{ route('auth.google.redirect') }}" class="inline-flex items-center w-full justify-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm font-semibold text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-bluey-primary focus:ring-offset-2 transition ease-in-out duration-150">
+                    <img src="https://img.icons8.com/color/24/000000/google-logo.png" alt="Google logo" class="w-5 h-5 mr-3">
+                    {{ __('Iniciar sesión con Google') }}
+                </a>
+            </div>
+
+            @if (Route::has('register'))
+                <div class="text-center text-sm mt-6">
+                    {{ __('¿No tienes una cuenta?') }}
+                    <a class="font-medium text-bluey-primary hover:text-bluey-dark ml-1" href="{{ route('register') }}">
+                        {{ __('Regístrate aquí') }}
+                    </a>
+                </div>
             @endif
-
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
         </div>
-    </form>
-
-    {{-- Botón para iniciar sesión con Google --}}
-    <div class="flex items-center justify-center mt-4"> {{-- Centramos el botón --}}
-        <a href="{{ route('auth.google.redirect') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-            <img src="https://img.icons8.com/color/24/000000/google-logo.png" alt="Google logo" class="w-4 h-4 mr-2">
-            Iniciar sesión con Google
-        </a>
     </div>
-
 </x-guest-layout>

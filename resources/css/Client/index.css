@@ -59,6 +59,20 @@ h6 {
     line-height: 1.2;
 }
 
+.main {
+    padding-top: 52px; /* Esta es la altura de tu navbar */
+    /* Si quieres un poco más de espacio entre el navbar y el contenido,
+       puedes darle un poco más, por ejemplo, 60px o 70px.
+       Prueba 52px primero y ajusta si es necesario. */
+
+    /* Otros estilos de .main que ya tengas */
+}
+
+/* Opcional pero recomendado para enlaces ancla */
+html {
+    scroll-padding-top: 52px; /* Esto asegura que el navbar no tape los encabezados al hacer scroll a un ancla */
+}
+
 /* HERO SECTION - Versión ajustada */
 .hero {
   background: var(--section-gradient);

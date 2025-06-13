@@ -29,7 +29,7 @@ Route::prefix('/servicios')->name('client.servicios.')->group(function () {
 });
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    return view('client.welcome');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Rutas de usuario autenticado
@@ -57,6 +57,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', [CitaController::class, 'store'])->name('store');
         // Ruta para el callback final de pago exitoso (si la ServiceOrder era para una cita)
         Route::get('/complete-booking', [CitaController::class, 'completeBookingAfterPayment'])->name('complete_booking');
+        Route::get('/{appointment}', [CitaController::class, 'show'])->name('show'); // El nombre será 'client.citas.show'
     });
 
     // Bloque de Pagos con PayPal
