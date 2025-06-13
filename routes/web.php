@@ -23,7 +23,7 @@ Route::get('/', function () {
     return view('client.welcome');
 });
 
-// Las rutas de servicios pueden estar fuera del 'auth' si quieres que sean públicas
+// Rutas de servicios (públicas)
 Route::prefix('/servicios')->name('client.servicios.')->group(function () {
     Route::get('/', [ServicioController::class, 'index'])->name('index');
 });
@@ -32,15 +32,15 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// ESTE ES EL BLOQUE CRÍTICO: TODAS las rutas del cliente que requieren sesión
+// Rutas de usuario autenticado
 Route::middleware(['auth'])->group(function () {
 
-    // Rutas del perfil de usuario
+    // Rutas de perfil de usuario
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // --- BLOQUE DE RUTAS PARA GESTIÓN DE MASCOTAS POR EL CLIENTE ---
+    // Rutas de gestión de mascotas para el cliente
     Route::prefix('mi-mascota')->name('client.mascotas.')->group(function () {
         Route::get('/', [MascotaController::class, 'index'])->name('index');
         Route::get('/registrar', [MascotaController::class, 'create'])->name('create');
@@ -49,41 +49,43 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{mascota}', [MascotaController::class, 'update'])->name('update');
         Route::delete('/{mascota}', [MascotaController::class, 'destroy'])->name('destroy');
     });
-    // --- FIN BLOQUE DE RUTAS PARA GESTIÓN DE MASCOTAS ---
 
-    // --- BLOQUE DE RUTAS PARA GESTIÓN DE CITAS POR EL CLIENTE (AHORA DENTRO DE AUTH) ---
+    // Rutas de gestión de citas para el cliente
     Route::prefix('/citas')->name('client.citas.')->group(function () {
         Route::get('/', [CitaController::class, 'index'])->name('index');
         Route::get('/agendar', [CitaController::class, 'create'])->name('create');
         Route::post('/', [CitaController::class, 'store'])->name('store');
+        // Ruta para el callback final de pago exitoso (si la ServiceOrder era para una cita)
+        Route::get('/complete-booking', [CitaController::class, 'completeBookingAfterPayment'])->name('complete_booking');
     });
-    // --- FIN BLOQUE DE RUTAS DE CITAS ---
 
-    // --- BLOQUE DE PAGOS PAYPAL (Ya estaban aquí, asegúrate de que sigan) ---
-    Route::get('/payments/show-checkout/{serviceOrderId}', [PaymentController::class, 'showCheckoutPage'])->name('payments.show_checkout_page');
-    Route::post('/payments/create-order', [PaymentController::class, 'checkout'])->name('payments.create_order');
-    Route::get('/payments/success', [PaymentController::class, 'success'])->name('payments.success');
-    Route::get('/payments/cancel', [PaymentController::class, 'cancel'])->name('payments.cancel');
+    // Bloque de Pagos con PayPal
+    Route::prefix('payments')->name('payments.')->group(function () {
+        // Ruta para mostrar la página de checkout con el ID de la ServiceOrder
+        // Esto espera un ID de ServiceOrder EXISTENTE
+        Route::get('/checkout/{serviceOrderId}', [PaymentController::class, 'showCheckoutPage'])->name('show_checkout_page');
 
-    // --- Rutas para las VISTAS DE ESTADO DEL PAGO ---
-    Route::get('/checkout/success', function() {
-        return view('client.payment_success');
-    })->name('checkout.success_page');
+        // NUEVA RUTA para la compra directa de servicios desde la vista de servicios (solicitud POST)
+        // Esta ruta CREA la ServiceOrder primero.
+        Route::post('/purchase-service', [PaymentController::class, 'purchaseService'])->name('purchase_service');
 
-    Route::get('/checkout/failed', function() {
-        return view('client.payment_cancelled');
-    })->name('checkout.failed');
+        // Ruta llamada por PayPal JS para crear la orden en PayPal (API)
+        Route::post('/create-order', [PaymentController::class, 'checkout'])->name('checkout');
 
-    Route::get('/checkout/error', function() {
-        return view('client.payment_error');
-    })->name('checkout.error_page');
+        // Ruta de retorno de PayPal para pago exitoso (PaymentController@success procesa y redirige)
+        Route::get('/success', [PaymentController::class, 'success'])->name('success');
+        // Ruta de retorno de PayPal para pago cancelado
+        Route::get('/cancel', [PaymentController::class, 'cancel'])->name('cancel');
 
-    // --- Rutas para el formulario de cita después del pago (si aplica) ---
-    Route::get('/reservar-cita/{order}', [PaymentController::class, 'showAppointmentForm'])->name('appointments.show_form');
-    Route::post('/reservar-cita/{order}', [PaymentController::class, 'storeAppointment'])->name('appointments.store');
-}); // <-- CIERRE DEL GRUPO DE MIDDLEWARE 'auth'
+        // Rutas para las VISTAS de estado de pago (estas son vistas finales genéricas)
+        Route::view('/success-page', 'client.checkout.success')->name('success_page');
+        Route::view('/failed', 'client.checkout.failed')->name('failed');
+        Route::view('/error-page', 'client.checkout.error')->name('error_page');
+    });
 
-// Rutas para autenticación con Google Socialite (Estas DEBEN estar fuera del middleware 'auth')
+}); // Fin del grupo de middleware 'auth'
+
+// Rutas de Socialite de Google OAuth (Estas DEBEN estar fuera del middleware 'auth')
 Route::get('/auth/google/redirect', function () {
     return Socialite::driver('google')->redirect();
 })->name('auth.google.redirect');
@@ -94,12 +96,12 @@ Route::get('/auth/google/callback', function () {
         $user = User::where('google_id', $googleUser->id)->first() ?? User::where('email', $googleUser->email)->first();
 
         if ($user) {
-            Log::info('User found, linking Google ID if new.', ['email' => $googleUser->email]);
+            Log::info('Usuario encontrado, vinculando ID de Google si es nuevo.', ['email' => $googleUser->email]);
             $user->google_id = $googleUser->id;
             $user->email_verified_at = now();
             $user->save();
         } else {
-            Log::info('Creating new user with Google data.', ['email' => $googleUser->email]);
+            Log::info('Creando nuevo usuario con datos de Google.', ['email' => $googleUser->email]);
             $user = User::create([
                 'name' => $googleUser->name,
                 'email' => $googleUser->email,

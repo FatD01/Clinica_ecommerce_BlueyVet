@@ -43,6 +43,19 @@
     </footer>
 
     {{-- Scripts adicionales. @vite ya carga app.js, que puede incluir Alpine.js y otros. --}}
-    @stack('js') {{-- Para JS específico de cada vista que use @push('js') --}}
+    @stack('scripts') {{-- Para JS específico de cada vista que use @push('js') --}}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const navbar = document.querySelector('.navbar');
+
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+    });
+</script>
 </body>
 </html>

@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo; // Import BelongsTo
-use Illuminate\Database\Eloquent\Relations\HasMany; // Import HasMany if medical records can belong to an appointment
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Appointment extends Model
@@ -17,15 +17,15 @@ class Appointment extends Model
         'veterinarian_id',
         'date',
         'reason',
-        'service_id', 
         'status',
+        'service_id',
+        'service_order_id', // Añade esto a fillable
     ];
 
     protected $casts = [
         'date' => 'datetime',
     ];
 
-    // Relaciones (si las necesitas)
     public function mascota(): BelongsTo
     {
         return $this->belongsTo(Mascota::class);
@@ -36,12 +36,16 @@ class Appointment extends Model
         return $this->belongsTo(Veterinarian::class);
     }
 
-     public function service(): BelongsTo // Nueva relación para el servicio asociado
+    public function service(): BelongsTo // Nueva relación para el servicio asociado con la cita
     {
         return $this->belongsTo(Service::class);
     }
 
-    // Una cita puede tener muchos historiales médicos (opcional, si los ligas así)
+    public function serviceOrder(): BelongsTo // Nueva relación para la orden de servicio que pagó esta cita
+    {
+        return $this->belongsTo(ServiceOrder::class);
+    }
+
     public function medicalRecords(): HasMany
     {
         return $this->hasMany(MedicalRecord::class);

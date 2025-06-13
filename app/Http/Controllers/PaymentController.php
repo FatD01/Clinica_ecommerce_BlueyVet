@@ -5,43 +5,40 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Service;
 use App\Models\ServiceOrder;
-use App\Models\Veterinarian;
+use App\Models\Appointment;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\ServiceContactMail;
 use App\Mail\OrderConfirmationMail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
-use App\Services\ExchangeRateService; // <--- Asegúrate de que este use esté presente y correcto
+use App\Services\ExchangeRateService;
 
-// ¡ASEGÚRATE DE TENER ESTAS LÍNEAS EXACTAMENTE ASÍ!
 use PayPalCheckoutSdk\Core\PayPalHttpClient;
 use PayPalCheckoutSdk\Core\SandboxEnvironment;
 use PayPalCheckoutSdk\Core\ProductionEnvironment;
 use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
-use PayPalCheckoutSdk\Orders\OrdersCaptureRequest;
 use PayPalCheckoutSdk\Orders\OrdersGetRequest;
-use PayPalHttp\HttpException; // <--- ¡¡¡AÑADE ESTA LÍNEA AQUÍ!!!
+use PayPalHttp\HttpException;
 
 
 class PaymentController extends Controller
 {
+    protected $exchangeRateService;
 
-
-     protected $exchangeRateService; // Declara la propiedad
-
-    public function __construct(ExchangeRateService $exchangeRateService) // Inyecta en el constructor
+    public function __construct(ExchangeRateService $exchangeRateService)
     {
         $this->exchangeRateService = $exchangeRateService;
     }
-    /**
-     * Configura el cliente de PayPal.
-     * @return PayPalHttpClient
-     */
+
     private function client()
     {
-        $clientId = config('services.paypal.sandbox.client_id');
-        $clientSecret = config('services.paypal.sandbox.client_secret');
+        $clientId = config('services.paypal.mode') === 'sandbox'
+            ? config('services.paypal.sandbox.client_id')
+            : config('services.paypal.live.client_id');
+
+        $clientSecret = config('services.paypal.mode') === 'sandbox'
+            ? config('services.paypal.sandbox.client_secret')
+            : config('services.paypal.live.client_secret');
 
         $environment = (config('services.paypal.mode') === 'sandbox')
             ? new SandboxEnvironment($clientId, $clientSecret)
@@ -52,23 +49,51 @@ class PaymentController extends Controller
 
     /**
      * Muestra la página de checkout al usuario.
+     * Este método recibe el ID de una ServiceOrder *ya creada* (en estado PENDING).
+     *
+     * @param int $serviceOrderId El ID de la ServiceOrder a pagar.
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
-    public function showCheckoutPage(Service $service)
+    public function showCheckoutPage(int $serviceOrderId)
     {
-        $order = ServiceOrder::where('user_id', Auth::id())
-            ->where('service_id', $service->id)
-            ->where('status', 'pending')
-            ->first();
+        Log::info('Accediendo a PaymentController@showCheckoutPage', ['service_order_id' => $serviceOrderId]);
+
+        $order = ServiceOrder::with('service')->find($serviceOrderId);
 
         if (!$order) {
-            $order = ServiceOrder::create([
-                'user_id' => Auth::id(),
-                'service_id' => $service->id,
-                'amount' => $service->price,
-                'currency' => config('services.paypal.local_currency', 'PEN'),
-                'status' => 'pending',
-            ]);
+            Log::error('ServiceOrder no encontrada para el ID proporcionado en showCheckoutPage.', ['service_order_id' => $serviceOrderId]);
+            Session::flash('error', 'La orden de pago no pudo ser encontrada. Por favor, intenta de nuevo.');
+            return redirect()->route('client.home');
         }
+
+        if ($order->user_id !== Auth::id()) {
+            Log::error('Intento de acceso no autorizado a ServiceOrder en showCheckoutPage.', ['service_order_id' => $serviceOrderId, 'current_user_id' => Auth::id(), 'order_user_id' => $order->user_id]);
+            Session::flash('error', 'No tienes permiso para acceder a esta orden de pago.');
+            return redirect()->route('client.home');
+        }
+
+        if (strtolower($order->status) === 'completed') {
+            Log::warning('Intento de pagar una ServiceOrder ya completada.', ['service_order_id' => $serviceOrderId, 'order_status' => $order->status]);
+            Session::flash('info', 'Esta orden ya ha sido pagada. Redirigiendo.');
+            // Si ya está pagada, redirige a la creación de citas con el ID de la orden para vincular
+            $relatedAppointment = Appointment::where('service_order_id', $order->id)->first();
+            if (!$relatedAppointment) {
+                return redirect()->route('client.citas.create', ['preselected_service_order_id' => $order->id]);
+            } else {
+                return redirect()->route('client.citas.index')->with('info', 'Esta orden ya está vinculada a una cita existente.');
+            }
+        }
+
+        if (strtolower($order->status) !== 'pending') {
+            Log::warning('Intento de pagar una ServiceOrder que no está en estado pendiente (estado actual: ' . $order->status . ').', ['service_order_id' => $serviceOrderId, 'order_status' => $order->status]);
+            Session::flash('error', 'Esta orden ya no está pendiente de pago. Por favor, intenta de nuevo.');
+            return redirect()->route('client.home');
+        }
+
+        $service = $order->service;
+
+        // Almacena el ID de la ServiceOrder en la sesión para el callback de PayPal (si no está ya ahí)
+        Session::put('current_service_order_id_for_payment', $order->id);
 
         return view('client.checkout', [
             'service' => $service,
@@ -77,7 +102,54 @@ class PaymentController extends Controller
     }
 
     /**
-     * Este método es llamado por el JavaScript del SDK de PayPal (función `createOrder`)
+     * Maneja la compra directa de un servicio desde la página /servicios.
+     * Crea una nueva ServiceOrder y redirige a la página de checkout.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function purchaseService(Request $request)
+    {
+        $request->validate([
+            'service_id' => 'required|exists:services,id',
+        ]);
+
+        $service = Service::findOrFail($request->service_id);
+
+        try {
+            $newServiceOrder = ServiceOrder::create([
+                'user_id' => Auth::id(),
+                'service_id' => $service->id,
+                'status' => 'PENDING',
+                'amount' => $service->price,
+                'currency' => config('app.locale_currency', 'PEN'), // Usa APP_LOCALE_CURRENCY de .env
+            ]);
+
+            // Almacena el ID de la ServiceOrder en la sesión para el callback de PayPal
+            Session::put('current_service_order_id_for_payment', $newServiceOrder->id);
+
+            Log::info('Nueva ServiceOrder PENDIENTE creada para la compra directa de servicios.', [
+                'service_order_id' => $newServiceOrder->id,
+                'user_id' => Auth::id(),
+                'service_id' => $service->id,
+            ]);
+
+            return redirect()->route('payments.show_checkout_page', ['serviceOrderId' => $newServiceOrder->id])
+                             ->with('info', 'Por favor, completa el pago para adquirir el servicio.');
+
+        } catch (\Exception $e) {
+            Log::error('Error al iniciar la compra de servicios en PaymentController@purchaseService: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->back()->with('error', 'Hubo un error al preparar la compra del servicio. Inténtalo de nuevo.');
+        }
+    }
+
+
+    /**
+     * Este método es llamado por el JavaScript SDK de PayPal (`createOrder` function)
      * para crear la orden de PayPal en el backend.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -85,59 +157,58 @@ class PaymentController extends Controller
      */
     public function checkout(Request $request)
     {
+        // NOTA: La solicitud ya debería contener order_id_local con el ID de la ServiceOrder
+        // El service_id, amount, service_name se pasan desde el frontend para construir la orden de PayPal.
         $request->validate([
-            'service_id' => 'required|exists:services,id',
-            'amount' => 'required|numeric|min:0.01',
-            'service_name' => 'required|string',
-            'order_id' => 'required|exists:service_orders,id',
+            'service_id' => 'required|exists:services,id', // Usado para la descripción de PayPal
+            'amount' => 'required|numeric|min:0.01',       // Usado para el monto de PayPal
+            'service_name' => 'required|string',           // Usado para la descripción de PayPal
+            'order_id' => 'required|exists:service_orders,id', // ESTE ES TU ID DE SERVICEORDER LOCAL
         ]);
 
         $service = Service::find($request->service_id);
         $order = ServiceOrder::find($request->order_id);
 
-        if (!$order || $order->user_id !== Auth::id() || $order->status !== 'pending' || $service->price != $request->amount) {
-            Log::warning('Acceso no autorizado o datos inválidos en payments.checkout. Orden: ' . ($order->id ?? 'N/A') . ' User: ' . Auth::id());
+        if (!$order || $order->user_id !== Auth::id() || strtolower($order->status) !== 'pending' || $service->price != $request->amount) {
+            Log::warning('Acceso no autorizado o datos inválidos en payments.checkout. Orden: ' . ($order->id ?? 'N/A') . ' Usuario: ' . Auth::id() . ' Estado: ' . ($order->status ?? 'N/A') . ' Precio Servicio: ' . ($service->price ?? 'N/A') . ' Monto Solicitado: ' . $request->amount);
             return response()->json(['error' => 'Acceso no autorizado o datos inválidos para la orden.'], 403);
         }
 
-        // --- INICIO DE LA LÓGICA DE CONVERSIÓN DE MONEDA (PEN a USD) ---
-        $localCurrency = config('services.paypal.local_currency', 'PEN'); // Esto debería ser 'PEN'
-        $paypalCurrency = config('services.paypal.currency', 'USD'); // Esto debería ser 'USD'
+        $amountInLocalCurrency = $order->amount; // Usa el monto de la ServiceOrder
+        $localCurrency = config('app.locale_currency', 'PEN'); // Usa APP_LOCALE_CURRENCY de .env
+        $paypalCurrency = config('services.paypal.currency', 'USD');
 
-        $amountInLocalCurrency = $service->price; // Monto original en PEN (ej. 46.00)
-        $amountForPayPal = $amountInLocalCurrency; // Se inicializa con el monto local
+        $amountForPayPal = $amountInLocalCurrency;
+        $exchangeRate = null;
 
-        // SOLO si la moneda local es diferente a la de PayPal (PEN vs USD)
         if ($localCurrency !== $paypalCurrency) {
             $exchangeRate = $this->exchangeRateService->getExchangeRate($localCurrency, $paypalCurrency);
-
             if (is_null($exchangeRate)) {
-                Log::error('No se pudo obtener la tasa de cambio entre ' . $localCurrency . ' y ' . $paypalCurrency . '. Asegúrate de que OPENEXCHANGERATES_API_KEY esté configurada correctamente y sea válida.');
+                Log::error('No se pudo obtener la tasa de cambio entre ' . $localCurrency . ' y ' . $paypalCurrency . '.');
                 return response()->json(['error' => 'No se pudo obtener la tasa de cambio para procesar el pago.'], 500);
             }
-            // ¡Esta es la línea clave que hace la conversión de PEN a USD!
-            $amountForPayPal = round($amountInLocalCurrency * $exchangeRate, 2); // Convertir PEN a USD y redondear a 2 decimales
+            $amountForPayPal = round($amountInLocalCurrency * $exchangeRate, 2);
         }
 
-        Log::info('Detalles de la conversión de moneda para PayPal:', [
+        Log::info('Detalles de conversión de moneda para PayPal:', [
             'local_amount' => $amountInLocalCurrency,
             'local_currency' => $localCurrency,
             'paypal_currency' => $paypalCurrency,
-            'exchange_rate' => $exchangeRate ?? 'N/A', // Mostrar N/A si no hubo conversión (ej. si local y paypal currency son iguales)
-            'amount_sent_to_paypal' => $amountForPayPal // ¡Este es el monto que se enviará a PayPal!
+            'exchange_rate' => $exchangeRate ?? 'N/A',
+            'amount_sent_to_paypal' => $amountForPayPal
         ]);
-        // --- FIN DE LA LÓGICA DE CONVERSIÓN ---
 
         $requestPayPal = new OrdersCreateRequest();
         $requestPayPal->prefer('return=representation');
         $requestPayPal->body = [
             "intent" => "CAPTURE",
             "purchase_units" => [[
-                "reference_id" => $order->id,
+                // El reference_id DEBE ser el ID de tu ServiceOrder local
+                "reference_id" => (string)$order->id, // Convertir a string es una buena práctica para PayPal
                 "description" => $service->name,
                 "amount" => [
-                    "currency_code" => $paypalCurrency, // <--- ¡AQUÍ USA LA MONEDA OBJETIVO!
-                    "value" => number_format($amountForPayPal, 2, '.', ''), // <--- ¡¡¡AQUÍ USA LA VARIABLE CONVERTIDA!!!
+                    "currency_code" => $paypalCurrency,
+                    "value" => number_format($amountForPayPal, 2, '.', ''),
                 ]
             ]],
             "application_context" => [
@@ -146,7 +217,7 @@ class PaymentController extends Controller
                 "shipping_preference" => "NO_SHIPPING",
                 "user_action" => "PAY_NOW",
                 "return_url" => route('payments.success'),
-                "cancel_url" => route('payments.cancel', ['order_id_local' => $order->id])
+                "cancel_url" => route('payments.cancel', ['order_id_local' => $order->id]) // Pasa el ID local para la cancelación
             ]
         ];
 
@@ -154,146 +225,159 @@ class PaymentController extends Controller
             $client = $this->client();
             $response = $client->execute($requestPayPal);
 
-            // Log la respuesta completa de PayPal
             Log::info('Respuesta de PayPal (OrdersCreateRequest):', ['response' => json_encode($response->result, JSON_PRETTY_PRINT)]);
 
-            // Asegurarse de que el ID exista antes de intentar acceder a él
             if (isset($response->result->id)) {
                 return response()->json(['id' => $response->result->id]);
             } else {
-                Log::error('PayPal no devolvió un Order ID en createOrder response:', ['response' => json_encode($response->result, JSON_PRETTY_PRINT)]);
+                Log::error('PayPal no devolvió un ID de Orden en la respuesta de createOrder:', ['response' => json_encode($response->result, JSON_PRETTY_PRINT)]);
                 return response()->json(['error' => 'No se pudo obtener el ID de la orden de PayPal.'], 500);
             }
         } catch (HttpException $ex) {
-            Log::error('Error de PayPal (HttpException) al crear orden:', [
+            Log::error('Error de PayPal (HttpException) al crear la orden:', [
                 'status' => $ex->statusCode,
                 'message' => $ex->getMessage(),
                 'details' => json_decode($ex->getMessage(), true),
                 'trace' => $ex->getTraceAsString()
             ]);
-            // Asegurarse de que el error es JSON si se intenta devolver
             return response()->json(['error' => 'Error al crear la orden de PayPal: ' . $ex->getMessage(), 'details' => json_decode($ex->getMessage(), true)], $ex->statusCode ?: 500);
         } catch (\Exception $ex) {
-            Log::error('Error general al crear orden de PayPal:', [
+            Log::error('Error general al crear la orden de PayPal:', [
                 'message' => $ex->getMessage(),
                 'trace' => $ex->getTraceAsString()
             ]);
             return response()->json(['error' => 'Error interno del servidor al crear la orden.'], 500);
         }
     }
+
+    /**
+     * Maneja el callback de PayPal después de un pago exitoso.
+     * Verifica el estado de la orden de PayPal y actualiza la ServiceOrder local.
+     * Luego, redirige a CitaController o a una página de confirmación.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function success(Request $request)
     {
-        Log::info('Acceso a payments.success', $request->all()); // Log para ver qué llega
-        $token = $request->get('token'); // Este es el Order ID de PayPal
+        Log::info('Accediendo a payments.success', $request->all());
+        $token = $request->get('token');
         $payerId = $request->get('PayerID');
 
         if (empty($token) || empty($payerId)) {
-            Log::error('Faltan parámetros en la URL de éxito de PayPal.');
+            Log::error('Parámetros faltantes en la URL de éxito de PayPal.');
             Session::flash('error', 'Faltan datos para procesar el pago. Por favor, intenta de nuevo.');
-            return redirect()->route('checkout.failed'); // Redirige a una página de fallo
+            return redirect()->route('payments.failed');
         }
 
-        $client = $this->client(); // Obtener el cliente de PayPal
+        $client = $this->client();
 
         try {
-            $requestGetOrder = new OrdersGetRequest($token); // Usamos OrdersGetRequest
+            $requestGetOrder = new OrdersGetRequest($token);
             $response = $client->execute($requestGetOrder);
 
-            // Log la respuesta completa de la captura
             Log::info('Respuesta de PayPal (OrdersGetRequest):', ['response' => json_encode($response->result, JSON_PRETTY_PRINT)]);
 
             if ($response->statusCode == 200 && $response->result->status == 'COMPLETED') {
-                $paypalOrderId = $response->result->id; // El mismo token
+                $paypalOrderId = $response->result->id;
                 $purchaseUnit = $response->result->purchase_units[0];
-                $referenceId = $purchaseUnit->reference_id; // Este debería ser tu order_id_local (el ID de ServiceOrder)
+                $referenceId = $purchaseUnit->reference_id; // Este es tu ID de ServiceOrder local
 
-                // Buscar tu orden local por el reference_id (el ID de tu ServiceOrder)
                 $order = ServiceOrder::find($referenceId);
 
-                // Verificamos si la orden existe, pertenece al usuario autenticado, y está pendiente
-                if ($order && $order->user_id === Auth::id() && $order->status === 'pending') {
-                    $order->status = 'completed';
-                    $order->paypal_order_id = $paypalOrderId; // Guardar el ID de PayPal
-                    $order->payer_id = $payerId; // Guardar el PayerID
-                    $order->save();
+                if (!$order) {
+                    Log::error('ServiceOrder local no encontrada en payments.success.', ['reference_id' => $referenceId, 'paypal_order_id' => $paypalOrderId]);
+                    Session::flash('error', 'La orden de servicio asociada a tu pago no pudo ser encontrada.');
+                    return redirect()->route('payments.error_page');
+                }
 
-                    // ******************************************************
-                    // LÓGICA PARA ENVIAR EL CORREO ELECTRÓNICO DE CONFIRMACIÓN
-                    // ******************************************************
-                    // Asegúrate de que el usuario tiene un correo electrónico asociado a la orden
-                    // $order->user es la relación (ServiceOrder belongsTo User)
+                if ($order->user_id !== Auth::id()) {
+                    Log::error('Intento de actualización no autorizado de ServiceOrder en payments.success.', ['order_id' => $order->id, 'order_user_id' => $order->user_id, 'auth_user_id' => Auth::id()]);
+                    Session::flash('error', 'Acceso no autorizado para esta orden de pago.');
+                    return redirect()->route('payments.error_page');
+                }
+
+                if (strtolower($order->status) === 'pending') {
+                    $order->status = 'COMPLETED';
+                    $order->paypal_order_id = $paypalOrderId;
+                    $order->payer_id = $payerId;
+                    $order->payment_details = json_encode($response->result);
+                    $order->save();
+                    Log::info('ServiceOrder ' . $order->id . ' actualizada a "COMPLETED" en PaymentController@success.');
+
+                    // Enviar correo de confirmación de orden
                     if ($order->user && $order->user->email) {
                         try {
                             Mail::to($order->user->email)->send(new OrderConfirmationMail($order));
                             Log::info('Correo de confirmación de orden ' . $order->id . ' enviado a: ' . $order->user->email);
                         } catch (\Exception $mailEx) {
-                            Log::error('Error al enviar correo de confirmación para orden ' . $order->id . ': ' . $mailEx->getMessage(), ['trace' => $mailEx->getTraceAsString()]);
-                            // No queremos que el fallo del correo impida que el usuario vea la página de éxito
-                            Session::flash('warning', 'Tu pago fue procesado correctamente, pero no pudimos enviar el correo de confirmación. Por favor, revisa tu bandeja de spam o contacta a soporte.');
+                            Log::error('Error al enviar correo de confirmación para la orden ' . $order->id . ': ' . $mailEx->getMessage());
+                            Session::flash('warning', 'Tu pago fue procesado correctamente, pero no pudimos enviar el correo de confirmación.');
                         }
-                    } else {
-                        Log::warning('No se pudo enviar correo de confirmación: usuario o email no encontrado para orden ' . $order->id);
-                        Session::flash('warning', 'Tu pago fue procesado correctamente, pero no pudimos enviar el correo de confirmación porque no se encontró el email del usuario.');
                     }
-                    // ******************************************************
-                    // FIN LÓGICA PARA ENVIAR EL CORREO ELECTRÓNICO
-                    // ******************************************************
 
                     Session::flash('success', '¡Pago realizado con éxito! Tu orden ha sido confirmada.');
-                    return redirect()->route('checkout.success_page'); // Una página de éxito real que debes crear
-                } else if ($order && $order->status === 'completed') {
-                    // La orden ya estaba completada (posible reintento o doble notificación)
-                    Log::info('Orden local ' . $referenceId . ' ya estaba completada. No se realizó ninguna acción.');
-                    Session::flash('info', 'Tu pago ya había sido confirmado previamente.');
-                    return redirect()->route('checkout.success_page');
-                }
-                else {
-                    Log::warning('Orden local no encontrada, usuario no coincide, o estado incorrecto en payments.success. Reference ID: ' . $referenceId . ', User: ' . Auth::id());
-                    Session::flash('warning', 'El pago fue procesado en PayPal, pero hubo un problema al actualizar el estado de tu orden local. Por favor, contacta a soporte.');
-                    return redirect()->route('checkout.error_page'); // Redirige a una página de error
+
+                    // Redirige a la página de creación de citas, pasando el ID de la ServiceOrder para vincular
+                    Session::flash('info_appointment', '¡Servicio adquirido con éxito! Ahora, por favor, agenda tu cita.');
+                    return redirect()->route('client.citas.create', ['preselected_service_order_id' => $order->id]);
+
+
+                } else if (strtolower($order->status) === 'completed') {
+                    Log::info('La orden local ' . $referenceId . ' ya estaba completada. Redirigiendo.');
+                    Session::flash('info', 'Tu pago ya había sido confirmado previamente. Redirigiendo.');
+                    // Si ya está completada, también redirige para agendar una cita o ver citas si ya está vinculada
+                    $relatedAppointment = Appointment::where('service_order_id', $order->id)->first();
+                    if (!$relatedAppointment) {
+                        return redirect()->route('client.citas.create', ['preselected_service_order_id' => $order->id]);
+                    } else {
+                        return redirect()->route('client.citas.index')->with('info', 'Esta orden ya está vinculada a una cita existente.');
+                    }
+
+                } else {
+                    Log::warning('Orden local ' . $referenceId . ' en estado inesperado (' . $order->status . ') después de un pago exitoso de PayPal.');
+                    Session::flash('warning', 'El pago fue procesado en PayPal, pero la orden local está en un estado inesperado. Contacta a soporte.');
+                    return redirect()->route('payments.error_page');
                 }
             } else {
-                // La orden de PayPal no está en estado COMPLETED (puede ser PENDING, VOIDED, etc.)
-                Log::warning('Orden de PayPal no completada. Estado: ' . ($response->result->status ?? 'N/A') . ', PayPal Order ID: ' . $token);
-                Session::flash('error', 'El pago no se pudo completar. Por favor, intenta de nuevo o contacta a soporte.');
-                return redirect()->route('checkout.failed');
+                Log::warning('Orden de PayPal NO COMPLETADA. Estado: ' . ($response->result->status ?? 'N/A') . ', ID de Orden de PayPal: ' . $token);
+                Session::flash('error', 'El pago no se pudo completar. Estado: ' . ($response->result->status ?? 'Desconocido') . '. Por favor, intenta de nuevo o contacta a soporte.');
+                return redirect()->route('payments.failed');
             }
         } catch (HttpException $ex) {
-            Log::error('Error de PayPal (HttpException) al obtener orden:', [
+            Log::error('Error de PayPal (HttpException) al obtener/procesar la orden en success:', [
                 'status' => $ex->statusCode,
                 'message' => $ex->getMessage(),
                 'details' => json_decode($ex->getMessage(), true)
             ]);
             Session::flash('error', 'Error al procesar el pago con PayPal: ' . $ex->getMessage());
-            return redirect()->route('checkout.failed');
+            return redirect()->route('payments.failed');
         } catch (\Exception $ex) {
-            Log::error('Error general al obtener orden de PayPal:', [
+            Log::error('Error general al procesar la orden de PayPal en success:', [
                 'message' => $ex->getMessage(),
                 'trace' => $ex->getTraceAsString()
             ]);
             Session::flash('error', 'Ocurrió un error interno al procesar tu pago. Por favor, intenta de nuevo.');
-            return redirect()->route('checkout.failed');
+            return redirect()->route('payments.failed');
         }
     }
 
-    /**
-     * Maneja la cancelación del pago de PayPal. (Este método se mantiene igual)
-     */
     public function cancel(Request $request)
     {
-        Log::info('Inicio del método cancel de PayPal.', ['request_query' => $request->query()]);
+        Log::info('Método de cancelación de PayPal iniciado.', ['request_query' => $request->query()]);
 
         $localOrderId = $request->query('order_id_local');
+        $token = $request->query('token');
 
         if ($localOrderId) {
             $order = ServiceOrder::find($localOrderId);
             if ($order) {
-                if ($order->status === 'pending') {
-                    $order->update(['status' => 'cancelled']);
-                    Log::info('Orden local ' . $localOrderId . ' marcada como cancelada.');
+                if (strtolower($order->status) === 'pending') {
+                    $order->update(['status' => 'CANCELLED']);
+                    Log::info('Orden local ' . $localOrderId . ' marcada como CANCELADA.');
                     Session::flash('info', 'El pago de tu orden fue cancelado. Puedes intentar de nuevo.');
                 } else {
-                    Log::warning('Orden local ' . $localOrderId . ' no se pudo marcar como cancelada porque ya no estaba en estado "pending". Estado actual: ' . $order->status);
+                    Log::warning('La orden local ' . $localOrderId . ' no pudo ser marcada como cancelada porque no estaba en estado "pending". Estado actual: ' . $order->status);
                     Session::flash('warning', 'La orden ya no estaba en estado pendiente. Si crees que hay un error, contacta a soporte.');
                 }
             } else {
@@ -305,55 +389,10 @@ class PaymentController extends Controller
             Session::flash('error', 'No se pudo identificar la orden para cancelar. Intenta de nuevo.');
         }
 
-        // Si la solicitud es AJAX (por ejemplo, desde los botones inteligentes de PayPal),
-        // podría esperar una respuesta JSON. Aunque PayPal en la cancelación suele hacer una redirección GET.
         if ($request->expectsJson()) {
             return response()->json(['status' => 'CANCELLED', 'message' => 'Pago cancelado.']);
         }
 
-        // Redirige a la vista de cancelación que ya tienes
-        return redirect()->route('checkout.failed'); // Usamos la misma página de fallo general para el usuario.
-        // O puedes tener una ruta específica como 'checkout.cancelled_page'
-        // si quieres un mensaje diferente.
-    }
-    /**
-     * Muestra el formulario de cita después de un pago exitoso. (Este método se mantiene igual)
-     */
-    public function showAppointmentForm(ServiceOrder $order)
-    {
-        if ($order->status !== 'completed' || $order->user_id !== Auth::id()) {
-            return redirect()->route('client.servicios.index')->with('error', 'Acceso no autorizado al formulario de cita o pago no completado para esta orden.');
-        }
-        $veterinarians = Veterinarian::all();
-        return view('client.appointment_form', [
-            'order' => $order,
-            'service' => $order->service,
-            'veterinarians' => $veterinarians,
-        ]);
-    }
-
-    /**
-     * Almacena los datos del formulario de cita (después del pago). (Este método se mantiene igual)
-     */
-    public function storeAppointment(Request $request, ServiceOrder $order)
-    {
-        if ($order->status !== 'completed' || $order->user_id !== Auth::id()) {
-            return redirect()->back()->with('error', 'No se puede procesar la cita. La orden no está pagada o no te pertenece.');
-        }
-
-        $validatedData = $request->validate([
-            'nombres' => 'required|string|max:255',
-            'apellidos' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'telefono' => 'required|string|max:20',
-            'veterinario' => 'required|string|max:255',
-            'fecha' => 'required|date|after_or_equal:today',
-            'hora' => 'required|date_format:H:i',
-            'mensaje' => 'nullable|string|max:1000',
-        ]);
-
-        Mail::to('fatima.rodriguez@tecsup.edu.pe')->send(new ServiceContactMail($validatedData));
-
-        return redirect()->route('client.home')->with('success', '¡Tu cita ha sido agendada y tu solicitud enviada! Nos pondremos en contacto pronto para confirmarla.');
+        return redirect()->route('payments.failed');
     }
 }

@@ -1,16 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlueyVet - Cuidado profesional para tus mascotas</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    {{-- Considera usar @vite para tu CSS de navbar.css si lo procesas con Tailwind --}}
-    {{-- Ejemplo: @vite(['resources/css/client/navbar.css']) --}}
-</head>
-
-<body>
     <nav class="navbar">
         <div class="navbar-container">
             {{-- CAMBIADO: Asumiendo que la ruta principal es la que quieres para el logo --}}
@@ -114,7 +102,6 @@
             </div>
         </div>
     </nav>
-</body>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const navbar = document.querySelector('.navbar');
@@ -143,4 +130,3 @@
     });
 </script> -->
 
-</html>

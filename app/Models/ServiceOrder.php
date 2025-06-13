@@ -4,30 +4,34 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes; // Si usaste softDeletes en la migración
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ServiceOrder extends Model
 {
-    use HasFactory, SoftDeletes; // Agrega SoftDeletes si lo usaste
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'user_id' ,
+        'user_id',
         'service_id',
         'amount',
         'currency',
-        'status',
         'paypal_order_id',
-        'status',
-        'payment_details',
+        'payer_id',        // Asumiendo que quieres almacenar el ID del pagador de PayPal
+        'status',          // Mantén solo una entrada 'status'
+        'payment_details', // Para almacenar la respuesta JSON completa de PayPal
     ];
 
-    // Definir la relación con el modelo User
+    protected $casts = [
+        'payment_details' => 'array', // Convierte payment_details a un array automáticamente
+    ];
+
+    // Define la relación con el modelo User
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // Definir la relación con el modelo Service
+    // Define la relación con el modelo Service
     public function service()
     {
         return $this->belongsTo(Service::class);
