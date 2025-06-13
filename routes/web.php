@@ -79,7 +79,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/cancel', [PaymentController::class, 'cancel'])->name('cancel');
 
         // Rutas para las VISTAS de estado de pago (estas son vistas finales genéricas)
-        Route::view('/success-page', 'client.checkout.success')->name('success_page');
+        // Route::view('/success-page', 'client.checkout.success')->name('success_page');
+        Route::get('/transaction-confirmed/{service_order_id}', [PaymentController::class, 'showCompletedTransactionView'])->name('transaction_confirmed_view');
         Route::view('/failed', 'client.checkout.failed')->name('failed');
         Route::view('/error-page', 'client.checkout.error')->name('error_page');
     });

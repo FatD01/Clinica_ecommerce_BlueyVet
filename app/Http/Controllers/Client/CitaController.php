@@ -28,25 +28,28 @@ public function index(): \Illuminate\Contracts\View\View|\Illuminate\Http\Redire
     {
         $cliente = Auth::user()->cliente;
 
-        if (!$cliente) {
-            Session::flash('error', 'No se encontró un perfil de cliente asociado a su cuenta. Por favor, complete su perfil.');
-            return redirect()->route('dashboard');
-        }
-
-        // Recuperar citas vinculadas a las mascotas del usuario
-        // ¡¡¡CAMBIO EN with() AHORA!!!
-        $citas = Appointment::whereHas('mascota', function ($query) {
-            $query->where('cliente_id', Auth::user()->cliente->id);
-        })
-        // Cargamos 'veterinarian' y DENTRO de 'veterinarian' cargamos 'user'
-        ->with(['mascota', 'service', 'veterinarian.user', 'serviceOrder']) 
-        ->orderBy('date', 'desc')
-        ->get();
-
-        $groupedAppointments = $citas->groupBy('mascota_id');
-
-        return view('client.citas.index', compact('groupedAppointments'));
+    if (!$cliente) {
+        Session::flash('error', 'No se encontró un perfil de cliente asociado a su cuenta. Por favor, complete su perfil.');
+        return redirect()->route('dashboard');
     }
+
+    $citas = Appointment::whereHas('mascota', function ($query) use ($cliente) { // Uso $cliente directamente
+        $query->where('cliente_id', $cliente->id); // Asegura que las mascotas pertenezcan al cliente
+    })
+    ->with(['mascota', 'service', 'veterinarian.user', 'serviceOrder'])
+    ->orderBy('date', 'desc')
+    ->get();
+
+    // **Añade esto para depurar la colección de citas:**
+    Log::info('Citas obtenidas para el cliente ' . $cliente->id, ['count' => $citas->count(), 'citas_data' => $citas->toArray()]);
+
+    $groupedAppointments = $citas->groupBy('mascota_id');
+
+    // **Añade esto para depurar el agrupamiento:**
+    Log::info('Citas agrupadas por mascota:', ['grouped_data' => $groupedAppointments->toArray()]);
+
+    return view('client.citas.index', compact('groupedAppointments'));
+}
     /**
      * Muestra el formulario para crear una nueva cita.
      * Permite la preselección de un servicio si viene de una compra directa.
@@ -291,6 +294,7 @@ public function index(): \Illuminate\Contracts\View\View|\Illuminate\Http\Redire
              Log::warning('ServiceOrder ' . $serviceOrder->id . ' ya tiene una cita asociada. Posible reintento de callback.');
              return redirect()->route('client.citas.index')->with('info', '¡Tu cita ya ha sido agendada con éxito!');
         }
+         Log::info('Datos para crear cita en completeBookingAfterPayment:', $pendingAppointmentData);
 
         try {
             // Crea la cita, vinculándola a ESTA ServiceOrder específica

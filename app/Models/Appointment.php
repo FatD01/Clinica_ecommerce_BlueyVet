@@ -19,7 +19,7 @@ class Appointment extends Model
         'reason',
         'status',
         'service_id',
-        'service_order_id', // Añade esto a fillable
+        'service_order_id', 
     ];
 
     protected $casts = [
