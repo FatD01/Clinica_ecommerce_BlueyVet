@@ -23,13 +23,32 @@ class Mascota extends Model implements HasMedia
         'weight',
         'birth_date',
         'allergies',
+        'image'
      // Este campo no es necesario si usas MediaLibrary correctamente
     ];
 
     public function cliente(): BelongsTo
     {
-        return $this->belongsTo(Cliente::class);
+        return $this->belongsTo(Cliente::class, 'cliente_id');
     }
+
+    /**
+     * Relación con Citas (appointments)
+     */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class, 'mascota_id');
+    }
+
+
+    /**
+     * Relación con Historial Médico
+     */
+    public function registrosMedicos(): HasMany
+    {
+        return $this->hasMany(MedicalRecord::class, 'mascota_id');
+    }
+
 
     // public function historialMedico(): HasMany
     // {

@@ -3,11 +3,16 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
+
 use App\Http\Controllers\Client\HomeController;
 use App\Http\Controllers\Client\CitaController;
 use App\Http\Controllers\Client\ServicioController;
 use App\Http\Controllers\Client\MascotaController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\Client\CartController;
+use App\Http\Controllers\Client\products\Petshop\ProductController;
+// use App\Http\Controllers\Client\ProductPaymentController;
+
 
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
@@ -15,6 +20,16 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\ProductPaymentController;
+
+
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\VeterinarianController;
+use App\Http\Controllers\HistorialMedicoController;
+
+// Importa el nuevo BlogController
+use App\Http\Controllers\BlogController; // ¡Importante: Añadir esta línea!
+use App\Http\Controllers\FaqController;
 
 
 Route::get('/client/home', [HomeController::class, 'index'])->name('client.home');
@@ -85,12 +100,56 @@ Route::middleware(['auth'])->group(function () {
         Route::view('/error-page', 'client.checkout.error')->name('error_page');
     });
 
+
+    // --- NUEVO BLOQUE DE PAGOS CON PAYPAL PARA PRODUCTOS DEL CARRITO ---
+    // Estas rutas serán manejadas por el ProductPaymentController
+    Route::prefix('cart-payments')->name('cart_payments.')->group(function () {
+        // Ruta para iniciar el pago desde el carrito
+        // Será un POST desde el botón "Pagar con PayPal" en la vista del carrito
+        Route::post('/pay', [ProductPaymentController::class, 'payWithPaypal'])->name('pay');
+
+        // Rutas de retorno de PayPal (¡usarán los mismos nombres que tus rutas de servicio, pero dentro de este nuevo grupo!)
+        Route::get('/success', [ProductPaymentController::class, 'paypalSuccess'])->name('success');
+        Route::get('/cancel', [ProductPaymentController::class, 'paypalCancel'])->name('cancel');
+
+        // Opcional: Ruta para ver los detalles de un pedido de producto completado
+        // Route::get('/order-confirmed/{order_id}', [ProductPaymentController::class, 'showProductOrderConfirmedView'])->name('order_confirmed_view');
+        // Route::get('/cart-payments/order-confirmed/{order}', [ProductPaymentController::class, 'orderConfirmed'])->name('cart-payments.order-confirmed');
+        Route::get('/order-details/{order}', [ProductPaymentController::class, 'showProductOrderConfirmedView'])->name('order_details');
+
+    });
+
 }); // Fin del grupo de middleware 'auth'
 
 // Rutas de Socialite de Google OAuth (Estas DEBEN estar fuera del middleware 'auth')
 Route::get('/auth/google/redirect', function () {
     return Socialite::driver('google')->redirect();
 })->name('auth.google.redirect');
+
+
+// Rutas del carrito (mantener como están)
+Route::post('/cart/add/{productId}', [CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/update/{product}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/remove/{product}', [CartController::class, 'remove'])->name('cart.remove');
+Route::get('/cart/component', [CartController::class, 'getCartComponent'])->name('cart.component');
+
+// Ruta principal para la página de productos de Petshop (ej. /productos/petshop)
+// Esta ruta apunta al método 'index' que muestra Petshop por defecto.
+Route::get('/productos/petshop', [ProductController::class, 'index'])->name('client.products.petshop');
+
+// Ruta dinámica para productos por categoría (ej. /productos/categoria/1 o /productos/categoria/3)
+// Esta es la ruta a la que apuntan los enlaces del navbar y el formulario de filtro.
+Route::get('/productos/categoria/{id}', [ProductController::class, 'porCategoriaPadre'])->name('productos.por_categoria');
+
+Route::get('/test-perf', function () {
+    \Illuminate\Support\Facades\Log::info('PerfTest: /test-perf started');
+    // No queries, no sessions, no views. Just return text.
+    $response = 'Hello from simple route!';
+    \Illuminate\Support\Facades\Log::info('PerfTest: /test-perf ended');
+    return $response;
+});
+
+
 
 Route::get('/auth/google/callback', function () {
     try {
@@ -122,5 +181,86 @@ Route::get('/auth/google/callback', function () {
         return redirect('/login')->with('error', 'No se pudo iniciar sesión con Google. Inténtalo de nuevo.');
     }
 });
+
+
+//VETERINARIO
+// Ruta raíz que redirige según el estado de autenticación
+Route::get('/veterinario', function () {
+    if (Auth::check()) {
+        return redirect()->route('index'); // Dashboard veterinario
+    } else {
+        return redirect()->route('veterinarian.login'); // Login específico del veterinario
+    }
+});
+
+// Vista del login exclusivo para veterinarios
+Route::get('/veterinario/login', function () {
+    return view('login'); // Blade personalizado para veterinario
+})->name('veterinarian.login');
+
+Route::post('/veterinario/login', [AuthController::class, 'login'])->name('veterinarian.login.submit');
+
+
+
+// Rutas de autenticación (solo para invitados)
+Route::middleware('guest')->group(function () {
+    Route::get('/login', fn() => view('login'))->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+});
+
+// Rutas protegidas (solo para usuarios autenticados)
+Route::middleware('auth')->group(function () {
+
+    Route::get('/index', function () {
+        $user = Auth::user();
+
+        // Solo permitir si es veterinario
+        if (strtolower($user->role) !== 'veterinario') {
+            return redirect()->route('veterinarian.login'); // Redirige al login de veterinarios si no lo es
+        }
+
+        $veterinarian = $user->veterinarian;
+        return view('index', compact('veterinarian'));
+    })->name('index');
+
+    // Cerrar sesión
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Perfil del veterinario
+    Route::get('/perfil', function () {
+        $veterinarian = Auth::user()->veterinarian;
+        return view('info', compact('veterinarian'));
+    })->name('veterinarian.profile');
+
+    Route::get('/perfil/editar/{id}', [VeterinarianController::class, 'edit'])->name('veterinarian.edit');
+    Route::patch('/veterinario/perfil', [VeterinarianController::class, 'update'])->name('veterinarian.profile.update');
+
+    // Citas
+    Route::get('/citas-agendadas', [CitaController::class, 'citasAgendadas'])->name('veterinarian.citas');
+    Route::get('/citasagendadas/cliente/{id}', [CitaController::class, 'verMascotas'])->name('ver.mascotas');
+    Route::get('/cita/{id}/atender', [VeterinarianController::class, 'formularioAtencion'])->name('veterinarian.atender');
+    Route::post('/guardar-atencion', [VeterinarianController::class, 'guardarAtencion'])->name('veterinarian.guardar.atencion');
+
+    // Historial médico (desde controlador dedicado)
+    Route::get('/historiales', [HistorialMedicoController::class, 'index'])->name('historialmedico.index');
+    Route::get('/historiales/{id}', [HistorialMedicoController::class, 'verHistorial'])->name('historialmedico.show');
+
+    // NUEVA RUTA: Historial médico por mascota (desde controlador VeterinarianController)
+    Route::get('/veterinarian/historial/{mascota}', [VeterinarianController::class, 'verHistorial'])->name('veterinarian.historial');
+});
+
+
+// --- NUEVAS RUTAS DEL BLOG Y FAQ (PÚBLICAS) ---
+// Estas rutas son para el acceso de los clientes y visitantes.
+// Se colocan fuera del middleware 'auth' para que sean accesibles a todos.
+Route::prefix('blog')->name('blog.')->group(function () {
+    Route::get('/', [BlogController::class, 'index'])->name('index');
+    Route::get('/{post:slug}', [BlogController::class, 'show'])->name('show');
+});
+
+// Ruta específica para la sección de Preguntas Frecuentes (FAQ)
+Route::get('/preguntas-frecuentes', [FaqController::class, 'index'])->name('faqs.index'); 
+// --- FIN DE NUEVAS RUTAS DEL BLOG Y FAQ ---
+
 
 require __DIR__.'/auth.php';

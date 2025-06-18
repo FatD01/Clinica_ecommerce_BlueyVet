@@ -1,0 +1,358 @@
+/* General */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #CEE4F2; /* Lightest blue as a calming background */
+    color: #393859; /* Darkest blue for primary text */
+    line-height: 1.6;
+    overflow-x: hidden; /* Prevents horizontal scroll */
+    min-height: 100vh; /* Ensures body takes full viewport height */
+    display: flex; /* Helps align content next to sidebar */
+}
+
+/* Custom Scrollbar */
+body::-webkit-scrollbar {
+    width: 10px;
+}
+
+body::-webkit-scrollbar-track {
+    background: #F2DC6D; /* Light yellow from palette */
+    border-radius: 10px;
+}
+
+body::-webkit-scrollbar-thumb {
+    background-color: #F2C879; /* Warm yellow from palette */
+    border-radius: 10px;
+    border: 2px solid #F2DC6D;
+}
+
+body::-webkit-scrollbar-thumb:hover {
+    background-color: #e0b468; /* Slightly darker warm yellow */
+}
+
+
+/* Sidebar (NO TOCAR) */
+.sidebar {
+    width: 250px;
+    background-color: #ecc43d; /* Amarillo vibrante */
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px 0;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.15); /* More prominent shadow for depth */
+    z-index: 1000;
+}
+
+.brand {
+    font-size: 24px;
+    font-weight: bold;
+    padding: 0 20px 20px;
+    color: #1e3a8a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    text-align: left;
+}
+
+.sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: -220px 0;
+}
+
+.sidebar li {
+    margin-bottom: 15px;
+}
+
+.sidebar li a {
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 20px;
+    display: block;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.sidebar li a:hover,
+.sidebar .active a {
+    background-color: #1e3a8a; /* Azul al pasar mouse */
+}
+
+.user {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+/* Main Content */
+.main-content {
+    flex-grow: 1; /* Allows it to take remaining space */
+    margin-left: 250px;
+    padding: 2.5rem 3.5rem; /* Generous padding for content */
+    background-color: #FFFFFF; /* Clean white background for the main area */
+    border-radius: 15px; /* Soft rounded corners */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); /* Elegant shadow for depth */
+    margin: 20px 30px 20px 280px; /* Adjust left margin for sidebar, and add right margin */
+    display: flex;
+    flex-direction: column;
+    animation: fadeInScale 0.7s ease-out forwards; /* Smooth entry animation */
+    opacity: 0;
+    transform: scale(0.98);
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.98) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+h2 {
+    font-size: 2.4rem; /* Larger, more impactful heading */
+    color: #393859; /* Darkest blue from palette */
+    font-weight: 700;
+    margin-bottom: 3rem; /* More space below heading */
+    text-align: center;
+    position: relative;
+    padding-bottom: 15px;
+}
+
+h2::after { /* Underline effect for heading */
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background-color: #F2C879; /* Warm yellow accent */
+    border-radius: 2px;
+}
+
+/* Card Styling (Client & Pet Info) */
+.card {
+    border: 1px solid #E0EAF2; /* Lighter border from palette */
+    border-radius: 12px; /* Soft rounded corners */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07); /* Subtle shadow */
+    margin-bottom: 25px; /* Space between cards */
+    background-color: #FFFFFF; /* White background for cards */
+    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Smooth transition on hover */
+}
+
+.card:hover {
+    transform: translateY(-3px); /* Slight lift on hover */
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); /* Enhanced shadow on hover */
+}
+
+.card-header {
+    background-color: #85C8F2; /* Mid-blue for header */
+    color: #393859; /* Dark blue text */
+    font-weight: 600;
+    font-size: 1.15rem;
+    padding: 15px 25px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1); /* Soft separator */
+}
+
+.card-body {
+    padding: 25px;
+}
+
+.card-body p {
+    margin-bottom: 10px; /* Spacing for paragraphs */
+    font-size: 1.05rem;
+    color: #4a4a6e; /* Slightly lighter dark blue for details */
+    display: flex; /* For icon alignment */
+    align-items: center;
+    gap: 8px; /* Space between icon and text */
+}
+
+.card-body p strong {
+    color: #393859; /* Emphasize labels */
+    font-weight: 600;
+}
+
+.card-body .img-fluid {
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    margin-top: 15px;
+    margin-bottom: 15px;
+    display: block; /* Ensures image takes its own line */
+    transition: transform 0.3s ease; /* Smooth zoom on hover */
+}
+
+.card-body .img-fluid:hover {
+    transform: scale(1.03); /* Slight zoom effect */
+}
+
+.card-body hr {
+    border-top: 1px solid #F2DC6D; /* Yellow accent line */
+    margin: 20px 0;
+}
+
+/* Form Styling */
+form {
+    background-color: #FFFFFF;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+    margin-top: 30px; /* Space from cards above */
+}
+
+.form-label {
+    font-weight: 600;
+    color: #393859; /* Dark blue for labels */
+    margin-bottom: 8px;
+    font-size: 1rem;
+}
+
+.form-control {
+    border: 1px solid #85C8F2; /* Mid-blue border for inputs */
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 1rem;
+    color: #393859;
+    background-color: #fcfdfe; /* Slightly off-white background */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    resize: vertical; /* Allow vertical resizing for textareas */
+}
+
+.form-control:focus {
+    border-color: #F2C879; /* Warm yellow on focus */
+    box-shadow: 0 0 0 0.25rem rgba(242, 200, 121, 0.25); /* Glow effect */
+    background-color: #ffffff; /* White on focus */
+    outline: none;
+}
+
+/* Buttons */
+.btn {
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1.05rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+}
+
+.btn-success {
+    background-color: #393859; /* Darkest blue for submit */
+    color: white;
+    border: none;
+    margin-right: 15px;
+}
+
+.btn-success:hover {
+    background-color: #2a2947; /* Darker shade on hover */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.btn-secondary {
+    background-color: #F2DC6D; /* Light yellow for cancel */
+    color: #393859; /* Dark blue text for contrast */
+    border: none;
+}
+
+.btn-secondary:hover {
+    background-color: #e0c25a; /* Darker yellow on hover */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+    body {
+        flex-direction: column; /* Stack sidebar and main content */
+    }
+
+    .sidebar {
+        position: static;
+        width: 100%;
+        height: auto;
+        padding-bottom: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar nav ul {
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding-top: 10px;
+    }
+
+    .sidebar li {
+        margin: 5px 8px;
+    }
+
+    .brand {
+        text-align: center;
+        padding-bottom: 10px;
+        border-bottom: none;
+    }
+
+    .user {
+        border-top: none;
+        padding-top: 10px;
+    }
+
+    .main-content {
+        margin: 20px 15px; /* Adjust margins for smaller screens */
+        padding: 2rem 1.5rem;
+        width: auto; /* Allow content to take natural width */
+        border-radius: 12px; /* Keep rounded corners */
+    }
+
+    h2 {
+        font-size: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    .btn {
+        width: 100%; /* Full width buttons on small screens */
+        margin-bottom: 15px; /* Space between stacked buttons */
+        margin-right: 0; /* Remove right margin */
+    }
+
+    .btn-success {
+        margin-right: 0; /* Override previous margin */
+    }
+}
+
+@media (max-width: 576px) {
+    .main-content {
+        padding: 1.5rem 1rem;
+        margin: 15px;
+    }
+
+    h2 {
+        font-size: 1.8rem;
+    }
+
+    .card-header {
+        font-size: 1rem;
+        padding: 12px 20px;
+    }
+
+    .card-body p {
+        font-size: 0.95rem;
+    }
+
+    .form-label, .form-control, .btn {
+        font-size: 0.9rem;
+        padding: 10px 15px;
+    }
+}

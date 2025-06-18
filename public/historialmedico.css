@@ -1,0 +1,424 @@
+/* General */
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background-color: #CEE4F2;
+    color: #393859;
+    line-height: 1.6;
+    overflow-x: hidden; /* Crucial para evitar scroll horizontal en todo el body */
+    display: flex; /* Establece body como contenedor flex */
+    /* **NUEVO:** Permitimos que el body crezca en ancho si es necesario, pero manteniendo los límites flexibles */
+    width: 100%; /* Asegura que el body use todo el ancho de la ventana */
+}
+
+/* Custom Scrollbar for the body */
+body::-webkit-scrollbar {
+    width: 10px;
+}
+
+body::-webkit-webkit-scrollbar-track {
+    background: #CEE4F2;
+    border-radius: 10px;
+}
+
+body::-webkit-scrollbar-thumb {
+    background-color: #85C8F2;
+    border-radius: 10px;
+    border: 2px solid #CEE4F2;
+}
+
+body::-webkit-scrollbar-thumb:hover {
+    background-color: #393859;
+}
+
+/* Sidebar (COMPLETAMENTE RESTAURADO A TU CÓDIGO ORIGINAL SIN CAMBIOS) */
+/* Este bloque es exactamente el que tú me diste para el sidebar */
+.sidebar {
+    width: 250px;
+    background-color: #ecc43d; /* Amarillo vibrante */
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px 0;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    /* Añadimos una sombra sutil para un mejor aspecto, si lo tenías, mantenlo, si no, es una mejora mínima */
+    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.15); 
+    z-index: 1000; /* Asegura que esté por encima del contenido */
+}
+
+.brand {
+    font-size: 24px;
+    font-weight: bold;
+    padding: 0 20px 20px;
+    color: #1e3a8a;
+    border-bottom: 1px solid #fff;
+    text-align: left;
+}
+
+.sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: -220px 0;
+}
+
+.sidebar li {
+    margin-bottom: 15px;
+}
+
+.sidebar li a {
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 20px;
+    display: block;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.sidebar li a:hover,
+.sidebar .active a {
+    background-color: #1e3a8a; /* Azul al pasar mouse */
+}
+
+.user {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+    font-size: 0.9rem;
+    /* Color del texto del usuario añadido para que sea visible en el fondo amarillo */
+    color: rgba(255, 255, 255, 0.8);
+}
+
+
+/* Main Content - The large white "target" */
+.main-content {
+    /* **MODIFICADO:** Margen derecho para el espacio, sin 'auto' para evitar problemas de cálculo */
+    margin-top: 20px;
+    margin-bottom: 20px;
+    margin-left: 280px; /* Offset for the fixed sidebar + desired gap */
+    margin-right: 30px; /* **Ajustado: Margen derecho fijo, le damos 30px, puedes ajustar** */
+                       /* Esto asegura que siempre haya un espacio a la derecha, sin dejar que 'auto' lo "corte" */
+    
+    flex-grow: 1; /* Permite que el main-content ocupe el espacio restante */
+    flex-shrink: 1; /* Permite que se encoja si no hay suficiente espacio (importante para responsive) */
+    flex-basis: auto; /* Permite que el tamaño inicial se base en el contenido */
+
+    /* **NUEVO/MODIFICADO:** Control de ancho. No usamos max-width aquí para permitirle estirarse. */
+    /* En su lugar, confiamos en el espacio disponible y el max-width del contenedor interno. */
+    width: auto; /* Ocupará el ancho que le permita flex-grow y los márgenes */
+    min-width: 500px; /* **Ajustado:** Un min-width más generoso para evitar que se vea muy estrecha y "partida" */
+                     /* Esto es vital si el contenido dentro es ancho. Puedes aumentar este valor. */
+
+    padding: 2.5rem 3.5rem;
+    background-color: #FFFFFF;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+
+    height: calc(100% - 40px);
+    box-sizing: border-box;
+    
+    overflow-y: scroll;
+    overflow-x: hidden; /* **CRUCIAL:** Oculta cualquier desbordamiento horizontal interno */
+    -webkit-overflow-scrolling: touch;
+
+    display: flex;
+    flex-direction: column;
+
+    animation: fadeInScale 0.7s ease-out forwards;
+    opacity: 0;
+    transform: scale(0.98);
+}
+
+/* Custom Scrollbar for .main-content (Colores Azules) */
+.main-content::-webkit-scrollbar {
+    width: 10px;
+}
+
+.main-content::-webkit-scrollbar-track {
+    background: #CEE4F2; /* Light blue */
+    border-radius: 10px;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+    background-color: #85C8F2; /* Mid blue */
+    border-radius: 10px;
+    border: 2px solid #CEE4F2;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+    background-color: #393859; /* Dark blue */
+}
+
+
+/* Inner container for actual content to control its max-width */
+.main-content > .container {
+    width: 100%; /* El contenedor interno siempre tomará el 100% del espacio de padding de su padre */
+    max-width: 1000px; /* **Mantenido:** Aquí controlamos el ancho máximo *del contenido real* */
+                       /* Esto evita que el contenido se estire demasiado y aún permite que el .main-content sea más ancho */
+    margin: 0 auto; /* Centra el contenido dentro del .main-content */
+    padding: 0;
+    box-sizing: border-box;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.98) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+h2 {
+    font-size: 2.4rem;
+    color: #393859;
+    font-weight: 700;
+    margin-bottom: 3rem;
+    text-align: center;
+    position: relative;
+    padding-bottom: 15px;
+}
+
+h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background-color: #F2C879;
+    border-radius: 2px;
+}
+
+/* Back Button */
+.btn-outline-secondary {
+    border: 2px solid #85C8F2;
+    color: #393859;
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    background-color: transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.btn-outline-secondary:hover {
+    background-color: #85C8F2;
+    color: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Form Styling (Select Mascota) */
+.form-select {
+    border: 1px solid #85C8F2;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    color: #393859;
+    background-color: #fcfdfe;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23393859' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    width: 100%;
+}
+
+.form-select:focus {
+    border-color: #F2C879;
+    box-shadow: 0 0 0 0.25rem rgba(242, 200, 121, 0.25);
+    outline: none;
+}
+
+/* Alert for no pets */
+.alert-info {
+    background-color: #F2DC6D;
+    color: #393859;
+    border-color: #F2C879;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-top: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Mascota Links (List Group) */
+.list-group {
+    margin-top: 2rem;
+    padding: 0;
+    width: 100%;
+}
+
+.mascota-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    padding: 1.2rem 1.5rem;
+    border: 1px solid #E0EAF2;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    background-color: #FFFFFF;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+}
+
+.mascota-link:hover {
+    background-color: #F8FBFE;
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    border-color: #85C8F2;
+}
+
+.mascota-link::after {
+    content: '\2192';
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    color: #F2C879;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.mascota-link:hover::after {
+    opacity: 1;
+    right: 15px;
+}
+
+.mascota-link h5 {
+    margin-bottom: 5px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #393859;
+}
+
+.mascota-link small {
+    font-size: 0.95rem;
+    color: #555;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+    html, body {
+        height: auto;
+    }
+
+    body {
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        width: 100%; /* Asegura el ancho completo en responsive */
+    }
+
+    .sidebar {
+        position: static;
+        width: 100%;
+        height: auto;
+        padding-bottom: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar nav ul {
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding-top: 10px;
+    }
+
+    .sidebar li {
+        margin: 5px 8px;
+    }
+
+    .brand {
+        text-align: center;
+        padding-bottom: 10px;
+        border-bottom: none;
+    }
+
+    .user {
+        border-top: none;
+        padding-top: 10px;
+    }
+
+    .main-content {
+        /* **MODIFICADO:** Margenes y ancho en responsive */
+        margin: 20px 20px; /* Margen fijo en ambos lados para centrar y dar espacio */
+        padding: 2rem 1.5rem;
+        width: calc(100% - 40px); /* Ocupa casi todo el ancho menos los 20px de margen en cada lado */
+        max-width: none; /* **CRUCIAL:** Elimina cualquier max-width que pueda recortar en mobile/tablet */
+        min-width: auto; /* Resetea el min-width para que se adapte */
+        border-radius: 12px;
+        min-height: auto;
+        height: auto;
+        overflow-y: visible;
+        overflow-x: hidden;
+    }
+
+    .main-content::-webkit-scrollbar {
+        display: none;
+    }
+
+    .main-content > .container {
+        max-width: 100%; /* El contenido interno ocupa el 100% del espacio disponible de la tarjeta */
+        padding: 0;
+    }
+
+    h2 {
+        font-size: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .btn-outline-secondary {
+        width: 100%;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .main-content {
+        padding: 1.5rem 1rem;
+        margin: 15px; /* Margen más pequeño en mobile */
+        width: calc(100% - 30px); /* Ancho ajustado al nuevo margen */
+    }
+
+    h2 {
+        font-size: 1.8rem;
+    }
+
+    .form-select, .mascota-link h5, .mascota-link small {
+        font-size: 0.95rem;
+    }
+
+    .mascota-link::after {
+        font-size: 1rem;
+    }
+}

@@ -1,0 +1,44 @@
+.filter-card {
+background: #f8f9fa;
+border: 1px solid #dee2e6;
+padding: 20px;
+border-radius: 12px;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+transition: all 0.3s ease-in-out;
+
+}
+
+.filter-card:hover {
+box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.filter-card .form-label {
+font-weight: 600;
+color: #495057;
+}
+
+.filter-card .form-control,
+.filter-card .form-select {
+border-radius: 8px;
+}
+
+.filter-card .btn {
+width: 100%;
+transition: all 0.2s ease-in-out;
+}
+
+.filter-card .btn:hover {
+transform: translateY(-1px);
+}
+
+@media (min-width: 768px) {
+.filter-card .btn {
+width: auto;
+}
+}
+
+.filtro-activo-resumen {
+margin-top: 10px;
+font-size: 0.95rem;
+color: #6c757d;
+}

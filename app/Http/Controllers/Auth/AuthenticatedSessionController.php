@@ -28,6 +28,21 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+
+        $user = Auth::user();
+         $role = strtolower($user->role); // Convertimos el rol a minúsculas por seguridad
+
+    if ($role === 'veterinario') {
+        return redirect()->intended(route('index', absolute: false)); // Dashboard veterinario
+    }
+
+    if ($role === 'admin') {
+        return redirect()->intended(route('admin.dashboard', absolute: false)); // Dashboard admin
+    }
+
+        
+
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
@@ -36,11 +51,18 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+
+        $user = Auth::user(); // ✅ Guarda el usuario antes de cerrar sesión
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
+
+         // ✅ Redirigir según el rol
+    if ($user && strtolower($user->role) === 'veterinario') {
+        return redirect()->route('veterinarian.login');
+    }
 
         return redirect('/');
     }

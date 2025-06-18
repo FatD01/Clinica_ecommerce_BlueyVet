@@ -24,7 +24,6 @@ class Cliente extends Model
     {
         return $this->belongsTo(User::class);
     }
-
     public function mascotas(): HasMany
     {
         return $this->hasMany(Mascota::class);

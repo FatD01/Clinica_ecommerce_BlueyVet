@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Client;
 
+
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Appointment;
 use App\Models\Mascota;
 use App\Models\Service;
+use App\Models\Cliente;
 use App\Models\ServiceOrder;
 use App\Models\Veterinarian;
 use Illuminate\Support\Facades\Auth;
@@ -16,8 +19,76 @@ use Carbon\Carbon;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Log;
 
+
+
 class CitaController extends Controller
 {
+
+
+    // Muestra los clientes que tienen citas con el veterinario autenticado (con filtros)
+    public function citasAgendadas(Request $request)
+    {
+        $veterinario = Auth::user()->veterinarian;
+
+        $status = $request->input('status');
+        $desde = $request->input('desde');
+        $hasta = $request->input('hasta');
+
+        // Obtener clientes con al menos una mascota con cita con este veterinario y filtros
+        $clientes = Cliente::whereHas('mascotas.appointments', function ($query) use ($veterinario, $status, $desde, $hasta) {
+            $query->where('veterinarian_id', $veterinario->id);
+
+            if ($status) {
+                $query->where('status', $status);
+            }
+
+            if ($desde) {
+                $query->whereDate('date', '>=', $desde);
+            }
+
+            if ($hasta) {
+                $query->whereDate('date', '<=', $hasta);
+            }
+        })
+        ->with('user')
+        ->get();
+
+        return view('citasagendadas', compact('clientes'));
+    }
+
+    // Muestra las mascotas de un cliente que tienen citas pendientes con el veterinario autenticado
+    public function verMascotas($id)
+{
+    $veterinario = Auth::user()->veterinarian;
+
+    $cliente = Cliente::find($id);
+    if (!$cliente) {
+        abort(404, 'Cliente no encontrado');
+    }
+
+    // Obtener mascotas del cliente que tienen citas pendientes con este veterinario
+    $mascotas = Mascota::where('cliente_id', $cliente->id)
+        ->whereHas('appointments', function ($query) use ($veterinario) {
+            $query->where('veterinarian_id', $veterinario->id)
+                  ->where('status', 'pending');
+        })
+        ->with(['appointments' => function ($query) use ($veterinario) {
+            $query->where('veterinarian_id', $veterinario->id)
+                  ->where('status', 'pending')
+                  ->orderBy('date', 'asc'); // opcional: ordena por fecha
+        }])
+        ->get();
+
+    return view('vermascotas', compact('cliente', 'mascotas'));
+}
+
+
+
+
+
+
+
+
     protected function middleware(): array
     {
         return [

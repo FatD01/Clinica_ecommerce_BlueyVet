@@ -6,6 +6,25 @@
       'EloquentSerialize' => 'AnourValar\\EloquentSerialize\\Facades\\EloquentSerializeFacade',
     ),
   ),
+  'awcodes/filament-tiptap-editor' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'FilamentTiptapEditor\\FilamentTiptapEditorServiceProvider',
+    ),
+  ),
+  'barryvdh/laravel-dompdf' => 
+  array (
+    'aliases' => 
+    array (
+      'PDF' => 'Barryvdh\\DomPDF\\Facade\\Pdf',
+      'Pdf' => 'Barryvdh\\DomPDF\\Facade\\Pdf',
+    ),
+    'providers' => 
+    array (
+      0 => 'Barryvdh\\DomPDF\\ServiceProvider',
+    ),
+  ),
   'blade-ui-kit/blade-heroicons' => 
   array (
     'providers' => 
@@ -170,6 +189,13 @@
     'providers' => 
     array (
       0 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
+    ),
+  ),
+  'saade/filament-fullcalendar' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Saade\\FilamentFullCalendar\\FilamentFullCalendarServiceProvider',
     ),
   ),
   'spatie/laravel-medialibrary' => 

@@ -16,10 +16,13 @@ export default {
             },
             colors: {
             'bluey-dark': '#393859',
-                'bluey-primary': '#85C8F2', // Usando 'primary-blue' como 'bluey-primary'
+                'bluey-primary': ' #74bcec ', // Usando 'primary-blue' como 'bluey-primary'
                 'bluey-light': '#CEE4F2', // Usando 'light-blue' como 'bluey-light'
                 'bluey-light-yellow': '#F2DC6D',
                 'bluey-gold-yellow': '#F2C879',
+                'bluey-secondary': ' #e47c34 ',
+                'bluey-secondary-light': ' #ddc06e ',
+                'bluey-secondary-light2': '  #d6e9f0 ',
             }
         },
     },

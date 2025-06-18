@@ -1,0 +1,871 @@
+/* Variables de color para fácil manejo */
+:root {
+    --dark-blue: #393859;
+    --mid-blue: #85C8F2;
+    --light-blue: #CEE4F2;
+    --light-yellow: #F2DC6D;
+    --orange-accent: #F2C879;
+    --white: #FFFFFF;
+    --light-gray-bg: #fcfdfe; /* Fondo muy claro para inputs y algunos elementos */
+    --medium-gray-border: #e0e0e0;
+    --text-color-primary: #393859;
+    --text-color-secondary: #555;
+    --error-color: #e74c3c;
+    --success-color: #155724;
+    --success-bg: #d4edda;
+    --success-border: #c3e6cb;
+}
+
+/* Restablecimiento básico y fuente */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--light-blue); /* Usando tu paleta */
+    color: var(--text-color-primary); /* Color de texto principal */
+    line-height: 1.6;
+    overflow-x: hidden; /* Evita el scroll horizontal en todo el body */
+    min-height: 100vh; /* Asegura que ocupe al menos la altura de la ventana */
+}
+
+/* Custom Scrollbar for the body */
+body::-webkit-scrollbar {
+    width: 10px;
+}
+
+body::-webkit-scrollbar-track {
+    background: var(--light-blue);
+    border-radius: 10px;
+}
+
+body::-webkit-scrollbar-thumb {
+    background-color: var(--mid-blue);
+    border-radius: 10px;
+    border: 2px solid var(--light-blue);
+}
+
+body::-webkit-scrollbar-thumb:hover {
+    background-color: var(--dark-blue);
+}
+
+/* Contenedor principal de Blade que envuelve sidebar y main */
+.container {
+    display: flex;
+    height: 100vh; /* altura fija al 100% de la ventana */
+    overflow: hidden; /* evita scroll */
+}
+
+/* Sidebar (TU CÓDIGO ORIGINAL SIN NINGÚN CAMBIO) */
+.sidebar {
+    width: 250px;
+    background-color: #ecc43d;
+    color: rgb(255, 255, 255);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 20px 0;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+}
+
+.brand {
+    font-size: 24px;
+    font-weight: bold;
+    padding: 0 20px 20px;
+    margin-top: 0px;
+    border-bottom: 1px solid #fff;
+    color: #1e3a8a;
+}
+
+.sidebar ul {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 20px 0;
+}
+
+.sidebar li {
+    margin-bottom: 15px;
+}
+
+.sidebar li a {
+    color: rgb(255, 255, 255);
+    text-decoration: none;
+    padding: 10px 15px;
+    display: block;
+    border-radius: 8px;
+    transition: background 0.2s;
+    margin-top: 0px;
+}
+
+.sidebar li a:hover,
+.sidebar .active a {
+    background-color: #1e3a8a;
+}
+
+.user {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+    margin-top: auto;
+}
+
+/* --------------------------------------------------- */
+/* INICIO DE SECCIÓN CRÍTICA PARA EL CENTRADO DEL CONTENIDO PRINCIPAL */
+/* Ajustado para no modificar el HTML */
+/* --------------------------------------------------- */
+
+.main {
+    flex: 1; /* Permite que ocupe el espacio restante */
+    margin-left: 250px; /* Empuja el contenido a la derecha del sidebar fijo */
+    padding: 30px; /* Espaciado alrededor del contenido */
+    background-color: var(--light-blue);
+    display: flex;
+    flex-direction: column; /* Apila los elementos internos (header, container anidado) */
+    align-items: center; /* Centra horizontalmente el 'header' y el 'container' anidado */
+    min-height: 100vh; /* Asegura que ocupe toda la altura */
+    width: calc(100% - 250px); /* Ajusta el ancho para el sidebar */
+    box-sizing: border-box; /* Asegura que el padding se incluya en el width */
+    overflow-y: auto; /* Permite scroll solo en el main si el contenido es largo */
+    overflow-x: hidden; /* Evita scroll horizontal en el main */
+}
+
+/* Header (Logout button) */
+.header {
+    width: 100%; /* Ocupa todo el ancho disponible del .main */
+    max-width: 800px; /* Limita el ancho del header para que se alinee con el contenido centrado */
+    display: flex;
+    justify-content: flex-end; /* Alinea el botón de logout a la derecha dentro de su max-width */
+    padding-bottom: 20px;
+    padding-top: 10px;
+    margin-left: auto; /* Centra el header dentro del .main si align-items no fuera suficiente */
+    margin-right: auto;
+}
+
+/* NUEVO: ESTILO PARA EL .container ANIDADO DENTRO DE .main */
+/* Esto centrará el contenido (título y tarjeta) dentro del .main */
+.main > .container {
+    display: flex; /* Lo convertimos en flexbox */
+    flex-direction: column; /* Apilamos sus elementos hijos */
+    align-items: center; /* Centramos sus hijos (el h1 y el center-container) */
+    width: 100%; /* Ocupa todo el ancho disponible de su padre (.main) */
+    max-width: 800px; /* Limita su ancho para que no sea demasiado grande y permita el centrado visual */
+    margin-left: auto; /* Centra este contenedor dentro de .main */
+    margin-right: auto;
+    padding: 0; /* Aseguramos que no tenga padding adicional que lo desplace */
+    height: auto; /* Permite que su altura se ajuste al contenido */
+    overflow: visible; /* Asegura que no tenga su propio scroll inesperado */
+}
+
+
+/* Título de sección (Perfil del Veterinario, Historial Médico de Oddie, etc.) */
+.section-title {
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin-bottom: 2.5rem;
+    color: var(--dark-blue);
+    text-align: center; /* Centra el texto DENTRO del h1 */
+    position: relative;
+    padding-bottom: 15px;
+    width: 100%; /* Ocupa todo el ancho de su nuevo padre (.main > .container) */
+    max-width: 800px; /* Limita su ancho, aunque su padre ya lo limita */
+    margin-left: auto; /* Centra el título como un bloque si su padre no es flex o si lo es pero necesita override */
+    margin-right: auto;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 5px;
+    background-color: var(--orange-accent);
+    border-radius: 3px;
+}
+
+/* Contenedor para centrar la profile-card y otros contenidos */
+.center-container {
+    display: flex;
+    justify-content: center; /* Centra el contenido horizontalmente (la tarjeta) */
+    align-items: flex-start; /* Alinea el contenido arriba si hay mucho espacio vertical */
+    width: 100%; /* Asegura que ocupe todo el ancho para centrar su hijo */
+    flex-grow: 1; /* Permite que este contenedor use el espacio disponible en el .main > .container */
+}
+
+/* La tarjeta del perfil del veterinario y la de edición */
+.profile-card,
+.profile-edit-section {
+    background-color: var(--white);
+    border-radius: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    padding: 2.5rem 3.5rem;
+    width: 100%; /* Ocupa todo el ancho de su contenedor (.center-container) */
+    max-width: 800px; /* Ancho máximo para mantener un diseño legible */
+    margin: 0; /* Elimina márgenes que puedan interferir con el centrado del flexbox padre */
+    line-height: 1.8;
+    /* AJUSTE CLAVE PARA EL SCROLLBAR: */
+    /* Incrementamos el margen de seguridad para max-height o lo hacemos relativo a la altura de la vista */
+    max-height: calc(100vh - 250px); /* Ajustado a 250px para dar más espacio. Puedes probar con 220px, 200px, etc. */
+    overflow-y: auto; /* Permite scroll interno si el contenido excede la altura de la tarjeta */
+    position: static; /* Asegura que no haya posicionamiento absoluto/relativo que desplace */
+    
+    /* Propiedades para personalizar el scrollbar en Webkit (Chrome, Safari, Edge) */
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: var(--mid-blue) var(--light-gray-bg); /* Firefox */
+}
+
+/* Custom scrollbar para las tarjetas */
+.profile-card::-webkit-scrollbar,
+.profile-edit-section::-webkit-scrollbar {
+    width: 8px; /* Ancho del scrollbar */
+}
+
+.profile-card::-webkit-scrollbar-track,
+.profile-edit-section::-webkit-scrollbar-track {
+    background: var(--light-gray-bg); /* Color de fondo de la pista del scrollbar */
+    border-radius: 10px;
+}
+
+.profile-card::-webkit-scrollbar-thumb,
+.profile-edit-section::-webkit-scrollbar-thumb {
+    background-color: var(--mid-blue); /* Color del "pulgar" del scrollbar */
+    border-radius: 10px;
+    border: 2px solid var(--light-gray-bg); /* Borde para que se vea flotando */
+}
+
+.profile-card::-webkit-scrollbar-thumb:hover,
+.profile-edit-section::-webkit-scrollbar-thumb:hover {
+    background-color: var(--dark-blue); /* Color al pasar el ratón */
+}
+
+/* --------------------------------------------------- */
+/* FIN DE SECCIÓN CRÍTICA PARA EL CENTRADO DEL CONTENIDO PRINCIPAL */
+/* --------------------------------------------------- */
+
+
+.profile-card h2 { /* Título dentro de la tarjeta de perfil */
+    font-size: 2.4rem;
+    color: var(--dark-blue);
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    text-align: center; /* Centra el título dentro de la tarjeta */
+    position: relative;
+    padding-bottom: 10px;
+}
+
+.profile-card h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background-color: var(--orange-accent);
+    border-radius: 2px;
+}
+
+.profile-card p {
+    margin: 0.8rem 0;
+    color: var(--text-color-secondary);
+    font-size: 1.05rem;
+}
+
+.profile-card strong {
+    color: var(--text-color-primary);
+    font-weight: 600;
+}
+
+.profile-card .btn.btn-primary.mt-3 { /* El botón "Editar Perfil" en la tarjeta */
+    display: block;
+    margin: 2.5rem auto 0 auto; /* Centra el botón si es un bloque */
+    padding: 0.85rem 2rem;
+    background-color: var(--dark-blue);
+    color: var(--white);
+    text-decoration: none;
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    font-size: 1.05rem;
+    text-align: center;
+    border: none;
+    box-shadow: 0 4px 15px rgba(57, 56, 89, 0.2);
+    max-width: 250px; /* Limita el ancho del botón para que no sea demasiado largo */
+}
+
+.btn-primary-logout {
+    background-color: var(--orange-accent);
+    color: var(--dark-blue);
+    border: none;
+    padding: 0.85rem 2rem;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.05rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(242, 200, 121, 0.2);
+}
+
+.btn-primary-logout:hover {
+    background-color: var(--light-yellow);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(242, 219, 109, 0.3);
+}
+
+.profile-card .btn.btn-primary.mt-3:hover {
+    background-color: var(--mid-blue);
+    color: var(--dark-blue);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(133, 200, 242, 0.3);
+}
+
+/* Inputs y Textareas para formularios */
+.form-input,
+.form-textarea {
+    padding: 0.9rem 1.2rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--medium-gray-border);
+    font-size: 1rem;
+    color: var(--text-color-primary);
+    background-color: var(--light-gray-bg);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    width: 100%;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: var(--text-color-secondary);
+    opacity: 0.7;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+    border-color: var(--mid-blue);
+    box-shadow: 0 0 0 4px rgba(133, 200, 242, 0.25);
+    outline: none;
+    background-color: var(--white);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.7rem;
+    color: var(--text-color-primary);
+    font-size: 1.05rem;
+    display: block;
+}
+
+/* Botones de formulario (Guardar, Cancelar) */
+.form-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--medium-gray-border);
+}
+
+.btn-primary-custom {
+    background-color: var(--dark-blue);
+    color: var(--white);
+    border: none;
+    padding: 0.85rem 2rem;
+    border-radius: 0.75rem;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.05rem;
+    box-shadow: 0 4px 15px rgba(57, 56, 89, 0.2);
+}
+
+.btn-primary-custom:hover {
+    background-color: var(--mid-blue);
+    color: var(--dark-blue);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(133, 200, 242, 0.3);
+}
+
+.btn-secondary-custom {
+    background-color: var(--medium-gray-border);
+    color: var(--text-color-primary);
+    border: 1px solid var(--medium-gray-border);
+    padding: 0.85rem 2rem;
+    border-radius: 0.75rem;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.05rem;
+}
+
+.btn-secondary-custom:hover {
+    background-color: var(--light-gray-bg);
+    color: var(--text-color-primary);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Alertas de éxito */
+.alert-success {
+    background-color: var(--success-bg);
+    color: var(--success-color);
+    border: 1px solid var(--success-border);
+    padding: 1.2rem;
+    border-radius: 0.75rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    font-size: 1.05rem;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* Estilos de las mascotas y otras tarjetas (si se usan en el main) */
+.pet-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.pet-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--mid-blue);
+}
+
+.btn-primary { /* Este botón es para uso general, no confundir con btn-primary-custom */
+    background-color: #1e3a8a; /* Color original del botón en tu código */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #156fc4; /* Color original del hover en tu código */
+}
+
+.cards { /* Contenedor de múltiples tarjetas */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    width: 100%;
+    max-width: 800px; /* Asegura que las tarjetas estén alineadas con el resto del contenido */
+    margin-top: 2rem;
+    margin-left: auto; /* Centra el grid de tarjetas */
+    margin-right: auto; /* Centra el grid de tarjetas */
+}
+
+.card { /* Tarjeta individual, como Historial Clínico */
+    background-color: var(--white);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+}
+
+.card h3 {
+    margin-bottom: 15px;
+    color: var(--dark-blue);
+    font-size: 1.6rem;
+    text-align: center;
+}
+
+.card ul {
+    list-style: none;
+}
+
+.card ul li {
+    margin-bottom: 8px;
+    color: var(--text-color-secondary);
+    font-size: 1rem;
+}
+
+.nutrition {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: var(--white);
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Back Button (de las páginas de historial, etc.) */
+.btn-outline-secondary {
+    border: 2px solid var(--mid-blue);
+    color: var(--dark-blue);
+    padding: 0.85rem 2rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    background-color: transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    text-decoration: none;
+    margin-left: auto; /* Esto ayuda a empujarlo hacia el centro si el padre lo permite */
+    margin-right: auto;
+    display: block; /* Asegura que ocupe su propia línea para el centrado */
+    max-width: 150px; /* Limita su ancho para que no se extienda demasiado */
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--mid-blue);
+    color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Form Styling (Filtro por fecha en Historial Médico) */
+.form-control, .form-select {
+    border: 1px solid var(--mid-blue);
+    border-radius: 0.75rem;
+    padding: 0.85rem 1.2rem;
+    font-size: 1rem;
+    color: var(--text-color-primary);
+    background-color: var(--light-gray-bg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    width: 100%;
+}
+
+.form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23393859' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--orange-accent);
+    box-shadow: 0 0 0 0.25rem rgba(242, 200, 121, 0.25);
+    outline: none;
+}
+
+.btn-secondary { /* Estilo para el botón "Filtrar" */
+    background-color: var(--orange-accent);
+    border-color: var(--orange-accent);
+    color: var(--text-color-primary);
+    padding: 0.85rem 2rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background-color: var(--light-yellow);
+    border-color: var(--light-yellow);
+    color: var(--text-color-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Card Header para Historial Clínico */
+.card-header {
+    background-color: var(--dark-blue);
+    color: var(--white);
+    padding: 1.2rem 2rem;
+    border-bottom: none;
+    font-size: 1.4rem;
+    font-weight: 600;
+    text-align: center;
+    border-top-left-radius: 1.5rem;
+    border-top-right-radius: 1.5rem;
+}
+
+.card-body {
+    padding: 2rem 2.5rem;
+    color: var(--text-color-secondary);
+}
+
+.card-body.border-top {
+    border-top: 1px solid var(--light-blue) !important;
+}
+
+/* Alert for no pets */
+.alert-info {
+    background-color: var(--light-blue);
+    color: var(--text-color-primary);
+    border-color: var(--mid-blue);
+    border-radius: 1rem;
+    padding: 20px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-top: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 800px;
+    margin-left: auto; /* Centra el alert */
+    margin-right: auto;
+}
+
+/* Mascota Image */
+.mascota-img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid var(--mid-blue);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-right: 20px;
+    flex-shrink: 0;
+}
+
+/* Historial Records (individuales) */
+.mb-3.p-3.border.rounded.bg-light {
+    background-color: var(--light-gray-bg) !important;
+    border: 1px solid var(--light-blue) !important;
+    border-radius: 1rem !important;
+    padding: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Toggle Button (Ver Más) */
+.toggle-button {
+    background-color: var(--light-gray-bg);
+    border-top: 1px solid var(--medium-gray-border);
+    text-align: center;
+    cursor: pointer;
+    padding: 15px;
+    font-weight: 600;
+    color: var(--text-color-primary);
+    transition: background-color 0.3s ease;
+    border-bottom-left-radius: 1.5rem;
+    border-bottom-right-radius: 1.5rem;
+}
+
+.toggle-button:hover {
+    background-color: var(--medium-gray-border);
+}
+
+/* Headings and Typography (general) */
+h2 { /* Esto aplica a títulos dentro de las tarjetas como "Datos del Dueño" */
+    font-size: 2.4rem;
+    color: var(--text-color-primary);
+    font-weight: 700;
+    margin-bottom: 3rem;
+    text-align: center;
+    position: relative;
+    padding-bottom: 15px;
+}
+
+h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background-color: var(--orange-accent);
+    border-radius: 2px;
+}
+
+h6 { /* Esto aplica a "Datos del Dueño" en tu Historial Médico */
+    font-size: 1.2rem;
+    color: var(--text-color-primary);
+    margin-top: 1.5rem;
+    margin-bottom: 0.8rem;
+    border-bottom: 2px solid var(--light-yellow);
+    padding-bottom: 0.4rem;
+}
+
+p {
+    font-size: 1rem;
+    color: var(--text-color-secondary);
+    margin-bottom: 0.5rem;
+}
+
+strong {
+    color: var(--text-color-primary);
+}
+
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+    .container {
+        flex-direction: column;
+        height: auto;
+        overflow: visible;
+    }
+
+    .sidebar {
+        position: static;
+        width: 100%;
+        height: auto;
+        padding-bottom: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        display: block;
+    }
+
+    .brand {
+        text-align: center;
+        padding-bottom: 10px;
+        border-bottom: none;
+    }
+
+    .sidebar nav ul {
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding-top: 10px;
+    }
+
+    .sidebar li {
+        margin: 5px 10px;
+    }
+    
+    .sidebar li a {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
+
+    .user {
+        border-top: none;
+        padding-top: 10px;
+    }
+
+    .main {
+        margin-left: 0;
+        padding: 20px;
+        width: 100%;
+        min-height: auto;
+        padding-top: 0;
+        overflow-y: visible;
+    }
+
+    .header {
+        padding-top: 15px;
+        justify-content: center;
+        max-width: 100%;
+    }
+
+    /* Ajuste para el .container anidado en responsive */
+    .main > .container {
+        flex-direction: column; /* Aseguramos que los hijos se apilen */
+        align-items: center; /* Centramos los hijos */
+        padding: 0;
+        margin: 0 auto; /* Asegura que el contenedor se centre */
+        width: 100%; /* Ocupa todo el ancho */
+        max-width: 100%; /* Elimina el max-width para adaptarse mejor en móviles */
+    }
+
+    .center-container {
+        align-items: flex-start;
+        min-height: auto;
+    }
+
+    .profile-card,
+    .profile-edit-section,
+    .card {
+        margin: 20px auto;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        width: calc(100% - 30px);
+        max-width: none;
+        max-height: none;
+        overflow-y: visible; /* En móvil, no queremos scroll interno en la tarjeta si no es muy muy largo */
+    }
+
+    .profile-card::-webkit-scrollbar,
+    .profile-edit-section::-webkit-scrollbar {
+        display: none; /* Ocultar scrollbar en móvil si no es necesario */
+    }
+    
+    .profile-card {
+        padding-bottom: 2.5rem; /* Asegura espacio si el botón se apila */
+    }
+
+    .section-title, h2 {
+        font-size: 2.2rem;
+        margin-bottom: 2rem;
+    }
+
+    .profile-card h2 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 1.2rem;
+    }
+
+    .form-buttons {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .btn-primary-custom, .btn-secondary-custom, .btn-primary-logout, .btn-outline-secondary, .btn-secondary, .profile-card .btn.btn-primary.mt-3 {
+        width: 100%;
+        max-width: 300px;
+        padding: 0.75rem 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .main {
+        padding: 15px;
+    }
+    .profile-card, .profile-edit-section, .card {
+        padding: 1.2rem;
+        width: calc(100% - 20px);
+    }
+    .section-title, h2 {
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+    }
+    .section-title::after, h2::after {
+        width: 60px;
+        height: 3px;
+    }
+    h6 {
+        font-size: 1.1rem;
+    }
+    .form-input, .form-textarea, .form-control, .form-select {
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+    }
+    .btn-primary-custom, .btn-secondary-custom, .btn-primary-logout, .btn-outline-secondary, .btn-secondary, .profile-card .btn.btn-primary.mt-3 {
+        padding: 0.65rem 1.2rem;
+        font-size: 0.95rem;
+    }
+    .alert-success {
+        font-size: 0.95rem;
+        padding: 1rem;
+    }
+    .card-header {
+        font-size: 1.2rem;
+        padding: 1rem 1.5rem;
+    }
+    .card-body {
+        padding: 1.5rem 1.5rem;
+    }
+}

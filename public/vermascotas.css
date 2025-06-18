@@ -1,0 +1,457 @@
+/* General */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f0f2f5; /* Light grey for a clean canvas */
+    color: #34495e; /* Darker, sophisticated text color */
+    line-height: 1.6;
+    overflow-x: hidden; /* Prevent horizontal scroll from minor overflows */
+}
+
+/* Custom Scrollbar (for a refined look) */
+body::-webkit-scrollbar {
+    width: 10px;
+}
+
+body::-webkit-scrollbar-track {
+    background: #e0e2e4;
+    border-radius: 10px;
+}
+
+body::-webkit-scrollbar-thumb {
+    background-color: #ecc43d;
+    border-radius: 10px;
+    border: 2px solid #e0e2e4;
+}
+
+body::-webkit-scrollbar-thumb:hover {
+    background-color: #dba900;
+}
+
+
+/* Sidebar (NO TOCAR) */
+.sidebar {
+    width: 250px;
+    background-color: #ecc43d; /* Vibrant yellow */
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px 0;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    z-index: 1000; /* Ensure sidebar is above main content */
+}
+
+.brand {
+    font-size: 24px;
+    font-weight: bold;
+    padding: 0 20px 20px;
+    color: #1e3a8a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3); /* Softer border */
+    text-align: left;
+}
+
+.sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: -220px 0; /* Original margin, keeping as requested */
+}
+
+.sidebar li {
+    margin-bottom: 15px;
+}
+
+.sidebar li a {
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 20px;
+    display: block;
+    border-radius: 8px;
+    transition: background 0.3s ease, color 0.3s ease; /* Smoother transitions */
+}
+
+.sidebar li a:hover,
+.sidebar .active a {
+    background-color: #1e3a8a; /* Blue on hover */
+    color: #ffffff; /* Ensure text stays white on active/hover */
+}
+
+.user {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8); /* Slightly less harsh white */
+}
+
+/* Main Content */
+.main-content {
+    margin-left: 250px;
+    padding: 2.5rem 3rem; /* More generous padding */
+    width: calc(100% - 250px);
+    background-color: #ffffff; /* Pure white content background */
+    min-height: 100vh; /* Ensures content area covers full height */
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05); /* Soft shadow from sidebar */
+    border-radius: 12px; /* Rounded corners for the main content area */
+    margin-top: 20px; /* Space from the top if content is short */
+    margin-bottom: 20px;
+    position: relative; /* For potential pseudo-elements or background effects */
+    animation: fadeIn 0.8s ease-out; /* Smooth fade-in for the content */
+}
+
+/* Subtle background pattern/texture for main content */
+.main-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f9fafc' fill-opacity='0.5'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0 20v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zm0 20v-4H4v4H0v2h4v4h2v-4h4v-2H6zM36 4v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM6 4v-4H4v4H0v2h4v4h2v-4h4v-2H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.5; /* Very subtle */
+    z-index: -1;
+    border-radius: 12px;
+}
+
+
+h2 {
+    font-weight: 700; /* Bolder for impact */
+    color: #2c3e50; /* Deeper blue-grey for headings */
+    border-bottom: 2px solid #e0e6ed; /* Lighter, subtle border */
+    padding-bottom: 15px; /* More padding */
+    margin-bottom: 40px; /* Increased margin for better spacing */
+    font-size: 2.2rem; /* Slightly larger heading */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.05); /* Subtle text shadow */
+}
+
+/* "No pets" message style */
+.main-content > p:not(.card p) { /* Target only direct paragraphs, not card content */
+    background-color: #fce4ec; /* Light red/pink for info */
+    color: #c2185b; /* Darker red for text */
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #f8bbd0;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-top: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+
+/* Card Styling for Pets */
+.card {
+    border: 1px solid #e0e6ed; /* Subtle border for definition */
+    border-radius: 15px; /* More pronounced rounded corners */
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08); /* Stronger, softer shadow */
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smoother transitions */
+    background-color: #ffffff; /* Ensure white background for cards */
+    padding: 20px 0 0 0; /* Adjust padding for the toggle button at the bottom */
+    overflow: hidden; /* Ensures rounded corners are respected by inner elements */
+    position: relative; /* For potential overlay effects */
+    margin-bottom: 30px !important; /* Ensure consistent spacing between cards */
+    animation: fadeInUp 0.6s ease-out forwards; /* Fade-in up animation for cards */
+    opacity: 0; /* Start hidden for animation */
+}
+
+/* Delay animation for each card */
+.card:nth-child(2) { animation-delay: 0.1s; }
+.card:nth-child(3) { animation-delay: 0.2s; }
+.card:nth-child(4) { animation-delay: 0.3s; }
+/* Add more as needed for your typical number of cards */
+
+.card:hover {
+    transform: translateY(-5px); /* Lift effect on hover */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12); /* More prominent shadow on hover */
+}
+
+.card-body {
+    padding: 0 25px 20px 25px; /* More padding for content inside the card */
+}
+
+.card-title {
+    font-size: 1.8rem; /* Larger and more prominent title */
+    font-weight: 700; /* Bolder title */
+    color: #1e3a8a; /* Deep blue color */
+    margin-bottom: 15px; /* More space below the title */
+    border-bottom: 1px dashed #e0e6ed; /* Subtle dashed line */
+    padding-bottom: 10px;
+    position: relative;
+}
+
+.card-title::after { /* Small decorative element under title */
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background-color: #ecc43d; /* Accent color */
+    border-radius: 2px;
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+}
+
+
+.card p {
+    font-size: 1.05rem; /* Clearer text size */
+    color: #555; /* Softer text color */
+    margin-bottom: 10px; /* Consistent spacing */
+    display: flex; /* For potential icon alignment */
+    align-items: center; /* Align text and potential icons vertically */
+    gap: 10px; /* Space between icon and text */
+}
+
+.card p strong {
+    color: #333; /* Make strong text stand out more */
+}
+
+/* Optional: Add icons if you decide to modify your Blade template */
+/* .card p.species::before { content: '🐾'; font-size: 1.2em; color: #1e3a8a; } */
+/* .card p.race::before { content: '🧬'; font-size: 1.2em; color: #1e3a8a; } */
+/* .card p.weight::before { content: '⚖️'; font-size: 1.2em; color: #1e3a8a; } */
+
+
+/* Details Section (collapsed) */
+.toggle-section {
+    transition: all 0.4s ease-in-out; /* Slower, smoother transition for collapse */
+    padding: 15px 25px 0 25px; /* Padding for the detailed section */
+}
+
+.toggle-section hr {
+    border-top: 1px solid #e0e6ed; /* Lighter, subtle hr */
+    margin-top: 20px;
+    margin-bottom: 20px;
+    opacity: 0.7; /* Slightly transparent */
+}
+
+.img-fluid {
+    border-radius: 12px; /* Slightly more rounded corners for images */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Soft shadow for images */
+    margin-top: 10px;
+    margin-bottom: 15px;
+    display: block; /* Ensure image takes full width in its container */
+    max-width: 100%; /* Ensure responsiveness */
+    height: auto;
+    object-fit: cover; /* Crop image nicely if aspect ratio is off */
+}
+
+/* Toggle Button */
+.btn-toggle {
+    background-color: #f8f9fa; /* Light background for the toggle button */
+    color: #1e3a8a; /* Primary color text */
+    border-top: 1px solid #e0e6ed; /* Top border matches card design */
+    border-radius: 0 0 15px 15px; /* Rounded only at the bottom */
+    font-weight: 600; /* Bolder text */
+    padding: 12px 20px; /* Generous padding */
+    width: 100%; /* Full width */
+    text-align: center;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    box-shadow: none; /* Remove default button shadow for this element */
+    outline: none; /* Remove outline on focus */
+}
+
+.btn-toggle:hover {
+    background-color: #e9ecef; /* Slightly darker on hover */
+    color: #0b295f; /* Darker blue on hover */
+}
+
+.btn-toggle.collapsed {
+    /* Styles for when the button is in its 'Show more' state */
+    background-color: #1e3a8a; /* Darker background when collapsed */
+    color: white;
+}
+
+.btn-toggle.collapsed:hover {
+    background-color: #156fc4; /* Darker blue on hover when collapsed */
+}
+
+
+/* General Button Styles */
+.btn {
+    padding: 12px 28px; /* More padding for a bolder look */
+    border-radius: 10px; /* Consistent rounded corners */
+    font-weight: 600; /* Bolder text */
+    font-size: 1rem; /* Consistent font size */
+    transition: all 0.3s ease; /* Smoother transitions for all buttons */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* General button shadow */
+    text-decoration: none; /* Ensure links styled as buttons don't have underline */
+    display: inline-block; /* For proper margin/padding/width */
+}
+
+/* Primary Button (e.g., Atender Cita) */
+.btn-primary {
+    background-color: #1e3a8a;
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #156fc4;
+    transform: translateY(-2px); /* Slight lift on hover */
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15); /* More prominent shadow */
+}
+
+/* Secondary Button (e.g., Volver) */
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    margin-top: 40px; /* More space from the content above */
+    margin-bottom: 20px; /* Space from the bottom of the page */
+    display: inline-flex; /* Align icon/text if needed later */
+    align-items: center;
+    gap: 8px; /* Space for an arrow icon if added */
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Atender Cita Button - Specific Style */
+.btn-atender {
+    background-color: #ffc609; /* Warm yellow */
+    color: #1e3a8a; /* Dark blue text for contrast */
+    border: 1px solid #ffc609; /* Matching border */
+    font-weight: 700; /* Extra bold for attention */
+    padding: 12px 25px; /* Generous padding */
+    border-radius: 8px; /* Slightly less rounded than others */
+    box-shadow: 0 4px 10px rgba(255, 198, 9, 0.2); /* Shadow with yellow tint */
+    margin-top: 20px; /* Space from content above */
+    display: inline-block; /* Essential for proper button behavior */
+}
+
+.btn-atender:hover {
+    background-color: #e9b200; /* Darker yellow on hover */
+    color: #1e3a8a; /* Keep text color consistent */
+    border-color: #e9b200;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(255, 198, 9, 0.3);
+}
+
+/* Keyframe Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* Responsive Adjustments */
+@media (max-width: 992px) { /* Adjust breakpoint for better tablet experience */
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 2rem 1.5rem; /* Adjusted padding for smaller screens */
+        border-radius: 0; /* Remove main content border radius on small screens */
+        box-shadow: none; /* Remove shadow when main content is static */
+        margin-top: 0; /* No top margin needed for full width */
+        margin-bottom: 0; /* No bottom margin needed for full height */
+    }
+
+    .sidebar {
+        position: static;
+        width: 100%;
+        height: auto;
+        box-shadow: none; /* Remove sidebar shadow when static */
+        padding-bottom: 0; /* Reduce padding for static sidebar */
+    }
+
+    .sidebar nav ul {
+        margin: 0; /* Reset margin for static sidebar nav */
+        display: flex; /* Make nav items horizontal */
+        flex-wrap: wrap; /* Allow wrapping */
+        justify-content: center;
+        padding-top: 15px;
+    }
+
+    .sidebar li {
+        margin: 5px 10px; /* Space out horizontal nav items */
+    }
+
+    .brand {
+        text-align: center; /* Center brand for static sidebar */
+        padding-bottom: 10px;
+        border-bottom: none;
+    }
+
+    .user {
+        border-top: none; /* Remove border from user section */
+        padding-top: 10px;
+    }
+
+    h2 {
+        font-size: 1.8rem; /* Smaller heading on mobile */
+        text-align: center;
+        margin-top: 20px; /* Add some top margin */
+        padding-bottom: 10px;
+        margin-bottom: 30px;
+    }
+
+    .card {
+        padding: 15px 0 0 0; /* Adjusted card padding */
+        margin-bottom: 20px !important; /* Adjust spacing */
+    }
+
+    .card-body {
+        padding: 0 15px 15px 15px;
+    }
+
+    .card-title {
+        font-size: 1.4rem; /* Smaller card title */
+    }
+
+    .btn {
+        width: 100%; /* Full width buttons on mobile */
+        margin-top: 15px; /* Add margin to buttons */
+    }
+
+    .btn-secondary {
+        margin-top: 25px; /* Adjust margin for secondary button */
+    }
+
+    .toggle-section {
+        padding: 15px 15px 0 15px;
+    }
+}
+
+@media (max-width: 576px) { /* Further adjustments for small mobile devices */
+    .main-content {
+        padding: 1.5rem 1rem;
+    }
+
+    h2 {
+        font-size: 1.6rem;
+    }
+
+    .card-title {
+        font-size: 1.2rem;
+    }
+
+    .btn-toggle,
+    .btn-atender,
+    .btn-secondary {
+        font-size: 0.9rem;
+        padding: 10px 15px;
+    }
+}

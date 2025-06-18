@@ -10,14 +10,14 @@ return new class extends Migration
     {
         Schema::create('veterinarians', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // Links to the user account
-            $table->string('license_number')->unique()->nullable(); // Professional license/college number
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->string('license_number')->unique()->nullable(); 
             $table->string('specialty')->nullable();
             $table->string('phone')->nullable();
             $table->string('address')->nullable();
             $table->text('bio')->nullable();
             $table->timestamps();
-            $table->softDeletes(); // ¡Añade esto!
+            $table->softDeletes();
         });
     }
 

@@ -1,0 +1,8 @@
+.sidebar a.active {
+    background-color: #1e3a8a;  /* azul claro */
+    color: white;             /* texto azul */
+    font-weight: bold;
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: block;
+}

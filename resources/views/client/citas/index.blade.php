@@ -42,7 +42,13 @@
     @php
     $mascota = $appointmentsForMascota->first()->mascota;
     $mascotaTypeIcon = (strtolower($mascota->species) === 'perro') ? 'fas fa-dog' : ((strtolower($mascota->species) === 'gato') ? 'fas fa-cat' : 'fas fa-paw');
-    $mascotaAvatarPath = $mascota->profile_photo_path ? asset('storage/' . $mascota->profile_photo_path) : asset('images/default_pet_avatar.png');
+
+    $mascotaAvatarPath = $mascota->getFirstMediaUrl('avatars', 'thumb');
+    // $mascotaAvatarPath = $mascota->getFirstMediaUrl('avatars');
+
+    if (empty($mascotaAvatarPath)) {
+        $mascotaAvatarPath = asset('images/default_pet_avatar.png');
+    }
     @endphp
 
     <div class="pet-card">
@@ -90,7 +96,7 @@
                         </div>
                         <div class="detail-text">
                             <div class="detail-label">Veterinario</div>
-                            <div class="detail-value">{{ $appointment->veterinarian->user->name }}</div>
+                            <div class="detail-value">{{ $appointment->veterinarian?->user?->name }}</div>
                         </div>
                     </div>
 
@@ -144,7 +150,7 @@
                     data-date="{{ $appointment->date->format('d/m/Y H:i') }}"
                     data-service-name="{{ $appointment->service->name }}"
                     {{-- AQUI EL CAMBIO PARA EL VETERINARIO --}}
-                    data-veterinarian-name="{{ $appointment->veterinarian->user->name ?? 'Sin asignar' }}"
+                    data-veterinarian-name="{{ $appointment->veterinarian->user?->name ?? 'Sin asignar' }}"
                     data-reason="{{ $appointment->reason }}"
                     data-status="{{ ucfirst($appointment->status) }}"
                     data-amount="{{ isset($appointment->serviceOrder->amount) ? number_format($appointment->serviceOrder->amount, 2) : 'N/A' }}"

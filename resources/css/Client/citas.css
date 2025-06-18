@@ -1,12 +1,13 @@
 :root {
             --bluey-blue: #4A90E2;
-            --bluey-orange: #F5A623;
+            --bluey-orange: #F2C879;
             --bluey-light-blue: #7FB3D3;
             --bluey-cream: #F8F4E6;
             --bluey-dark: #2C3E50;
             --bluey-success: #27AE60;
             --bluey-warning: #F39C12;
             --bluey-danger: #E74C3C;
+            --bluey-secondary: #74bcec;
         }
 
         body {
@@ -278,9 +279,9 @@
         }
 
         .view-details-btn {
-            background: linear-gradient(135deg, var(--bluey-orange), #FF8C42);
+            background: linear-gradient(135deg, var(--bluey-orange), #F2C879);
             border: none;
-            color: white;
+            color: whitesmoke;
             padding: 0.75rem 1.5rem;
             border-radius: 25px;
             font-weight: 600;
@@ -424,7 +425,7 @@
 
 /* Estilos para el encabezado del modal */
 .custom-modal-header {
-    background-color: #5a67d8; /* Color de encabezado que combine con tu tema */
+    background-color:  #577895  ; /* Color de encabezado que combine con tu tema */
     color: white; /* Texto blanco */
     border-bottom: none; /* Elimina la línea de borde inferior */
     padding: 1.5rem;
@@ -436,6 +437,7 @@
 .custom-modal-header .modal-title {
     font-size: 1.5rem;
     font-weight: bold;
+    color: #ddc06e;
 }
 
 .custom-modal-header .btn-close {
@@ -481,13 +483,13 @@
 }
 
 .custom-modal-footer .btn-secondary {
-    background-color: #6c757d;
+    background-color:  #26283d ;
     border-color: #6c757d;
     color: white;
 }
 
 .custom-modal-footer .btn-secondary:hover {
-    background-color: #5a6268;
+    background-color:   #445884  ;
     border-color: #545b62;
 }
 

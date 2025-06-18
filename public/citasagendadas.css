@@ -1,0 +1,260 @@
+/* General */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f0f2f5; /* Lighter background for a fresh feel */
+    color: #34495e; /* Darker, sophisticated text color */
+    line-height: 1.6;
+}
+
+/* Sidebar (NO TOCAR) */
+.sidebar {
+    width: 250px;
+    background-color: #ecc43d;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px 0;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+.brand {
+    font-size: 24px;
+    font-weight: bold;
+    padding: 0 20px 20px;
+    color: #1e3a8a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3); /* Softer border */
+    text-align: left;
+}
+
+.sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: -220px 0;
+}
+
+.sidebar li {
+    margin-bottom: 15px;
+}
+
+.sidebar li a {
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 20px;
+    display: block;
+    border-radius: 8px;
+    transition: background 0.3s ease, color 0.3s ease; /* Smoother transitions */
+}
+
+.sidebar li a:hover,
+.sidebar .active a {
+    background-color: #1e3a8a;
+    color: #ffffff; /* Ensure text stays white on active/hover */
+}
+
+.user {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8); /* Slightly less harsh white */
+}
+
+/* Main Content */
+.main-content {
+    margin-left: 250px;
+    padding: 2.5rem 3rem; /* More generous padding */
+    width: calc(100% - 250px);
+    background-color: #ffffff; /* Pure white content background */
+    min-height: 100vh; /* Ensures content area covers full height */
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05); /* Soft shadow from sidebar */
+    border-radius: 12px; /* Rounded corners for the main content area */
+    margin-top: 20px; /* Space from the top if content is short */
+    margin-bottom: 20px;
+}
+
+h2 {
+    font-weight: 700; /* Bolder for impact */
+    color: #2c3e50; /* Deeper blue-grey for headings */
+    border-bottom: 2px solid #e0e6ed; /* Lighter, subtle border */
+    padding-bottom: 15px; /* More padding */
+    margin-bottom: 40px; /* Increased margin for better spacing */
+    font-size: 2.2rem; /* Slightly larger heading */
+}
+
+/* Client Cards */
+.card {
+    border: 1px solid #e0e6ed; /* Subtle border for definition */
+    border-radius: 15px; /* More pronounced rounded corners */
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08); /* Stronger, softer shadow */
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smoother transitions */
+    background-color: #ffffff; /* Ensure white background for cards */
+    padding: 20px; /* Add internal padding */
+}
+
+.card:hover {
+    transform: translateY(-5px); /* Lift effect on hover */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12); /* More prominent shadow on hover */
+}
+
+.card-title {
+    font-weight: 700; /* Bolder title */
+    color: #1e3a8a;
+    margin-bottom: 12px; /* Slightly more space below title */
+    font-size: 1.4rem; /* Larger card title */
+}
+
+.card p {
+    font-size: 0.95rem; /* Slightly larger text in cards */
+    color: #555; /* Softer text color */
+    margin-bottom: 8px; /* Consistent spacing */
+}
+
+.card p strong {
+    color: #333; /* Make strong text stand out more */
+}
+
+/* Filter Section */
+.filter-card {
+    background-color: #ffffff;
+    padding: 25px; /* More padding */
+    border-radius: 15px; /* Consistent rounded corners */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); /* Soft shadow */
+    margin-bottom: 40px; /* Increased margin */
+    border: 1px solid #e0e6ed; /* Subtle border */
+}
+
+.filter-card .form-label {
+    font-weight: 600; /* Bolder labels */
+    color: #34495e;
+    margin-bottom: 8px;
+}
+
+.filter-card .form-control,
+.filter-card .form-select {
+    border-radius: 8px; /* Rounded input fields */
+    border: 1px solid #ced4da;
+    padding: 10px 15px;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+.filter-card .form-control:focus,
+.filter-card .form-select:focus {
+    border-color: #1e3a8a;
+    box-shadow: 0 0 0 0.25rem rgba(30, 58, 138, 0.25); /* Focus effect with primary color */
+}
+
+
+.filtro-activo-resumen {
+    background-color: #e6f7ff; /* Lighter blue background */
+    padding: 15px 22px; /* More padding */
+    border-left: 5px solid #1e3a8a; /* Stronger accent line */
+    border-radius: 10px; /* Rounded corners */
+    margin-bottom: 30px; /* Consistent spacing */
+    color: #1e3a8a;
+    font-weight: 600; /* Bolder text */
+    font-size: 1.05rem; /* Slightly larger font */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+}
+
+/* Buttons */
+.btn {
+    padding: 12px 28px; /* More padding for a bolder look */
+    border-radius: 10px; /* Consistent rounded corners */
+    font-weight: 600; /* Bolder text */
+    font-size: 1rem; /* Consistent font size */
+    transition: all 0.3s ease; /* Smoother transitions for all buttons */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* General button shadow */
+}
+
+.btn-primary {
+    background-color: #1e3a8a;
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #156fc4;
+    transform: translateY(-2px); /* Slight lift on hover */
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15); /* More prominent shadow */
+}
+
+.btn-outline-secondary {
+    border: 2px solid #1e3a8a;
+    color: #1e3a8a;
+    background-color: transparent;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #e6f0fa;
+    color: #0b295f;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    margin-top: 30px; /* More space from the content above */
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 992px) { /* Adjust breakpoint for better tablet experience */
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 2rem 1.5rem; /* Adjusted padding for smaller screens */
+    }
+
+    .sidebar {
+        position: static;
+        width: 100%;
+        height: auto;
+        box-shadow: none; /* Remove shadow when sidebar is static */
+    }
+
+    h2 {
+        font-size: 1.8rem; /* Smaller heading on mobile */
+    }
+
+    .filter-card .col-md-3 {
+        width: 100%; /* Stack filter inputs on smaller screens */
+        margin-bottom: 15px;
+    }
+
+    .filter-card .d-flex.gap-2 {
+        flex-direction: column; /* Stack buttons on smaller screens */
+        gap: 10px !important; /* Ensure gap is applied */
+    }
+
+    .btn {
+        width: 100%; /* Full width buttons on mobile */
+        padding: 10px 20px; /* Slightly less padding */
+    }
+}
+
+@media (max-width: 576px) { /* Further adjustments for small mobile devices */
+    .main-content {
+        padding: 1.5rem 1rem;
+    }
+
+    h2 {
+        font-size: 1.6rem;
+    }
+
+    .card-title {
+        font-size: 1.2rem;
+    }
+}

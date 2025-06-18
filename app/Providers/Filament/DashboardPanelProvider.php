@@ -11,12 +11,16 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Widgets;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin; 
+
+
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+
 
 // ¡IMPORTA TU WIDGET AQUÍ!
 use App\Filament\Widgets\AppointmentsChart; //
@@ -40,10 +44,11 @@ class DashboardPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
+                // \App\Filament\Widgets\VeterinarianCalendarWidget::class,
                 // Widgets\AccountWidget::class,
                 // Widgets\FilamentInfoWidget::class, // Descomenta si quieres el widget de info de Filament
                 // ¡AÑADE TU WIDGET DE GRÁFICO AQUÍ!
-                AppointmentsChart::class, //
+                AppointmentsChart::class, //ya está emito, perdona - meeeeeeeeeeeeeee | no sé donde tengo la cabeza de la verga jajaja que (lo autocompletó copiloto)
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -58,6 +63,10 @@ class DashboardPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+            ])
+            ->plugins([
+                FilamentFullCalendarPlugin::make(),
             ]);
-    }
+    } //no me ignoresmr|calla tmr adna duerme, n¿ando viendo un videp  seguro así ya da |suerte oye :,3 te odio `calla emo novi de katherin y su mam[a]
+    
 }
