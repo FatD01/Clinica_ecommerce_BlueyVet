@@ -1,0 +1,563 @@
+/* Custom styles for a minimalist calendar with highlighted dark blue and yellow */
+:root {
+    /* Tus Variables de Paleta de Colores Existentes */
+    --color-primary-dark: #393859; /* Azul oscuro dominante */
+    --color-primary-light: #5091b9; /* Azul medio */
+    --color-warning-yellow: #eccd30; /* Amarillo de acento */
+
+    /* Colores Derivados (ajusta según tus necesidades, estos son un ejemplo) */
+    --color-background-soft: #fcfdff; /* Fondo general suave */
+    --color-border-light: #e0e0e0; /* Borde claro para elementos generales */
+    --color-text-secondary: #5a5e66; /* Texto secundario gris oscuro */
+    --color-light-accent-bg: #eaf3f8; /* Fondo azul muy claro para sutiles resaltados/hovers */
+    --color-hover-darken: #2b2a47; /* Azul más oscuro para hover de elementos principales */
+
+    /* FullCalendar specific variables, re-mapeadas para tus estilos */
+    --fc-button-text-color: var(--color-primary-dark);
+    --fc-button-bg-color: #fff;
+    --fc-button-border-color: #d1d9e0;
+    --fc-button-hover-bg-color: var(--color-light-accent-bg);
+    --fc-button-active-bg-color: var(--color-primary-dark);
+    --fc-button-active-text-color: #fff;
+
+    /* Fondo para el día de hoy en la vista de mes (DayGrid) - TAL COMO LO TIENES EN TU IMAGEN */
+    --fc-today-bg-color: var(--color-light-accent-bg);
+    --fc-event-bg-color: var(--color-primary-dark);
+    --fc-event-border-color: var(--color-primary-dark);
+    --fc-event-text-color: #fff;
+
+    /* Borde para la cuadrícula del calendario (global) */
+    --fc-border-color: #f0f0f0;
+    --fc-day-header-color: var(--color-primary-dark);
+    --fc-day-grid-event-dot-color: var(--color-warning-yellow);
+
+    /* Nuevas variables para la vista de agenda (TimeGrid) */
+    --fc-timegrid-border-color: #f0f0f0; /* Borde muy claro para la vista de agenda */
+    --fc-timegrid-now-indicator-line-color: var(--color-warning-yellow);
+    --fc-timegrid-now-indicator-arrow-color: var(--color-warning-yellow);
+    --fc-timegrid-slot-label-color: var(--color-text-secondary); /* Color de las etiquetas de hora */
+    --fc-timegrid-slot-min-height: 1.5em;
+}
+
+/* Base body styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--color-background-soft);
+    color: var(--color-text-secondary);
+}
+
+/* Layout and main content */
+.layout {
+    display: flex;
+}
+
+.main-content {
+    margin-left: 250px;
+    flex-grow: 1;
+    padding: 40px;
+    background-color: var(--color-background-soft);
+}
+
+h2 {
+    color: var(--color-primary-dark);
+    font-weight: 700;
+    margin-bottom: 35px;
+    font-size: 2.2rem;
+    text-align: center;
+}
+
+/* Filter form */
+.form-label {
+    font-weight: 500;
+    color: var(--color-primary-dark);
+    margin-bottom: 8px;
+}
+
+.form-select, .form-control {
+    border: 1px solid var(--color-border-light);
+    border-radius: 10px;
+    padding: 12px 18px;
+    box-shadow: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background-color: #fdfdfd;
+    color: var(--color-text-secondary);
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: var(--color-primary-dark);
+    box-shadow: 0 0 0 0.25rem rgba(57, 56, 89, 0.2);
+    outline: none;
+}
+
+.btn-primary {
+    background-color: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+    font-weight: 600;
+    padding: 10px 25px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 12px rgba(0,0,0,0.05);
+    color: #fff;
+    font-size: 0.95rem;
+}
+
+.btn-primary:hover {
+    background-color: var(--color-hover-darken);
+    border-color: var(--color-hover-darken);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.1);
+}
+
+/* FullCalendar container and shadow */
+#calendarContainer {
+    background-color: var(--color-background-soft);
+    border-radius: 15px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+    padding: 35px;
+    border: none;
+}
+
+/* FullCalendar toolbar and buttons (general styles, apply to all views) */
+.fc .fc-toolbar.fc-header-toolbar {
+    margin-bottom: 2.2em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.fc .fc-button-group {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.fc-toolbar-chunk {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.fc .fc-button {
+    background-color: var(--fc-button-bg-color);
+    border: 1px solid var(--fc-button-border-color);
+    color: var(--fc-button-text-color);
+    font-size: 14px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+    height: auto;
+    line-height: normal;
+}
+
+.fc .fc-button:hover {
+    background-color: var(--fc-button-hover-bg-color);
+    border-color: var(--color-primary-light);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+
+.fc .fc-button-primary {
+    background-color: var(--fc-button-bg-color);
+    border-color: var(--fc-button-border-color);
+    color: var(--fc-button-text-color);
+}
+
+.fc .fc-button-primary:hover {
+    background-color: var(--fc-button-hover-bg-color);
+    border-color: var(--color-primary-light);
+    color: var(--fc-button-text-color);
+}
+
+.fc .fc-button-primary:not(:disabled):active,
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+    background-color: var(--fc-button-active-bg-color);
+    border-color: var(--fc-button-active-bg-color);
+    color: var(--fc-button-active-text-color);
+    box-shadow: inset 0 1px 4px rgba(0,0,0,0.25);
+}
+
+.fc .fc-button-group > .fc-button:not(:first-child) {
+    margin-left: -1px;
+}
+
+.fc .fc-button-group > .fc-button:first-child {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.fc .fc-button-group > .fc-button:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.fc-toolbar-title {
+    font-size: 2.3rem;
+    font-weight: 700;
+    color: var(--color-primary-dark);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin: 0;
+}
+
+/* --- ESTILOS GENERALES DE EVENTOS (APLICABLES A TODAS LAS VISTAS) --- */
+.fc-event {
+    background-color: var(--color-primary-dark);
+    border: 1px solid var(--color-primary-dark);
+    color: #fff;
+    border-radius: 6px;
+    font-size: 13px;
+    padding: 4px 10px;
+    margin-bottom: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.fc-event:hover {
+    background-color: var(--color-hover-darken);
+    border-color: var(--color-hover-darken);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+.fc-event-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fc-daygrid-event-dot {
+    background-color: var(--color-warning-yellow);
+    width: 8px;
+    height: 8px;
+    margin-right: 5px;
+    border-radius: 50%;
+}
+
+
+/* --- ESTILOS ESPECÍFICOS PARA VISTA DE MES (dayGridMonth) y AHORA TAMBIÉN dayGridWeek --- */
+/* (Basados en tu imagen de Month y la imagen de Google Calendar) */
+
+/* Cabeceras de los días (DOM, LUN, MAR, etc.) para DayGrid (Mes y Semana) */
+.fc-daygrid-day-names .fc-col-header-cell-cushion {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    padding: 10px 0; /* Asegura un padding uniforme */
+}
+
+.fc-daygrid-day-number {
+    color: var(--color-text-secondary); /* Color normal para los números de día */
+    font-size: 13.5px;
+    padding: 7px;
+    font-weight: 500;
+    transition: color 0.2s ease;
+    /* Asegurarse de que no haya estilos de círculo aquí por defecto */
+    background: none !important;
+    width: auto !important;
+    height: auto !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    display: inline-block !important; /* CAMBIO: inline-block para que funcione el span dentro de dayHeaderContent */
+}
+
+.fc-day-other .fc-daygrid-day-number {
+    color: #cdd4dc; /* Lighter grey for out-of-month days */
+}
+
+/* El día de hoy en la vista de Mes y Semana (DayGrid) - fondo de la celda */
+.fc-daygrid-day.fc-day-today {
+    background-color: var(--fc-today-bg-color); /* Fondo azul claro para la celda de hoy*/
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+/* El número del día de hoy en la vista de Mes y Semana (DayGrid) - círculo amarillo (en Month) o azul (en Week) */
+/* Este estilo se aplicará al número del día en la VISTA DE MES (círculo amarillo) */
+.fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+    background-color: var(--color-warning-yellow); /* Fondo amarillo para el número de hoy*/
+    color: var(--color-primary-dark); /* Texto azul oscuro en el número de hoy*/
+    border-radius: 50%; /* Círculo*/
+    width: 34px; /* Tamaño del círculo*/
+    height: 34px; /* Tamaño del círculo*/
+    display: inline-flex; /* Centrar contenido*/
+    align-items: center; /* Centrar contenido*/
+    justify-content: center; /* Centrar contenido*/
+    font-weight: 700;
+    font-size: 16px;
+    box-shadow: 0 3px 8px rgba(236, 205, 48, 0.5); /* Sombra para el círculo*/
+}
+
+/* --- ESTILOS ADICIONALES PARA LA VISTA DAYGRIDWEEK (Week Horizontal) --- */
+
+/* Ajusta la cabecera de las columnas para DayGridWeek */
+.fc-dayGridWeek-view .fc-col-header-cell {
+    /* Aquí puedes ajustar el padding o margen si es necesario,
+       pero el flexbox en el JS ya lo organiza bien. */
+    padding: 10px 0; /* Restablece el padding de la celda si fue modificado antes */
+}
+
+/* Estilo para el nombre del día de la semana (SUN, MON) en DayGridWeek */
+.fc-dayGridWeek-view .fc-col-header-cell-dayname {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 5px; /* Espacio entre el nombre y el número */
+    line-height: 1;
+    display: block; /* Asegura que sea un bloque para el margen */
+}
+
+/* Estilo para el número del día (15, 16) en DayGridWeek */
+.fc-dayGridWeek-view .fc-daygrid-day-number {
+    font-size: 1.6rem; /* Más grande que en Month */
+    font-weight: 700;
+    color: var(--color-primary-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px; /* Tamaño del círculo */
+    height: 45px; /* Tamaño del círculo */
+    border-radius: 50%;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    /* Ajusta el margen si es necesario */
+}
+
+/* Estilo para el número del DÍA ACTUAL en DayGridWeek (círculo azul) */
+.fc-dayGridWeek-view .fc-col-header-cell.fc-day-today .fc-daygrid-day-number {
+    background-color: var(--color-primary-dark); /* Fondo azul oscuro para el día actual */
+    color: #fff; /* Texto blanco para el día actual */
+    box-shadow: 0 4px 10px rgba(57, 56, 89, 0.2);
+}
+
+
+/* --- ESTILOS ESPECÍFICOS PARA VISTAS DE AGENDA (timeGridDay) --- */
+/* FullCalendar añade la clase 'fc-timegrid' al contenedor cuando estas vistas están activas */
+
+.fc-timegrid .fc-col-header-cell {
+    background-color: #f7f9fb; /* Fondo claro para las cabeceras */
+    color: var(--color-primary-dark);
+    font-weight: 600;
+    padding: 0; /* El padding lo manejarán los SPAN internos */
+    border-bottom: 1px solid var(--fc-timegrid-border-color); /* Borde claro inferior */
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    display: flex; /* Habilitar flexbox */
+    flex-direction: column; /* Apilar el día de la semana y el número */
+    align-items: center; /* Centrar horizontalmente */
+    justify-content: center; /* Centrar verticalmente */
+    height: 100%; /* Asegura que la celda de cabecera ocupe toda su altura disponible */
+}
+
+/* Estilo para la abreviatura del día de la semana (SUN, MON, TUE...) en TimeGrid */
+.fc-timegrid .fc-timegrid-col-dayname { /* Selector que se usa en el JS para timeGridDay */
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    line-height: 1;
+    padding-top: 10px;
+}
+
+/* Estilo para los NÚMEROS de los días (15, 16, 17...) en TimeGrid */
+.fc-timegrid .fc-timegrid-col-daynum { /* Selector que se usa en el JS para timeGridDay */
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--color-primary-dark); /* Color azul oscuro por defecto */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    padding-bottom: 10px;
+}
+
+/* Estilo para el número del DÍA ACTUAL en TimeGridDay (círculo azul) */
+.fc-timegrid .fc-col-header-cell.fc-day-today .fc-timegrid-col-daynum {
+    background-color: var(--color-primary-dark); /* Fondo azul oscuro para el día actual */
+    color: #fff; /* Texto blanco para el día actual */
+    box-shadow: 0 4px 10px rgba(57, 56, 89, 0.2);
+}
+
+/* Asegurarse de que el fondo de la CELDA COMPLETA del día actual en la cuadrícula sea transparente en TimeGrid*/
+.fc-timegrid .fc-timegrid-col.fc-day-today {
+    background-color: transparent;
+}
+
+
+/* Estilos para las etiquetas de hora (3 AM, 4 AM, etc.) en TimeGrid*/
+.fc-timegrid .fc-timegrid-slot-label {
+    color: var(--fc-timegrid-slot-label-color);
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding-right: 10px;
+    text-align: right;
+    vertical-align: top;
+    padding-top: 5px;
+    height: 100% !important;
+}
+
+
+/* --- Bordes de la CUADRÍCULA HORARIA (muy claros) en TimeGrid --- */
+
+.fc-timegrid-col-header {
+    border-right: 1px solid var(--fc-timegrid-border-color);
+    border-bottom: 1px solid var(--fc-timegrid-border-color);
+}
+
+.fc-timegrid-body {
+    border-left: 1px solid var(--fc-timegrid-border-color);
+    border-bottom: 1px solid var(--fc-timegrid-border-color);
+}
+
+.fc-timegrid-cols table {
+    border-top: 1px solid var(--fc-timegrid-border-color);
+}
+
+.fc-timegrid-divider {
+    background-color: var(--fc-timegrid-border-color);
+}
+
+.fc-timegrid-slot {
+    border-bottom: 1px dashed var(--fc-timegrid-border-color);
+}
+
+.fc-timegrid-slot.fc-timegrid-slot-label {
+    border-bottom: 1px solid var(--fc-timegrid-border-color);
+}
+
+.fc-timegrid-col {
+    border-right: 1px solid var(--fc-timegrid-border-color);
+}
+
+.fc-timegrid-col:last-child {
+    border-right: none;
+}
+
+/* Línea de tiempo "Ahora" en TimeGrid*/
+.fc-timegrid-now-indicator-line {
+    background-color: var(--color-warning-yellow);
+}
+.fc-timegrid-now-indicator-arrow {
+    border-color: transparent transparent transparent var(--color-warning-yellow);
+}
+.fc-timegrid-now-indicator-tooltip {
+    background-color: var(--color-warning-yellow);
+    color: var(--color-primary-dark);
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+/* Modal styles */
+.modal-content {
+    border-radius: 15px;
+    box-shadow: 0 15px 45px rgba(0,0,0,0.25);
+    padding: 30px;
+    border: none;
+    background-color: #ffffff;
+}
+
+.modal-header {
+    border-bottom: none;
+    padding: 0 0 18px 0;
+    position: relative;
+}
+
+.modal-title {
+    font-weight: 700;
+    color: var(--color-primary-dark);
+    font-size: 2.1rem;
+    text-align: center;
+    width: 100%;
+}
+
+.btn-close {
+    font-size: 1.1rem;
+    padding: 0.6rem;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    color: var(--color-primary-dark);
+    opacity: 0.8;
+}
+
+.btn-close:hover {
+    background-color: var(--color-light-accent-bg);
+    opacity: 1;
+}
+
+.modal-body p {
+    margin-bottom: 12px;
+    color: var(--color-primary-dark);
+    line-height: 1.6;
+    font-size: 1.05rem;
+}
+
+.modal-body strong {
+    color: var(--color-primary-dark);
+    font-weight: 600;
+}
+
+.modal-body .btn-primary {
+    background-color: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+    font-size: 1.05rem;
+    padding: 12px 25px;
+    border-radius: 10px;
+    margin-top: 25px;
+    box-shadow: 0 4px 10px rgba(57, 56, 89, 0.2);
+    color: #fff;
+}
+
+.modal-body .btn-primary:hover {
+    background-color: var(--color-hover-darken);
+    border-color: var(--color-hover-darken);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(57, 56, 89, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        padding: 20px;
+    }
+
+    .fc .fc-toolbar.fc-header-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .fc-toolbar-title {
+        margin-bottom: 15px;
+        font-size: 1.8rem;
+    }
+
+    .fc .fc-button-group {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-top: 10px;
+    }
+
+    .fc .fc-button {
+        flex-grow: 1;
+        padding: 8px 12px;
+    }
+}

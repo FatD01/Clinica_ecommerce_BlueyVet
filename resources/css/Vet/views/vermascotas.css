@@ -28,64 +28,7 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 
-/* Sidebar (NO TOCAR) */
-.sidebar {
-    width: 250px;
-    background-color: #ecc43d; /* Vibrant yellow */
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 20px 0;
-    height: 100vh;
-    position: fixed;
-    left: 0;
-    top: 0;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-    z-index: 1000; /* Ensure sidebar is above main content */
-}
 
-.brand {
-    font-size: 24px;
-    font-weight: bold;
-    padding: 0 20px 20px;
-    color: #1e3a8a;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.3); /* Softer border */
-    text-align: left;
-}
-
-.sidebar nav ul {
-    list-style: none;
-    padding: 0;
-    margin: -220px 0; /* Original margin, keeping as requested */
-}
-
-.sidebar li {
-    margin-bottom: 15px;
-}
-
-.sidebar li a {
-    color: #fff;
-    text-decoration: none;
-    padding: 10px 20px;
-    display: block;
-    border-radius: 8px;
-    transition: background 0.3s ease, color 0.3s ease; /* Smoother transitions */
-}
-
-.sidebar li a:hover,
-.sidebar .active a {
-    background-color: #1e3a8a; /* Blue on hover */
-    color: #ffffff; /* Ensure text stays white on active/hover */
-}
-
-.user {
-    padding: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-    text-align: center;
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.8); /* Slightly less harsh white */
-}
 
 /* Main Content */
 .main-content {

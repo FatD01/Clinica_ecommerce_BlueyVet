@@ -5,20 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Vet Dashboard</title>
   
-  <link rel="stylesheet" href="{{ asset('styles.css') }}">
+  @vite(['resources/css/vet/views/styles.css'])
   <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ asset('seccionesactivas.css') }}">
+  @vite(['resources/css/vet/views/seccionesactivas.css'])
+  @vite(['resources/css/Vet/panel.css'])
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
         /* Estilo general de la sección */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden; /* ⚠️ Esto evita scroll general innecesario */
+}
 .profile-edit-section {
     background-color: #fff;
     padding: 2rem;
     margin: 2rem auto;
     border-radius: 1rem;
-    max-width: 600px;
-    max-height: 450px; /* altura limitada */
-    overflow-y: auto;  /* scroll vertical si se necesita */
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
@@ -85,16 +90,12 @@
 
 /* Botones */
 
-.btn-primary-logout{
-    background-color:rgb(12, 78, 177);
-    color: #fff;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    border: none;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.3s ease; 
+.logout-wrapper {
+  background: none;
+  padding: 1.5rem 2rem 0 2rem;
+  text-align: right;
 }
+
 .form-buttons {
     display: flex;
     justify-content: flex-end;
@@ -149,46 +150,61 @@
 <body>
   <div class="container">
     <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="brand">BlueyVet</div>
-      <nav>
-    <ul>
-        <li>
-            <a href="{{ route('veterinarian.citas') }}"
-               class="{{ request()->routeIs('veterinarian.citas') ? 'active' : '' }}">
-               Consultar Citas
-            </a>
-        </li>
-        <li>
-  <a href="{{ route('historialmedico.index') }}"
-     class="{{ request()->routeIs('historialmedico.index') ? 'active' : '' }}">
-     Historial Médico
-  </a>
-</li>
+     <aside class="sidebar">
+    <div class="brand">
+        <i class="fas fa-paw"></i> BlueyVet
+    </div>
+    <nav>
+        <ul>
+            <li>
+                <a href="{{ route('veterinarian.citas') }}"
+                   class="{{ request()->routeIs('veterinarian.citas') ? 'active' : '' }}">
+                    <i class="fas fa-calendar-alt"></i> Consultar Citas
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('historialmedico.index') }}"
+                   class="{{ request()->routeIs('historialmedico.index') ? 'active' : '' }}">
+                    <i class="fas fa-file-medical-alt"></i> Historial Médico
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('veterinarian.profile') }}"
+                   class="{{ request()->routeIs('veterinarian.profile*') || request()->routeIs('veterinarian.edit') ? 'active' : '' }}">
+                    <i class="fas fa-user"></i> Mi Información
+                </a>
+            </li>
+            <li>
+                        <a href="{{ route('datosestadisticos') }}" class="{{ request()->routeIs('datosestadisticos') ? 'active' : '' }}">
+                            <i class="fas fa-chart-bar"></i> Datos estadísticos
+                        </a>
+                    </li>
+                    <li>
+                <a href="{{ route('veterinarian.notificaciones') }}"
+                   class="{{ request()->routeIs('veterinarian.notificaciones') ? 'active' : '' }}">
+                    <i class="fas fa-bell"></i> Notificaciones
+                    @if($unreadCount)
+                        <span class="notification-dot"></span>
+                    @endif
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <div class="user">
+        Hola, <strong>{{ Auth::user()->name }}</strong>
+    </div>
+</aside>
 
-        
-        <li>
-            <a href="{{ route('veterinarian.profile') }}"
-   class="{{ request()->routeIs('veterinarian.profile*') || request()->routeIs('veterinarian.edit') ? 'active' : '' }}">
-   Mi Información
-</a>
 
-        </li>
-    </ul>
-</nav>
-
-      <div class="user">Hola, <strong>{{ Auth::user()->name }}</strong></div>
-    </aside>
 
     <!-- Main content -->
     <main class="main">
-      <div class="header">
-        <form method="POST" action="{{ route('logout') }}">
-          @csrf
-          <button class="btn-primary-logout" type="submit">Cerrar sesión</button>
-        </form>
-      </div>
-
+      <div class="logout-wrapper" style="padding: 1rem 2rem; text-align: right;">
+  <form method="POST" action="{{ route('logout') }}">
+    @csrf
+    <button class="btn-primary-logout" type="submit">Cerrar sesión</button>
+  </form>
+</div>
       <div class="profile-edit-section">
         <h1 class="section-title">Editar Perfil de Veterinario</h1>
 

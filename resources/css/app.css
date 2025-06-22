@@ -4,18 +4,20 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'animate.css/animate.min.css';
 
-/* 2. Importaciones de tus archivos CSS personalizados */
-/* El orden aquí puede importar si hay sobrescrituras específicas */
+
 @import './Client/navbar.css';
 @import './Client/index.css'; /* Tu CSS para welcome blade */
 @import './Client/servicios.css'; /* Otros CSS de tu proyecto */
 @import './Client/citas.css';
 
-
-/* 3. ¡Las directivas de TailwindCSS deben ir DESPUÉS de todos los @import! */
 @tailwind base;
+
+
 @tailwind components;
 @tailwind utilities;
 
-/* 4. Cualquier CSS personalizado que tengas directamente en app.css, después de Tailwind */
-/* ... Tus propias reglas CSS generales ... */
+
+
+
+
+

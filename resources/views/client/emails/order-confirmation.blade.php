@@ -34,11 +34,11 @@
             @endif
         </div>
 
-        <p>Puedes ver los detalles de tu orden iniciando sesión en tu cuenta de BlueyVet.</p>
+        <!-- <p>Puedes ver los detalles de tu orden iniciando sesión en tu cuenta de BlueyVet.</p>
 
         <p style="text-align: center;">
             <a href="{{ url('/profile/orders') }}" class="button">Ver Mis Órdenes</a>
-        </p>
+        </p> -->
 
         <div class="footer">
             <p>Este es un correo automático, por favor no respondas a esta dirección.</p>

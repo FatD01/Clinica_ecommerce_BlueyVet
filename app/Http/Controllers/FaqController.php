@@ -33,6 +33,6 @@ class FaqController extends Controller
                     ->where('is_published', true)
                     ->firstOrFail(); // Busca la FAQ por slug, o lanza 404 si no la encuentra
 
-        return view('faqs.show', compact('faq'));
+        return view('client.faq.show', compact('faq'));
     }
 }

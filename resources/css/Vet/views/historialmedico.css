@@ -32,66 +32,8 @@ body::-webkit-scrollbar-thumb:hover {
     background-color: #393859;
 }
 
-/* Sidebar (COMPLETAMENTE RESTAURADO A TU CÓDIGO ORIGINAL SIN CAMBIOS) */
-/* Este bloque es exactamente el que tú me diste para el sidebar */
-.sidebar {
-    width: 250px;
-    background-color: #ecc43d; /* Amarillo vibrante */
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 20px 0;
-    height: 100vh;
-    position: fixed;
-    left: 0;
-    top: 0;
-    /* Añadimos una sombra sutil para un mejor aspecto, si lo tenías, mantenlo, si no, es una mejora mínima */
-    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.15); 
-    z-index: 1000; /* Asegura que esté por encima del contenido */
-}
-
-.brand {
-    font-size: 24px;
-    font-weight: bold;
-    padding: 0 20px 20px;
-    color: #1e3a8a;
-    border-bottom: 1px solid #fff;
-    text-align: left;
-}
-
-.sidebar nav ul {
-    list-style: none;
-    padding: 0;
-    margin: -220px 0;
-}
-
-.sidebar li {
-    margin-bottom: 15px;
-}
-
-.sidebar li a {
-    color: #fff;
-    text-decoration: none;
-    padding: 10px 20px;
-    display: block;
-    border-radius: 8px;
-    transition: background 0.2s;
-}
-
-.sidebar li a:hover,
-.sidebar .active a {
-    background-color: #1e3a8a; /* Azul al pasar mouse */
-}
-
-.user {
-    padding: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-    text-align: center;
-    font-size: 0.9rem;
-    /* Color del texto del usuario añadido para que sea visible en el fondo amarillo */
-    color: rgba(255, 255, 255, 0.8);
-}
+/* Sidebar (NO TOCAR) */
+/* --- Sidebar Styles --- */
 
 
 /* Main Content - The large white "target" */

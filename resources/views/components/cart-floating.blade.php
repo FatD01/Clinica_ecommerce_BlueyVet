@@ -1,3 +1,30 @@
+
+<style>
+    /* CSS personalizado para el efecto de desplegable */
+    .shipping-info-container {
+        /* Altura inicial: ajusta este valor si tu h3, junto con su padding o margen, es más alto. */
+        /* Esta altura es crucial para que solo se vea el título inicialmente. */
+        max-height: 70px;
+        overflow: hidden; /* Oculta el contenido que excede la altura máxima */
+        transition: max-height 0.5s ease-out; /* Transición suave para el cambio de altura */
+        cursor: pointer; /* Cambia el cursor a una mano para indicar que es interactivo */
+    }
+
+    .shipping-info-container:hover {
+        /* Altura al pasar el ratón: ajusta este valor para asegurar que todo el contenido (dirección o mensaje de "no hay dirección" + botón) sea visible cuando se expande. */
+        max-height: 300px;
+    }
+
+    .shipping-content-wrapper {
+        opacity: 0; /* Oculta el contenido inicialmente (lo hace transparente) */
+        /* Transición para la opacidad: el contenido aparecerá suavemente después de un pequeño retraso (0.2s) */
+        transition: opacity 0.3s ease-in 0.2s;
+    }
+
+    .shipping-info-container:hover .shipping-content-wrapper {
+        opacity: 1; /* Hace que el contenido sea completamente visible al pasar el ratón */
+    }
+</style>
 <div
     id="cartFloating"
     class="select-none fixed top-0 right-0 w-[350px] h-screen p-4 shadow-[var(--medium-shadow)] z-[9999] transition-transform duration-300 bg-[var(--white)] border-l flex flex-col"
@@ -67,9 +94,9 @@
                             Precio: ${{ number_format($item['discounted_price'], 2) }} <br>
                             {{-- Si es 'buy_x_get_y', el precio a mostrar sigue siendo el original por unidad pagada --}}
                             @else
-                            Precio: ${{ number_format($item['price'], 2) }} <br>
+                            Precio: S/{{ number_format($item['price'], 2) }} <br>
                             @endif
-                            Subtotal: <span id="subtotal-{{ $item['id'] }}">${{ number_format($itemTotal, 2) }}</span>
+                            Subtotal: <span id="subtotal-{{ $item['id'] }}">S/{{ number_format($itemTotal, 2) }}</span>
                     </small>
 
                     <button
@@ -87,8 +114,51 @@
     <hr class="my-4 border-[var(--medium-gray)]">
 
     <p class="text-[var(--black)] font-semibold text-right">
-        Total: <span id="cart-total">${{ number_format($total, 2) }}</span> {{-- $total is expected from the controller --}}
+        Total: <span id="cart-total">S/.{{ number_format($total, 2) }}</span> {{-- $total is expected from the controller --}}
     </p>
+
+<!-- 0000000000000000000000000000  -->
+
+    <div class="shipping-info-container bg-bluey-light rounded-lg shadow-sm p-6 mb-6 border border-bluey-light2">
+        <h3 class="text-base font-semibold text-bluey-dark mb-2 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-bluey-primary mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+            </svg>
+            Dirección de envío
+        </h3>
+
+        {{-- Este div contendrá todo el contenido que se mostrará al pasar el ratón --}}
+        <div class="shipping-content-wrapper">
+            @if ($cliente && $cliente->direccion)
+            <div class="bg-bluey-light2 p-2 rounded-md mb-3 border border-bluey-light">
+                <p class="text-bluey-dark text-sm font-normal">{{ $cliente->direccion }}</p>
+            </div>
+            <a href="{{ route('profile.edit') }}" class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-bluey-secondary transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                </svg>
+                Cambiar dirección
+            </a>
+            @else
+            <div class="bg-bluey-light-yellow border-l-4 border-bluey-gold-yellow p-4 mb-3">
+                <p class="text-bluey-dark flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-bluey-secondary mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    No hay dirección registrada
+                </p>
+            </div>
+            <a href="{{ route('profile.edit') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-bluey-primary hover:bg-bluey-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-bluey-primary transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                </svg>
+                Completa tu perfil
+            </a>
+            @endif
+        </div>
+    </div>
+
+
 
     {{-- AQUI ES DONDE CAMBIAS: ENVUELVE EL BOTON EN UN FORMULARIO --}}
     <form action="{{ route('cart_payments.pay') }}" method="POST">
@@ -188,7 +258,7 @@
             if (data.success) {
                 // Actualizar elementos básicos
                 document.getElementById(`qty-${productId}`).textContent = data.newQty;
-                document.getElementById(`subtotal-${productId}`).textContent = `$${data.newSubtotal}`;
+                document.getElementById(`subtotal-${productId}`).textContent = `S/.${data.newSubtotal}`;
                 document.getElementById('cart-total').textContent = `$${data.total}`;
 
                 // Actualizar badge del carrito

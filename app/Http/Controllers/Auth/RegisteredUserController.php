@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Cliente; // Import the Cliente model
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,6 +40,15 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+        ]);
+
+        // Create a Cliente record for the new user
+        Cliente::create([
+            'user_id' => $user->id,
+            'nombre' => $user->name, // Or you can leave it NULL to force the user to fill it
+            'apellido' => null,      // Set to NULL to trigger the 'incomplete profile' indicator
+            'telefono' => null,
+            'direccion' => null,
         ]);
 
         event(new Registered($user));

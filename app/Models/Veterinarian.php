@@ -39,9 +39,13 @@ class Veterinarian extends Model
         return $this->hasMany(Appointment::class, 'veterinarian_id');
     }
 
-    public function scheduleBlocks(): HasMany
-    {
-        return $this->hasMany(ScheduleBlock::class);
-    }
+    // public function scheduleBlocks(): HasMany
+    // {
+    //     return $this->hasMany(ScheduleBlock::class);
+    // }
 
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(VeterinarianSchedule::class);
+    }
 }

@@ -116,10 +116,10 @@
 
                 {{-- Mostrar el precio original tachado si hay descuento, y el precio final --}}
                 @if($finalPrice < number_format($producto->price, 2, '.', ''))
-                    <p class="text-[var(--dark-gray)] text-lg line-through mb-1">${{ number_format($producto->price, 2) }}</p>
-                    <p class="text-[var(--bluey-dark)] text-2xl font-bold mb-4">${{ $finalPrice }}</p>
+                    <p class="text-[var(--dark-gray)] text-lg line-through mb-1">S/{{ number_format($producto->price, 2) }}</p>
+                    <p class="text-[var(--bluey-dark)] text-2xl font-bold mb-4">S/{{ $finalPrice }}</p>
                 @else
-                    <p class="text-[var(--bluey-dark)] text-2xl font-bold mb-4">${{ number_format($producto->price, 2) }}</p>
+                    <p class="text-[var(--bluey-dark)] text-2xl font-bold mb-4">S/{{ number_format($producto->price, 2) }}</p>
                 @endif
             </div>
 
@@ -173,7 +173,6 @@
         </div>
     </div>
 </div>
-
 <script>
     // PASO CLAVE PARA LA URL BASE: Blade imprimirá el ID principal aquí
     const CURRENT_MAIN_CATEGORY_ID = {{ $currentMainPageCategory->id }};
@@ -184,7 +183,7 @@
         ? "{{ url('/productos/petshop') }}"
         : "{{ url('/productos/categoria') }}" + "/" + CURRENT_MAIN_CATEGORY_ID;
 
-    // --- Script para la alerta del carrito ---
+    // --- Script para la alerta del carrito (Puede ser global sin problema) ---
     function showCartAlert(message = 'Producto agregado al carrito ✔️', isSuccess = true) {
         const alert = document.getElementById('cart-alert');
         alert.textContent = message;
@@ -203,15 +202,13 @@
         }, 2500);
     }
 
-    // --- MANEJO DE ADD TO CART (DELEGACIÓN DE EVENTOS) ---
-    // Esta es la parte crucial que asegura la interacción con el carrito flotante
+    // --- MANEJO DE ADD TO CART (DELEGACIÓN DE EVENTOS - Global porque escucha clics en todo el documento) ---
     document.addEventListener('click', async function(event) {
-        // Asegúrate de que el clic fue en un botón con la clase 'add-to-cart-btn'
         if (event.target.classList.contains('add-to-cart-btn')) {
             const productId = event.target.dataset.id;
-            
+
             try {
-                const res = await fetch(`/cart/add/${productId}`, { // Ruta /cart/add/{productId}
+                const res = await fetch(`/cart/add/${productId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -223,25 +220,23 @@
                 });
                 const data = await res.json();
 
-                if (res.ok && data.success) { // Asegurarse que la respuesta HTTP también fue exitosa (200 OK)
+                if (res.ok && data.success) {
                     const cartBadge = document.querySelector('.cart-badge');
                     if (cartBadge) {
                         cartBadge.textContent = data.cart_count || 0;
                     }
                     showCartAlert(data.message, true);
-                    
-                    if (event.target.id === 'modal-add-to-cart-btn') {
-                        closeModal(); // Cierra el modal si el botón está dentro de él
+
+                    // Asegúrate de que closeModal exista antes de llamarla
+                    if (event.target.id === 'modal-add-to-cart-btn' && typeof closeModal === 'function') {
+                        closeModal();
                     }
 
-                    // --- ¡PUNTO CLAVE! Actualiza el componente del carrito flotante
-                    // Esto recargará el HTML del carrito para mostrar el nuevo producto
                     if (typeof updateCartFloatingComponent === 'function') {
                         await updateCartFloatingComponent();
                     }
 
                 } else {
-                    // Manejar errores devueltos por el backend (ej. stock insuficiente)
                     const errorMessage = data.message || 'Error al agregar el producto al carrito.';
                     showCartAlert(errorMessage, false);
                 }
@@ -252,55 +247,9 @@
         }
     });
 
-    // --- SCRIPT PARA EL SELECT PERSONALIZADO (ADAPTADO PARA AJAX) ---
+    // --- Envuelve toda la lógica que interactúa con el DOM dentro de DOMContentLoaded ---
     document.addEventListener('DOMContentLoaded', function() {
-        const customSelectWrapper = document.getElementById('custom-select-wrapper');
-        const customSelectDisplay = document.getElementById('custom-select-display');
-        const customSelectOptions = document.getElementById('custom-select-options');
-        const selectedCategoryText = document.getElementById('selected-category-text');
-        const hiddenCategoryId = document.getElementById('hidden_category_id');
-        const categoryFilterForm = document.getElementById('category-filter-form'); 
-        const searchInput = document.getElementById('search_query');
-
-        customSelectDisplay.addEventListener('click', function() {
-            customSelectOptions.classList.toggle('hidden');
-        });
-
-        customSelectOptions.querySelectorAll('.custom-option').forEach(option => {
-            option.addEventListener('click', function() {
-                const value = this.dataset.value;
-                const text = this.dataset.text;
-
-                selectedCategoryText.textContent = text;
-                hiddenCategoryId.value = value;
-                customSelectOptions.classList.add('hidden');
-                fetchProducts(); // Llama a la función AJAX cuando se selecciona una categoría
-            });
-        });
-
-        document.addEventListener('click', function(event) {
-            if (!customSelectWrapper.contains(event.target)) {
-                customSelectOptions.classList.add('hidden');
-            }
-        });
-
-        // Interceptar el envío del formulario (para filtro y búsqueda)
-        categoryFilterForm.addEventListener('submit', function(event) {
-            event.preventDefault(); // Evita la recarga de la página
-            fetchProducts(); // Llama a la función AJAX al enviar el formulario
-        });
-
-        // Opcional: Envío del formulario al presionar Enter en el campo de búsqueda
-        searchInput.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault(); // Evita el submit por defecto si es solo Enter en el input
-                fetchProducts();
-            }
-        });
-    });
-
-    // --- SCRIPT PARA EL MODAL DE PRODUCTO (DELEGACIÓN DE EVENTOS) ---
-    document.addEventListener('DOMContentLoaded', function() {
+        // --- Variables y Funciones del Modal (Inicializadas aquí para asegurar que el DOM esté listo) ---
         const productModal = document.getElementById('product-modal');
         const closeModalBtn = document.getElementById('close-modal');
         const modalProductName = document.getElementById('modal-product-name');
@@ -312,19 +261,19 @@
         const modalProductStock = document.getElementById('modal-product-stock');
         const modalAddToCartBtn = document.getElementById('modal-add-to-cart-btn');
 
-        function openModal(product) {
+        // Define openModal y closeModal aquí, porque usan las variables del DOM inicializadas arriba
+        window.openModal = function(product) { // Hacemos openModal global explícitamente si se necesita fuera
             modalProductName.textContent = product.name;
             modalProductCategory.textContent = `Categoría: ${product.category}`;
             modalProductDescription.textContent = product.description;
-            // Usa product.final_price si está disponible, de lo contrario product.price
-            modalProductPrice.textContent = `$${product.final_price || product.price}`;
+            modalProductPrice.textContent = `S/.${parseFloat(product.final_price || product.price).toFixed(2)}`;
             modalProductImage.src = product.image;
             modalProductStock.textContent = `Stock disponible: ${product.stock}`;
-            modalAddToCartBtn.dataset.id = product.id; // Asigna el ID del producto al botón del modal
+            modalAddToCartBtn.dataset.id = product.id;
 
             modalProductPromotions.innerHTML = '';
             try {
-                const promotions = product.promotions; 
+                const promotions = product.promotions;
                 if (Array.isArray(promotions) && promotions.length > 0) {
                     promotions.forEach(promoTitle => {
                         const p = document.createElement('p');
@@ -342,20 +291,21 @@
             productModal.querySelector('div').classList.remove('scale-95');
             productModal.querySelector('div').classList.add('scale-100');
             document.body.style.overflow = 'hidden';
-        }
+        };
 
-        function closeModal() {
+        window.closeModal = function() { // Hacemos closeModal global explícitamente
             productModal.classList.remove('opacity-100');
             productModal.classList.add('opacity-0');
             productModal.querySelector('div').classList.remove('scale-100');
             productModal.querySelector('div').classList.add('scale-95');
-            
+
             setTimeout(() => {
                 productModal.classList.add('hidden');
                 document.body.style.overflow = '';
-            }, 300); 
-        }
+            }, 300);
+        };
 
+        // --- Event Listeners del Modal ---
         closeModalBtn.addEventListener('click', closeModal);
 
         productModal.addEventListener('click', function(event) {
@@ -367,15 +317,14 @@
         // Delegación de eventos para las tarjetas de producto (abrir modal)
         document.getElementById('products-grid').addEventListener('click', function(event) {
             const card = event.target.closest('.product-card-trigger');
-            
-            // Asegúrate de que se hizo clic en una tarjeta y no en el botón "Agregar al carrito"
+
             if (card && !event.target.closest('.add-to-cart-btn')) {
                 const product = {
                     id: card.dataset.productId,
                     name: card.dataset.productName,
                     description: card.dataset.productDescription,
-                    price: card.dataset.productPrice, // Precio original
-                    final_price: card.dataset.productFinalPrice, // Nuevo: precio final con promo
+                    price: card.dataset.productPrice,
+                    final_price: card.dataset.productFinalPrice,
                     image: card.dataset.productImage,
                     stock: card.dataset.productStock,
                     promotions: JSON.parse(card.dataset.productPromotions || '[]'),
@@ -384,141 +333,180 @@
                 openModal(product);
             }
         });
-    });
 
-    // --- NUEVAS FUNCIONES PARA CARGA AJAX DE PRODUCTOS ---
-
-    // Función para renderizar una sola tarjeta de producto
-    function renderProductCard(product) {
-        const hasPromotions = product.applied_promotions && product.applied_promotions.length > 0;
-        const originalPriceHtml = (hasPromotions && parseFloat(product.final_price) < parseFloat(product.price)) 
-            ? `<p class="text-[var(--dark-gray)] text-lg line-through mb-1">$${parseFloat(product.price).toFixed(2)}</p>`
-            : '';
-        const displayPrice = parseFloat(product.final_price || product.price).toFixed(2);
-
-        const dataProductPromotions = JSON.stringify(product.applied_promotions || []);
-
-        return `
-            <div class="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col justify-between cursor-pointer product-card-trigger select-none"
-                 style="border-color: var(--medium-gray);"
-                 data-product-id="${product.id}"
-                 data-product-name="${product.name}"
-                 data-product-description="${product.description}"
-                 data-product-price="${parseFloat(product.price).toFixed(2)}"
-                 data-product-image="${product.image_url}"
-                 data-product-stock="${product.stock}"
-                 data-product-promotions='${dataProductPromotions}'
-                 data-product-category="${product.category_name}"
-                 data-product-final-price="${displayPrice}"
-                 data-product-gift-quantity="${product.gift_quantity || 0}">
-
-                <div class="relative overflow-hidden group">
-                    <img src="${product.image_url}" alt="${product.name}"
-                        class="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105 select-none"
-                        loading="lazy">
-                    ${hasPromotions ? `<span class="absolute top-2 left-2 bg-[var(--yellow-dark)] text-white text-xs font-semibold px-2 py-1 rounded-full shadow select-none">Oferta</span>` : ''}
-                </div>
-
-                <div class="p-4 flex-grow">
-                    <h2 class="text-xl font-semibold text-[var(--black)] mb-2 line-clamp-2" title="${product.name}">${product.name}</h2>
-                    <p class="text-[var(--dark-gray)] text-sm mb-3 line-clamp-3">${product.description}</p>
-
-                    ${hasPromotions ? product.applied_promotions.map(promoTitle => `
-                        <p class="text-sm text-[var(--yellow-dark)] font-semibold mb-2">🎁 ${promoTitle}</p>
-                    `).join('') : ''}
-
-                    ${originalPriceHtml}
-                    <p class="text-[var(--bluey-dark)] text-2xl font-bold mb-4">$${displayPrice}</p>
-                </div>
-
-                <div class="p-4 border-t border-[var(--medium-gray)]">
-                    <button
-                        class="add-to-cart-btn w-full px-4 py-2 bg-[var(--bluey-primary)] hover:bg-[var(--bluey-secondary)] text-white font-semibold rounded-lg shadow-md transition-colors duration-200"
-                        data-id="${product.id}">
-                        🛒 Agregar al carrito
-                    </button>
-                </div>
-            </div>
-        `;
-    }
-
-    // Función principal para obtener y mostrar productos con AJAX
-    async function fetchProducts() {
-        const productsGrid = document.getElementById('products-grid');
-        const noProductsMessage = document.getElementById('no-products-message');
-        const loadingSpinner = document.getElementById('loading-spinner');
-        const hiddenCategoryId = document.getElementById('hidden_category_id');
-        const searchInput = document.getElementById('search_query');
-        const pageTitle = document.getElementById('page-title');
+        // --- SCRIPT PARA EL SELECT PERSONALIZADO (ADAPTADO PARA AJAX) ---
+        const customSelectWrapper = document.getElementById('custom-select-wrapper');
+        const customSelectDisplay = document.getElementById('custom-select-display');
+        const customSelectOptions = document.getElementById('custom-select-options');
         const selectedCategoryText = document.getElementById('selected-category-text');
+        const hiddenCategoryId = document.getElementById('hidden_category_id');
+        const categoryFilterForm = document.getElementById('category-filter-form');
+        const searchInput = document.getElementById('search_query');
 
-        // Construir los parámetros de la URL
-        const categoryId = hiddenCategoryId.value;
-        const searchQuery = searchInput.value;
+        customSelectDisplay.addEventListener('click', function() {
+            customSelectOptions.classList.toggle('hidden');
+        });
 
-        // La URL base para la petición AJAX siempre debe ser la URL de la página actual
-        const url = new URL(BASE_AJAX_PRODUCTS_URL);
-        
-        // Añadir parámetros de búsqueda y categoría como query strings
-        url.searchParams.set('category_id', categoryId);
-        if (searchQuery) {
-            url.searchParams.set('query', searchQuery);
-        }
-        url.searchParams.set('ajax', 'true'); // Indicador para el controlador de que es una petición AJAX
+        customSelectOptions.querySelectorAll('.custom-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const value = this.dataset.value;
+                const text = this.dataset.text;
 
-        // Mostrar spinner de carga y limpiar la cuadrícula
-        productsGrid.innerHTML = ''; 
-        if (noProductsMessage) noProductsMessage.classList.add('hidden');
-        loadingSpinner.classList.remove('hidden');
-
-        try {
-            const response = await fetch(url.toString(), {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest' // Cabecera para $request->ajax() en Laravel
-                }
+                selectedCategoryText.textContent = text;
+                hiddenCategoryId.value = value;
+                customSelectOptions.classList.add('hidden');
+                fetchProducts();
             });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+        });
 
-            const data = await response.json();
-            
-            // Actualizar el título de la página y el texto del filtro si es necesario
-            if (data.displaying_category_name) {
-                if (categoryId == CURRENT_MAIN_CATEGORY_ID) {
-                    pageTitle.textContent = `Nuestros Productos para tu ${CURRENT_MAIN_CATEGORY_NAME}`;
-                    selectedCategoryText.textContent = `Todas las categorías de ${CURRENT_MAIN_CATEGORY_NAME}`;
-                } else {
-                    const selectedCatObj = data.categories.find(cat => cat.id == categoryId);
-                    if (selectedCatObj) {
-                        selectedCategoryText.textContent = selectedCatObj.name;
+        document.addEventListener('click', function(event) {
+            if (!customSelectWrapper.contains(event.target)) {
+                customSelectOptions.classList.add('hidden');
+            }
+        });
+
+        categoryFilterForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            fetchProducts();
+        });
+
+        searchInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                fetchProducts();
+            }
+        });
+
+        // --- NUEVAS FUNCIONES PARA CARGA AJAX DE PRODUCTOS (Estas no necesitan DOMContentLoaded, pero es mejor que las llamemos desde aquí) ---
+
+        // Función principal para obtener y mostrar productos con AJAX
+        // La hacemos global para que pueda ser llamada desde cualquier parte
+        window.fetchProducts = async function() {
+            const productsGrid = document.getElementById('products-grid');
+            const noProductsMessage = document.getElementById('no-products-message');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const hiddenCategoryId = document.getElementById('hidden_category_id');
+            const searchInput = document.getElementById('search_query');
+            const pageTitle = document.getElementById('page-title');
+            const selectedCategoryText = document.getElementById('selected-category-text');
+
+            const categoryId = hiddenCategoryId.value;
+            const searchQuery = searchInput.value;
+
+            const url = new URL(BASE_AJAX_PRODUCTS_URL);
+
+            url.searchParams.set('category_id', categoryId);
+            if (searchQuery) {
+                url.searchParams.set('query', searchQuery);
+            }
+            url.searchParams.set('ajax', 'true');
+
+            productsGrid.innerHTML = '';
+            if (noProductsMessage) noProductsMessage.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+
+            try {
+                const response = await fetch(url.toString(), {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.displaying_category_name) {
+                    if (categoryId == CURRENT_MAIN_CATEGORY_ID) {
+                        pageTitle.textContent = `Nuestros Productos para tu ${CURRENT_MAIN_CATEGORY_NAME}`;
+                        selectedCategoryText.textContent = `Todas las categorías de ${CURRENT_MAIN_CATEGORY_NAME}`;
+                    } else {
+                        const selectedCatObj = data.categories.find(cat => cat.id == categoryId);
+                        if (selectedCatObj) {
+                            selectedCategoryText.textContent = selectedCatObj.name;
+                        }
                     }
                 }
-            }
 
-            if (data.products && data.products.length > 0) {
-                data.products.forEach(product => {
-                    productsGrid.insertAdjacentHTML('beforeend', renderProductCard(product));
-                });
-            } else {
+                if (data.products && data.products.length > 0) {
+                    data.products.forEach(product => {
+                        productsGrid.insertAdjacentHTML('beforeend', renderProductCard(product));
+                    });
+                } else {
+                    productsGrid.innerHTML = `
+                        <div class="col-span-full text-center text-gray-600 text-xl py-10" id="no-products-message">
+                            No se encontraron productos en esta categoría.
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Error fetching products:', error);
                 productsGrid.innerHTML = `
-                    <div class="col-span-full text-center text-gray-600 text-xl py-10" id="no-products-message">
-                        No se encontraron productos en esta categoría.
+                    <div class="col-span-full text-center text-red-600 text-xl py-10" id="error-message">
+                        Hubo un error al cargar los productos. Por favor, inténtalo de nuevo.
                     </div>
                 `;
+            } finally {
+                loadingSpinner.classList.add('hidden');
             }
-            
-        } catch (error) {
-            console.error('Error fetching products:', error);
-            productsGrid.innerHTML = `
-                <div class="col-span-full text-center text-red-600 text-xl py-10" id="error-message">
-                    Hubo un error al cargar los productos. Por favor, inténtalo de nuevo.
+        };
+
+        // Función para renderizar una sola tarjeta de producto (Puede ser global)
+        window.renderProductCard = function(product) { // La hacemos global también
+            const hasPromotions = product.applied_promotions && product.applied_promotions.length > 0;
+            const originalPriceHtml = (hasPromotions && parseFloat(product.final_price) < parseFloat(product.price))
+                ? `<p class="text-[var(--dark-gray)] text-lg line-through mb-1">S/.${parseFloat(product.price).toFixed(2)}</p>`
+                : '';
+            const displayPrice = parseFloat(product.final_price || product.price).toFixed(2);
+
+            const dataProductPromotions = JSON.stringify(product.applied_promotions || []);
+
+            return `
+                <div class="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col justify-between cursor-pointer product-card-trigger select-none"
+                     style="border-color: var(--medium-gray);"
+                     data-product-id="${product.id}"
+                     data-product-name="${product.name}"
+                     data-product-description="${product.description}"
+                     data-product-price="${parseFloat(product.price).toFixed(2)}"
+                     data-product-image="${product.image_url}"
+                     data-product-stock="${product.stock}"
+                     data-product-promotions='${dataProductPromotions}'
+                     data-product-category="${product.category_name}"
+                     data-product-final-price="${displayPrice}"
+                     data-product-gift-quantity="${product.gift_quantity || 0}">
+
+                    <div class="relative overflow-hidden group">
+                        <img src="${product.image_url}" alt="${product.name}"
+                             class="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105 select-none"
+                             loading="lazy">
+                        ${hasPromotions ? `<span class="absolute top-2 left-2 bg-[var(--yellow-dark)] text-white text-xs font-semibold px-2 py-1 rounded-full shadow select-none">Oferta</span>` : ''}
+                    </div>
+
+                    <div class="p-4 flex-grow">
+                        <h2 class="text-xl font-semibold text-[var(--black)] mb-2 line-clamp-2" title="${product.name}">${product.name}</h2>
+                        <p class="text-[var(--dark-gray)] text-sm mb-3 line-clamp-3">${product.description}</p>
+
+                        ${hasPromotions ? product.applied_promotions.map(promoTitle => `
+                            <p class="text-sm text-[var(--yellow-dark)] font-semibold mb-2">🎁 ${promoTitle}</p>
+                        `).join('') : ''}
+
+                        ${originalPriceHtml}
+                        <p class="text-[var(--bluey-dark)] text-2xl font-bold mb-4">S/.${displayPrice}</p>
+                    </div>
+
+                    <div class="p-4 border-t border-[var(--medium-gray)]">
+                        <button
+                            class="add-to-cart-btn w-full px-4 py-2 bg-[var(--bluey-primary)] hover:bg-[var(--bluey-secondary)] text-white font-semibold rounded-lg shadow-md transition-colors duration-200"
+                            data-id="${product.id}">
+                            🛒 Agregar al carrito
+                        </button>
+                    </div>
                 </div>
             `;
-        } finally {
-            loadingSpinner.classList.add('hidden');
-        }
-    }
+        };
+    }); // Fin de DOMContentLoaded
 </script>
 @endsection

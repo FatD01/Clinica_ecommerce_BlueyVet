@@ -1,0 +1,633 @@
+/*
+* resources/css/Vet/panel.css - ¡Versión con !important para forzar el layout!
+* Estilos globales para el layout del panel de control
+* Basado en panelvet.blade.php
+*/
+
+/* --- Variables de colores --- */
+:root {
+    --bluey-dark: #393859;
+    --bluey-primary: #74bcec;
+    --bluey-light: #CEE4F2;
+    --bluey-light-yellow: #F2DC6D;
+    --bluey-gold-yellow: #F2C879;
+    --bluey-secondary: #e47c34;
+    --bluey-secondary-light: #ddc06e;
+    --bluey-secondary-light2: #d6e9f0;
+    --white: #ffffff;
+    --gray-light: #f5f7fa;
+    --gray-medium: #e1e5eb;
+    --gray-dark: #6b7280;
+    --success: #10b981;
+    --error: #ef4444;
+
+    /* Sombras sutiles para elementos del panel */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* --- Reset básico y estilos globales del body --- */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    height: 100% !important; /* Forzar altura */
+}
+
+body {
+    font-family: 'Poppins', sans-serif !important; /* Forzar fuente */
+    background-color: var(--gray-light) !important; /* Forzar background */
+    color: var(--bluey-dark) !important; /* Forzar color de texto */
+    line-height: 1.6 !important;
+    overflow-x: hidden !important; /* Evita el scroll horizontal en el body */
+    min-height: 100vh !important; /* Asegura que el body ocupe al menos la altura de la ventana */
+    display: flex !important; /* Para asegurar que .container-fluid-custom ocupe todo el espacio */
+    flex-direction: column !important; /* Para asegurar el flex column */
+}
+
+/* Custom Scrollbar for the body (estilo limpio) */
+body::-webkit-scrollbar { width: 10px !important; }
+body::-webkit-scrollbar-track { background: var(--gray-light) !important; border-radius: 10px !important; }
+body::-webkit-scrollbar-thumb {
+    background-color: var(--bluey-light) !important;
+    border-radius: 10px !important;
+    border: 2px solid var(--gray-light) !important;
+}
+body::-webkit-scrollbar-thumb:hover { background-color: var(--bluey-primary) !important; }
+
+
+/* --- Contenedor principal del Layout (container-fluid-custom) --- */
+.container-fluid-custom {
+    display: flex !important; /* CRUCIAL: Convierte este en el contenedor flex principal */
+    flex-grow: 1 !important; /* Permite que ocupe el espacio vertical restante del body */
+    width: 100% !important; /* Forzar ancho */
+    height: 100% !important; /* Asegurar altura completa */
+}
+
+
+/* --- Sidebar Styles --- */
+.sidebar {
+    width: 280px !important; /* ¡Forzado! */
+    min-width: 280px !important; /* Asegura que no se encoja */
+    height: 100vh !important; /* Ocupa toda la altura de la ventana */
+    position: fixed !important; /* Fijo en la pantalla */
+    top: 0 !important;
+    left: 0 !important;
+    background: linear-gradient(135deg, var(--bluey-dark) 0%, var(--bluey-primary) 100%) !important; /* Forzar background */
+    color: var(--white) !important;
+    padding: 2rem 1.5rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    z-index: 1000 !important; /* Asegura que esté por encima de otros elementos */
+    box-shadow: var(--shadow-lg) !important; /* Sombra para profundidad */
+    overflow-y: auto !important; /* Permite scroll si el contenido del sidebar es largo */
+    transition: all 0.3s ease-in-out !important; /* Transición para responsive o animaciones */
+}
+
+/* Scrollbar para el sidebar */
+.sidebar::-webkit-scrollbar { width: 8px !important; }
+.sidebar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05) !important; border-radius: 10px !important; }
+.sidebar::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.2) !important; border-radius: 10px !important; }
+.sidebar::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.3) !important; }
+
+
+.brand {
+    font-size: 2.2rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 2.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    color: var(--bluey-light-yellow) !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.brand i {
+    margin-right: 12px !important;
+    font-size: 1.8rem !important;
+    color: var(--white) !important;
+}
+
+.sidebar nav {
+    flex-grow: 1 !important;
+}
+
+nav ul {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+nav ul li {
+    margin-bottom: 0.8rem !important;
+}
+
+nav ul li a {
+    display: flex !important;
+    align-items: center !important;
+    padding: 0.9rem 1.2rem !important;
+    color: var(--white) !important;
+    text-decoration: none !important;
+    border-radius: 10px !important;
+    transition: all 0.3s ease !important;
+    font-weight: 500 !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+nav ul li a i {
+    margin-right: 15px !important;
+    font-size: 1.2rem !important;
+    width: 25px !important;
+    text-align: center !important;
+}
+
+/* Estilos de hover - ¡CRÍTICO para el problema del "hover pegado"! */
+nav ul li a:hover {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    transform: translateX(5px) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+/* Estilos para el elemento activo */
+nav ul li a.active {
+    background-color: var(--bluey-primary) !important;
+    box-shadow: var(--shadow-md) !important;
+    font-weight: 600 !important;
+    color: var(--bluey-dark) !important;
+}
+nav ul li a.active i {
+    color: var(--white) !important;
+}
+
+
+.user {
+    margin-top: 2rem !important;
+    padding: 1.2rem !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 10px !important;
+    font-size: 0.95rem !important;
+    text-align: center !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.user strong {
+    color: var(--bluey-light-yellow) !important;
+    font-weight: 700 !important;
+}
+
+
+/* --- Main Content Area Styles --- */
+.main {
+    flex: 1 !important; /* ¡Forzado! */
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-x: hidden !important;
+    /* Este margen es CRUCIAL para compensar el sidebar fijo */
+    margin-left: 280px !important; /* ¡Forzado! */
+    transition: margin-left 0.3s ease-in-out !important;
+    min-height: 100vh !important; /* Asegurar que el main sea alto */
+}
+
+.header {
+    padding: 1.2rem 2.5rem !important;
+    background-color: var(--white) !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    box-shadow: var(--shadow-sm) !important;
+    z-index: 10 !important;
+    position: sticky !important;
+    top: 0 !important;
+}
+
+.content {
+    flex: 1 !important;
+    padding: 2.5rem !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Custom Scrollbar for .content (similar al body, pero para el área de contenido) */
+.content::-webkit-scrollbar { width: 10px !important; }
+.content::-webkit-scrollbar-track { background: var(--gray-light) !important; border-radius: 10px !important; }
+.content::-webkit-scrollbar-thumb {
+    background-color: var(--bluey-light) !important;
+    border-radius: 10px !important;
+    border: 2px solid var(--gray-light) !important;
+}
+.content::-webkit-scrollbar-thumb:hover { background-color: var(--bluey-primary) !important; }
+
+
+/* --- Estilos generales para cards, formularios y botones (aplicables en todo el panel) --- */
+
+.content-wrapper {
+    background-color: var(--white) !important;
+    padding: 2.5rem !important;
+    border-radius: 15px !important;
+    box-shadow: var(--shadow-md) !important;
+    margin-bottom: 2rem !important;
+    flex-grow: 1 !important;
+}
+
+/* Clase más genérica para cards, adaptable */
+.panel-card {
+    background-color: var(--white) !important;
+    border-radius: 15px !important;
+    box-shadow: var(--shadow-md) !important;
+    padding: 2.5rem !important;
+    max-width: 900px !important;
+    margin: 2rem auto !important;
+}
+
+.panel-card-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 2.5rem !important;
+    padding-bottom: 1.5rem !important;
+    border-bottom: 1px solid var(--gray-medium) !important;
+}
+
+.panel-card-title {
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    color: var(--bluey-dark) !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.panel-card-title i {
+    margin-right: 15px !important;
+    color: var(--bluey-primary) !important;
+    font-size: 1.8rem !important;
+}
+
+.form-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+    gap: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.form-group {
+    margin-bottom: 0 !important;
+}
+
+.form-label {
+    display: block !important;
+    margin-bottom: 0.6rem !important;
+    font-weight: 600 !important;
+    color: var(--bluey-dark) !important;
+    font-size: 0.95rem !important;
+}
+
+
+.notification-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: red;
+    border-radius: 50%;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+    width: 100% !important;
+    padding: 0.9rem 1.2rem !important;
+    border: 1px solid var(--gray-medium) !important;
+    border-radius: 10px !important;
+    font-size: 1rem !important;
+    transition: all 0.3s ease !important;
+    background-color: var(--gray-light) !important;
+    color: var(--bluey-dark) !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+    outline: none !important;
+    border-color: var(--bluey-primary) !important;
+    box-shadow: 0 0 0 4px rgba(116, 188, 236, 0.3) !important;
+    background-color: var(--white) !important;
+}
+
+.form-textarea {
+    min-height: 120px !important;
+    resize: vertical !important;
+}
+
+/* Icono para el select personalizado */
+.form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23393859' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 6 6 6 6-6'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 1rem center !important;
+    background-size: 16px 12px !important;
+}
+
+.input-error {
+    border-color: var(--error) !important;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2) !important;
+}
+
+.error-message {
+    color: var(--error) !important;
+    font-size: 0.875rem !important;
+    margin-top: 0.4rem !important;
+    display: block !important;
+}
+
+.btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0.9rem 1.8rem !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    border: none !important;
+    text-decoration: none !important;
+    font-size: 1rem !important;
+}
+
+.btn i {
+    margin-right: 10px !important;
+    font-size: 1.1rem !important;
+}
+
+.btn-primary {
+    background-color: var(--bluey-primary) !important;
+    color: var(--white) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.btn-primary:hover {
+    background-color: #5ca8d8 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.btn-secondary {
+    background-color: var(--gray-medium) !important;
+    color: var(--bluey-dark) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.btn-secondary:hover {
+    background-color: #d1d9e3 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.btn-logout {
+    background-color: var(--bluey-secondary) !important;
+    color: var(--white) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.btn-logout:hover {
+    background-color: #d86b2a !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.form-actions {
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 1.5rem !important;
+    margin-top: 2.5rem !important;
+    padding-top: 2rem !important;
+    border-top: 1px solid var(--gray-medium) !important;
+}
+
+.alert {
+    padding: 1.2rem 1.5rem !important;
+    border-radius: 10px !important;
+    margin-bottom: 1.8rem !important;
+    font-size: 1rem !important;
+    display: flex !important;
+    align-items: center !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.alert i {
+    margin-right: 12px !important;
+    font-size: 1.2rem !important;
+}
+
+.alert-success {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+    color: var(--success) !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.alert-error {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    color: var(--error) !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+/* --- Responsive Design --- */
+
+/* Tablet y dispositivos medianos (992px y abajo) */
+@media (max-width: 992px) {
+    .container-fluid-custom {
+        flex-direction: column !important; /* Forzado */
+    }
+
+    .sidebar {
+        width: 100% !important;
+        height: auto !important;
+        position: static !important; /* Desactiva el fixed en tablet/móviles */
+        padding: 1.5rem !important;
+        box-shadow: var(--shadow-md) !important;
+        border-radius: 0 0 15px 15px !important;
+    }
+
+    .brand {
+        margin-bottom: 1.5rem !important;
+        text-align: center !important;
+        justify-content: center !important;
+    }
+
+    nav ul {
+        display: flex !important;
+        overflow-x: auto !important;
+        padding-bottom: 1rem !important;
+        margin-top: 0 !important;
+        margin-left: -1.5rem !important;
+        padding-right: 1.5rem !important;
+        width: calc(100% + 3rem) !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+    }
+
+    nav ul::-webkit-scrollbar { display: none !important; }
+
+    nav ul li {
+        margin-bottom: 0 !important;
+        margin-right: 0.8rem !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+    }
+
+    nav ul li:last-child { margin-right: 0 !important; }
+
+    nav ul li a {
+        padding: 0.7rem 1rem !important;
+        font-size: 0.9rem !important;
+    }
+    nav ul li a i {
+        margin-right: 8px !important;
+        font-size: 1rem !important;
+    }
+
+    .user {
+        display: none !important;
+    }
+
+    .main {
+        margin-left: 0 !important; /* Elimina el margen en móvil */
+        padding-top: 1.5rem !important;
+        min-height: 100vh !important;
+    }
+
+    .header {
+        padding: 1rem 1.5rem !important;
+        border-radius: 15px 15px 0 0 !important;
+        margin: 0 1.5rem !important;
+        width: auto !important;
+    }
+
+    .content {
+        padding: 1.5rem !important;
+        margin: 0 1.5rem 1.5rem 1.5rem !important;
+        border-radius: 0 0 15px 15px !important;
+        box-shadow: var(--shadow-md) !important;
+        background-color: var(--white) !important;
+    }
+
+    .panel-card {
+        margin: 0 auto !important;
+    }
+}
+
+/* Teléfonos y dispositivos pequeños (768px y abajo) */
+@media (max-width: 768px) {
+    .header {
+        justify-content: center !important;
+        padding: 1rem !important;
+        margin: 0 1rem !important;
+    }
+
+    .panel-card {
+        padding: 2rem 1.5rem !important;
+    }
+
+    .panel-card-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        margin-bottom: 1.5rem !important;
+    }
+
+    .panel-card-title {
+        font-size: 1.8rem !important;
+        margin-bottom: 1rem !important;
+    }
+    .panel-card-title i {
+        font-size: 1.5rem !important;
+    }
+
+    .form-actions {
+        flex-direction: column !important;
+        gap: 0.8rem !important;
+        margin-top: 1.5rem !important;
+        padding-top: 1rem !important;
+    }
+
+    .btn {
+        width: 100% !important;
+        margin-bottom: 0.5rem !important;
+    }
+    .btn:last-child { margin-bottom: 0 !important; }
+}
+
+/* Teléfonos más pequeños (576px y abajo) */
+@media (max-width: 576px) {
+    .sidebar {
+        padding: 1rem !important;
+    }
+    .brand {
+        font-size: 1.8rem !important;
+        margin-bottom: 1rem !important;
+    }
+    .brand i {
+        font-size: 1.3rem !important;
+    }
+
+    nav ul li a {
+        padding: 0.6rem 0.8rem !important;
+        font-size: 0.85rem !important;
+    }
+    nav ul li a i {
+        margin-right: 5px !important;
+    }
+
+    .header {
+        padding: 0.8rem 1rem !important;
+        margin: 0 0.5rem !important;
+    }
+
+    .content {
+        padding: 1rem !important;
+        margin: 0 0.5rem 0.5rem 0.5rem !important;
+    }
+
+    .panel-card {
+        padding: 1.5rem !important;
+        margin: 1rem auto !important;
+    }
+
+    .panel-card-title {
+        font-size: 1.5rem !important;
+    }
+    .panel-card-title i {
+        font-size: 1.2rem !important;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    .form-label {
+        font-size: 0.9rem !important;
+    }
+    .form-input, .form-textarea, .form-select {
+        padding: 0.7rem 1rem !important;
+        font-size: 0.9rem !important;
+    }
+    .error-message {
+        font-size: 0.8rem !important;
+    }
+
+    .btn {
+        padding: 0.7rem 1.2rem !important;
+        font-size: 0.9rem !important;
+    }
+    .btn i {
+        font-size: 1rem !important;
+    }
+}

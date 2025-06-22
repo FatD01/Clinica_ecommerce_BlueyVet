@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use App\Services\ExchangeRateService; // Tu servicio para tasas de cambio
 
+use Barryvdh\DomPDF\Facade\Pdf;  //libreria de pdf 
+
 // Importa tus nuevos modelos de Order y OrderItem
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -129,6 +131,42 @@ class ProductPaymentController extends Controller
 
         $amountForPayPal = sprintf("%.2f", (float)$itemTotalForPayPal + (float)$shippingForPayPal + (float)$taxForPayPal);
 
+
+
+        //fabricio estuvoo aqui, si da error, borrar desde aqui hasta el fin
+        $customerAddress = null;
+        $user = Auth::user(); // Obtener el usuario autenticado
+
+        if ($user) {
+            // Asumiendo que el modelo User tiene una relación 'cliente'
+            // Y que el modelo Cliente tiene un campo 'direccion'
+            if ($user->cliente) { 
+                $customerAddress = $user->cliente->direccion;
+                Log::info('DEBUG: Dirección del cliente obtenida del modelo Cliente: ' . $customerAddress);
+            } else {
+                // Si la dirección está directamente en el modelo User
+                // o si Auth::user() ya es tu modelo Cliente
+                $customerAddress = $user->direccion ?? null; 
+                if ($customerAddress) {
+                    Log::info('DEBUG: Dirección del cliente obtenida directamente del modelo User: ' . $customerAddress);
+                } else {
+                    Log::warning('DEBUG: Usuario autenticado pero no se encontró dirección en user->cliente ni en user->direccion.');
+                }
+            }
+        } else {
+            Log::warning('DEBUG: Usuario no autenticado al intentar obtener la dirección.');
+            // Puedes decidir si permites pedidos de invitados y cómo manejar su dirección.
+            // Para este ejemplo, si no hay usuario, la dirección quedará como null.
+        }
+
+
+
+        //fin de fabricio estuvo aqui
+
+
+
+
+
         // 4. Crear la orden en tu base de datos (estado 'pending')
         try {
             $order = Order::create([
@@ -138,6 +176,7 @@ class ProductPaymentController extends Controller
                 'status' => 'pending',
                 'paypal_order_id' => null,
                 'payment_details' => null,
+                'customer_address' => $customerAddress,
             ]);
 
             foreach ($cartItems as $item) {
@@ -236,128 +275,151 @@ class ProductPaymentController extends Controller
     /**
      * Maneja el callback de PayPal después de un pago exitoso para productos.
      */
-    public function paypalSuccess(Request $request)
-    {
-        Log::info('Accediendo a cart_payments.success', $request->all());
-        $token = $request->get('token');
+  public function paypalSuccess(Request $request)
+{
+    Log::info('Accediendo a cart_payments.success', $request->all());
+    $token = $request->get('token');
 
-        if (empty($token)) {
-            Log::error('Token de orden de PayPal faltante en la URL de éxito para productos.');
-            return redirect()->route('cart.index')->with('error', 'Faltan datos para verificar tu pago. Por favor, contacta a soporte.');
+    if (empty($token)) {
+        Log::error('Token de orden de PayPal faltante en la URL de éxito para productos.');
+        return redirect()->route('cart.index')->with('error', 'Faltan datos para verificar tu pago. Por favor, contacta a soporte.');
+    }
+
+    $client = $this->client();
+    $order = null;
+    $invoicePdfPath = null; // *** Inicializa la variable para la ruta del PDF ***
+
+    try {
+        $requestGetOrder = new OrdersGetRequest($token);
+        $response = $client->execute($requestGetOrder);
+
+        Log::info('PayPal Get Product Order Response:', ['response' => json_encode($response->result, JSON_PRETTY_PRINT)]);
+
+        $paypalOrderId = $response->result->id;
+        $purchaseUnit = $response->result->purchase_units[0];
+        $referenceId = $purchaseUnit->reference_id ?? null;
+
+        if (empty($referenceId)) {
+            Log::error('reference_id no encontrado en la respuesta de PayPal (productos), no se puede vincular a la orden local.');
+            return redirect()->route('cart.index')->with('error', 'Pago exitoso, pero no pudimos vincularlo a tu orden de productos. Contacta a soporte.');
         }
 
-        $client = $this->client();
-        $order = null;
+        $order = Order::find($referenceId);
 
-        try {
-            // 1. Obtener los detalles de la orden de PayPal
-            $requestGetOrder = new OrdersGetRequest($token);
-            $response = $client->execute($requestGetOrder);
+        if (!$order) {
+            Log::error('Order local no encontrada en cart_payments.success.', ['reference_id' => $referenceId, 'paypal_order_id' => $paypalOrderId]);
+            return redirect()->route('cart.index')->with('error', 'La orden de productos asociada a tu pago no pudo ser encontrada.');
+        }
 
-            Log::info('PayPal Get Product Order Response:', ['response' => json_encode($response->result, JSON_PRETTY_PRINT)]);
+        if (strtolower($order->status) === 'completed') {
+            Log::info('La orden de productos local ' . $order->id . ' ya estaba completada. Redirigiendo a página principal con modal.');
+            Session::flash('info', 'Tu pago de productos ya había sido confirmado previamente.');
+            // Si ya estaba completada, asumimos que el PDF ya existe y el correo se envió
+            Session::flash('show_product_order_modal', true);
+            Session::flash('confirmed_product_order_id', $order->id);
+            // Redirige a la vista principal de productos
+            return redirect()->route('client.products.petshop'); // Asumiendo esta es tu ruta principal de productos
+        }
 
-            $paypalOrderId = $response->result->id;
-            $purchaseUnit = $response->result->purchase_units[0];
-            $referenceId = $purchaseUnit->reference_id ?? null;
+        if ($response->result->status == 'APPROVED') {
+            $requestCapture = new OrdersCaptureRequest($token);
+            $responseCapture = $client->execute($requestCapture);
 
-            if (empty($referenceId)) {
-                Log::error('reference_id no encontrado en la respuesta de PayPal (productos), no se puede vincular a la orden local.');
-                return redirect()->route('cart.index')->with('error', 'Pago exitoso, pero no pudimos vincularlo a tu orden de productos. Contacta a soporte.');
-            }
+            Log::info('PayPal Capture Product Order Response (after APPROVED):', ['response' => json_encode($responseCapture->result, JSON_PRETTY_PRINT)]);
 
-            $order = Order::find($referenceId);
+            if (isset($responseCapture->result->status) && $responseCapture->result->status == 'COMPLETED') {
+                $order->status = 'completed';
+                $order->paypal_order_id = $paypalOrderId;
+                $order->paypal_payment_id = $responseCapture->result->purchase_units[0]->payments->captures[0]->id ?? null;
+                $order->payment_details = json_encode($responseCapture->result);
+                $order->save();
 
-            if (!$order) {
-                Log::error('Order local no encontrada en cart_payments.success.', ['reference_id' => $referenceId, 'paypal_order_id' => $paypalOrderId]);
-                return redirect()->route('cart.index')->with('error', 'La orden de productos asociada a tu pago no pudo ser encontrada.');
-            }
+                Session::forget('cart');
 
-            // Verificar si la orden ya fue completada para evitar doble procesamiento
-            if (strtolower($order->status) === 'completed') {
-                Log::info('La orden de productos local ' . $order->id . ' ya estaba completada. Redirigiendo a página de confirmación.');
-                Session::flash('info', 'Tu pago de productos ya había sido confirmado previamente.');
-                // Usar la nueva ruta 'cart_payments.order_details'
-                return redirect()->route('cart_payments.order_details', $order->id);
-            }
-
-            // 2. Capturar el pago si la orden de PayPal está en estado 'APPROVED'
-            if ($response->result->status == 'APPROVED') {
-                $requestCapture = new OrdersCaptureRequest($token);
-                $responseCapture = $client->execute($requestCapture);
-
-                Log::info('PayPal Capture Product Order Response (after APPROVED):', ['response' => json_encode($responseCapture->result, JSON_PRETTY_PRINT)]);
-
-                if (isset($responseCapture->result->status) && $responseCapture->result->status == 'COMPLETED') {
-                    $order->status = 'completed';
-                    $order->paypal_order_id = $paypalOrderId;
-                    $order->paypal_payment_id = $responseCapture->result->purchase_units[0]->payments->captures[0]->id ?? null;
-                    $order->payment_details = json_encode($responseCapture->result);
-                    $order->save();
-
-                    Session::forget('cart');
-
-                    foreach ($order->items as $orderItem) {
-                        $product = Product::find($orderItem->product_id);
-                        if ($product && $product->stock >= $orderItem->quantity) {
-                            $product->decrement('stock', $orderItem->quantity);
-                            Log::info('Stock decrementado para producto ID: ' . $product->id . ', cantidad: ' . $orderItem->quantity);
-                        } else {
-                            Log::warning('No se pudo decrementar el stock para producto ID: ' . ($product->id ?? $orderItem->product_id) . '. Stock actual: ' . ($product->stock ?? 'N/A') . ', cantidad pedida: ' . $orderItem->quantity);
-                        }
+                foreach ($order->items as $orderItem) {
+                    $product = Product::find($orderItem->product_id);
+                    if ($product && $product->stock >= $orderItem->quantity) {
+                        $product->decrement('stock', $orderItem->quantity);
+                        Log::info('Stock decrementado para producto ID: ' . $product->id . ', cantidad: ' . $orderItem->quantity);
+                    } else {
+                        Log::warning('No se pudo decrementar el stock para producto ID: ' . ($product->id ?? $orderItem->product_id) . '. Stock actual: ' . ($product->stock ?? 'N/A') . ', cantidad pedida: ' . $orderItem->quantity);
                     }
-
-                    try {
-                        $recipientEmail = $order->user ? $order->user->email : ($responseCapture->result->payer->email_address ?? null);
-                        if ($recipientEmail) {
-                            Mail::to($recipientEmail)->send(new ProductOrderConfirmationMail($order));
-                            Log::info('Correo de confirmación de pedido de productos ' . $order->id . ' enviado a: ' . $recipientEmail);
-                        } else {
-                            Log::warning("No recipient email found for product order ID: {$order->id}. Cannot send confirmation email.");
-                        }
-                    } catch (\Exception $mailEx) {
-                        Log::error("Error al enviar correo de confirmación para la orden de productos " . $order->id . ": " . $mailEx->getMessage());
-                    }
-
-                    Session::flash('success', '¡Pago de productos procesado con éxito! Tu pedido ha sido confirmado.');
-                    // Usar la nueva ruta 'cart_payments.order_details'
-                    return redirect()->route('cart_payments.order_details', $order->id);
-                } else {
-                    $order->status = 'failed';
-                    $order->payment_details = json_encode($responseCapture->result);
-                    $order->save();
-                    Log::error('PayPal Capture Product Order Failed:', ['order_id' => $order->id, 'response' => $responseCapture->result]);
-                    return redirect()->route('cart.index')->with('error', $responseCapture->result->message ?? 'El pago de productos no se pudo completar. Por favor, inténtalo de nuevo.');
                 }
+                //dsshh
+                // --- INICIO: Lógica para GENERAR el PDF del comprobante ---
+                try {
+                    $pdf = Pdf::loadView('pdf.product_invoice', compact('order'));
+                    $directory = storage_path('app/public/invoices/products');
+                    if (!file_exists($directory)) {
+                        mkdir($directory, 0755, true);
+                    }
+                    $invoiceFileName = 'comprobante_producto_' . $order->id . '.pdf';
+                    $invoicePdfPath = $directory . '/' . $invoiceFileName;
+                    $pdf->save($invoicePdfPath);
+                    Log::info('PDF del comprobante de producto generado y guardado en: ' . $invoicePdfPath);
+                } catch (\Exception $pdfEx) {
+                    Log::error("Error al generar o guardar el PDF del comprobante de producto para la orden " . $order->id . ": " . $pdfEx->getMessage());
+                    $invoicePdfPath = null;
+                }
+                // --- FIN: Lógica para GENERAR el PDF del comprobante ---
+
+                try {
+                    $recipientEmail = $order->user ? $order->user->email : ($responseCapture->result->payer->email_address ?? null);
+                    if ($recipientEmail) {
+                        Mail::to($recipientEmail)->send(new ProductOrderConfirmationMail($order, $invoicePdfPath));
+                        Log::info('Correo de confirmación de pedido de productos ' . $order->id . ' enviado a: ' . $recipientEmail . ' (adjunto: ' . ($invoicePdfPath ? 'sí' : 'no') . ')');
+                    } else {
+                        Log::warning("No recipient email found for product order ID: {$order->id}. Cannot send confirmation email.");
+                    }
+                } catch (\Exception $mailEx) {
+                    Log::error("Error al enviar correo de confirmación para la orden de productos " . $order->id . ": " . $mailEx->getMessage());
+                }
+
+                // *** CAMBIO CLAVE AQUÍ ***
+                Session::flash('success_message', '¡Pago de productos procesado con éxito! Tu pedido ha sido confirmado.');
+                Session::flash('show_product_order_modal', true);
+                Session::flash('confirmed_product_order_id', $order->id);
+
+                // Redirige a la vista principal de productos (donde quieres que aparezca el modal)
+                return redirect()->route('client.products.petshop'); // Asumiendo que esta es la ruta a client/products/petshop.blade.php
+
             } else {
                 $order->status = 'failed';
-                $order->payment_details = json_encode($response->result);
+                $order->payment_details = json_encode($responseCapture->result);
                 $order->save();
-                Log::warning('Orden de PayPal de productos no aprobada o estado inesperado: ' . ($response->result->status ?? 'N/A') . ', ID de Orden: ' . $paypalOrderId);
-                return redirect()->route('cart.index')->with('error', 'El estado de la orden de PayPal no es válido para la captura. Estado: ' . ($response->result->status ?? 'Desconocido'));
+                Log::error('PayPal Capture Product Order Failed:', ['order_id' => $order->id, 'response' => $responseCapture->result]);
+                return redirect()->route('cart.index')->with('error', $responseCapture->result->message ?? 'El pago de productos no se pudo completar. Por favor, inténtalo de nuevo.');
             }
-        } catch (HttpException $ex) {
-            $errorDetails = json_decode($ex->getMessage(), true);
-            Log::error('Error de PayPal (HttpException) al obtener/capturar la orden de productos en success:', [
-                'status' => $ex->statusCode,
-                'message' => $ex->getMessage(),
-                'details' => $errorDetails,
-                'trace' => $ex->getTraceAsString()
-            ]);
-            if (isset($order) && $order->exists()) {
-                $order->update(['status' => 'failed', 'payment_details' => json_encode($errorDetails)]);
-            }
-            return redirect()->route('cart.index')->with('error', 'Error al procesar el pago de productos con PayPal: ' . ($errorDetails['message'] ?? 'Error desconocido.'));
-        } catch (\Exception $ex) {
-            Log::error('Error general al procesar la orden de PayPal de productos en success:', [
-                'message' => $ex->getMessage(),
-                'trace' => $ex->getTraceAsString()
-            ]);
-            if (isset($order) && $order->exists()) {
-                $order->update(['status' => 'failed', 'payment_details' => json_encode(['error' => $ex->getMessage()])]);
-            }
-            return redirect()->route('cart.index')->with('error', 'Ocurrió un error interno al verificar tu pago de productos. Por favor, inténtalo de nuevo.');
+        } else {
+            $order->status = 'failed';
+            $order->payment_details = json_encode($response->result);
+            $order->save();
+            Log::warning('Orden de PayPal de productos no aprobada o estado inesperado: ' . ($response->result->status ?? 'N/A') . ', ID de Orden: ' . $paypalOrderId);
+            return redirect()->route('cart.index')->with('error', 'El estado de la orden de PayPal no es válido para la captura. Estado: ' . ($response->result->status ?? 'Desconocido'));
         }
+    } catch (HttpException $ex) {
+        $errorDetails = json_decode($ex->getMessage(), true);
+        Log::error('Error de PayPal (HttpException) al obtener/capturar la orden de productos en success:', [
+            'status' => $ex->statusCode,
+            'message' => $ex->getMessage(),
+            'details' => $errorDetails,
+            'trace' => $ex->getTraceAsString()
+        ]);
+        if (isset($order) && $order->exists()) {
+            $order->update(['status' => 'failed', 'payment_details' => json_encode($errorDetails)]);
+        }
+        return redirect()->route('cart.index')->with('error', 'Error al procesar el pago de productos con PayPal: ' . ($errorDetails['message'] ?? 'Error desconocido.'));
+    } catch (\Exception $ex) {
+        Log::error('Error general al procesar la orden de PayPal de productos en success:', [
+            'message' => $ex->getMessage(),
+            'trace' => $ex->getTraceAsString()
+        ]);
+        if (isset($order) && $order->exists()) {
+            $order->update(['status' => 'failed', 'payment_details' => json_encode(['error' => $ex->getMessage()])]);
+        }
+        return redirect()->route('cart.index')->with('error', 'Ocurrió un error interno al verificar tu pago de productos. Por favor, inténtalo de nuevo.');
     }
+}
 
     /**
      * Maneja la redirección de PayPal cuando el usuario cancela el pago de productos.

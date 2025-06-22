@@ -9,6 +9,9 @@ use App\Models\Promotion; // Asegúrate de que esto esté importado
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log; // Importar el Facade de Log
 
+use App\Models\Cliente;
+use Illuminate\Support\Facades\Auth; 
+
 class CartController extends Controller
 {
     /**
@@ -297,8 +300,16 @@ class CartController extends Controller
         $cart = $revalidatedData['cart'];
         $total = $revalidatedData['total'];
 
+
+        $cliente = null;
+        if (Auth::check()) {
+            $user = Auth::user();
+            $cliente = $user->cliente;
+        }
+
         // 3. Renderiza la vista con los datos ya listos
-        $html = view('components.cart-floating', compact('cart', 'total'))->render();
+        $html = view('components.cart-floating', compact('cart', 'total', 'cliente'))->render();
+
         return response()->json(['html' => $html]);
     }
 }

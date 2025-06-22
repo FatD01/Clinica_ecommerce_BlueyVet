@@ -26,17 +26,23 @@
                 <h3 class="text-lg font-semibold text-bluey-primary mb-4 pb-2 border-b border-bluey-primary/30">Enlaces Rápidos</h3>
                 <ul class="space-y-3">
                     <li><a href="{{ route('client.home') }}" class="text-bluey-dark hover:text-bluey-primary transition duration-300 flex items-center">
-                        <i class="fas fa-chevron-right text-xs text-bluey-primary hover:text-bluey-dark mr-2"></i> Inicio</a></li>
-                    <li><a href="{{ route('client.citas.create') }}"class=" text-bluey-dark hover:text-bluey-primary transition duration-300 flex items-center">
-                        <i class="fas fa-chevron-right text-xs text-bluey-primary mr-2"></i> Agendar Cita</a></li>
+                            <i class="fas fa-chevron-right text-xs text-bluey-primary hover:text-bluey-dark mr-2"></i> Inicio</a></li>
+                    <li><a href="{{ route('client.citas.create') }}" class=" text-bluey-dark hover:text-bluey-primary transition duration-300 flex items-center">
+                            <i class="fas fa-chevron-right text-xs text-bluey-primary mr-2"></i> Agendar Cita</a></li>
                     <li><a href="{{ route('client.citas.index') }}" class="text-bluey-dark hover:text-bluey-primary transition duration-300 flex items-center">
-                        <i class="fas fa-chevron-right text-xs text-bluey-primary mr-2"></i> Mis Citas</a></li>
-                    <li><a href="#" class=" text-bluey-dark hover:text-bluey-primary transition duration-300 flex items-center">
-                        <i class="fas fa-chevron-right text-xs text-bluey-primary mr-2"></i> Servicios</a></li>
+                            <i class="fas fa-chevron-right text-xs text-bluey-primary mr-2"></i> Mis Citas</a></li>
+                    <li><a href="{{route('client.servicios.index')}}" class=" text-bluey-dark hover:text-bluey-primary transition duration-300 flex items-center">
+                            <i class="fas fa-chevron-right text-xs text-bluey-primary mr-2"></i> Servicios</a></li>
+                    <li><a href="{{ route('about.us') }}" class=" text-bluey-dark hover:text-bluey-primary transition duration-300 flex items-center">
+                            <i class="fas fa-chevron-right text-xs text-bluey-primary mr-2"></i> Nosotros</a></li>
+                    <li><a href="{{ route('faqs.index') }}" class=" text-bluey-dark hover:text-bluey-primary transition duration-300 flex items-center">
+                            <i class="fas fa-chevron-right text-xs text-bluey-primary mr-2"></i> FAQ</a></li>
+    
                 </ul>
+
             </div>
 
-            
+
             <div class="col-span-1 md:col-span-2 lg:col-span-1 space-y-8 px-4"> {{-- Puede ocupar más columnas en md para mejor layout --}}
                 <div>
                     <h3 class="text-lg font-semibold text-bluey-primary mb-4 pb-2 border-b border-bluey-primary/30">Horario</h3>
@@ -50,7 +56,7 @@
                         </li>
                     </ul>
                 </div>
-                
+
                 <div>
                     <h3 class="text-lg font-semibold text-bluey-primary mb-4 pb-2 border-b border-bluey-primary/30">Contacto</h3>
                     <ul class="space-y-3">

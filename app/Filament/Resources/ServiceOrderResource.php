@@ -124,6 +124,7 @@ class ServiceOrderResource extends Resource
             ])
             ->headerActions([
                 Action::make('exportPdf')
+                
                     ->label('Exportar PDF')
                     ->color('danger')
                     ->icon('heroicon-o-document-arrow-down')
@@ -251,7 +252,7 @@ class ServiceOrderResource extends Resource
                 SelectFilter::make('created_at_range')
                     ->label('Rango de Fecha de Creación')
                     ->options([
-                        'all' => 'Todas las fechas',
+                        // 'all' => 'Todas las fechas',
                         'today' => 'Hoy',
                         'yesterday' => 'Ayer',
                         'last_7_days' => 'Últimos 7 días',
@@ -260,7 +261,7 @@ class ServiceOrderResource extends Resource
                         'current_year' => 'Año actual',
                         'last_year_complete' => 'Último año (completo)',
                     ])
-                    ->default('all')
+                    // ->default('all')
                     ->query(function (Builder $query, array $data): Builder {
                         if (empty($data['value']) || $data['value'] === 'all') {
                             return $query;

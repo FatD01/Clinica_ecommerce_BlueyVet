@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('apellido')->nullable(); // Apellido del dueño (opcional, puede estar en users)
             $table->string('telefono')->nullable();
             $table->string('direccion')->nullable();
-            // Otros campos específicos del cliente
             $table->timestamps();
              $table->softDeletes(); // ¡Añade esto!
         });

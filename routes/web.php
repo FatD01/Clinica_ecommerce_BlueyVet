@@ -12,8 +12,10 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Client\CartController;
 use App\Http\Controllers\Client\products\Petshop\ProductController;
 // use App\Http\Controllers\Client\ProductPaymentController;
+use App\Http\Controllers\PagesController;
 
-
+use Illuminate\Support\Facades\Storage; // Asegúrate de que esta línea esté presente
+use App\Models\Order;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +24,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\ProductPaymentController;
 
+use App\Http\Controllers\Client\ContactController;
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\VeterinarianController;
@@ -29,14 +32,35 @@ use App\Http\Controllers\HistorialMedicoController;
 
 // Importa el nuevo BlogController
 use App\Http\Controllers\BlogController; // ¡Importante: Añadir esta línea!
+use App\Http\Controllers\ClientOrderController;
 use App\Http\Controllers\FaqController;
+use App\Http\Controllers\NotificationController;
 
 
-Route::get('/client/home', [HomeController::class, 'index'])->name('client.home');
+// Route::get('/client/home', [HomeController::class, 'index'])->name('client.home'); ESTE TAMPOCO ESSSS
+//COMENTÉ LA LINEA DE ARRIBA
 
-Route::get('/', function () {
-    return view('client.welcome');
-});
+// Route::get('/', function () { COMPROBADO QUE ESTA NO TIENE NADA QUE VER
+//     return view('client.welcome');
+// });
+
+//COMENTÉ LAS LINEAS DE ARRIBA sdasdasd
+// se supone que esta deberia dar la de abajo, la ia  me dijo que solo deberia tener el de abajo
+//porque las demas no tienen controlador, voy a descomentar lo de arriba a ver si asi da,pucha, 
+//el pronblema es que si descomento el de arriba, no va a dar no se cuañ kaajajasdjasdasdas
+//hazme caso mrddddddddddddddddddd
+
+
+
+Route::get('/', [HomeController::class, 'index'])->name('client.home');
+
+
+//sobre nosotros part:
+Route::get('/about-us', [PagesController::class, 'about'])->name('about.us');
+Route::get('/contact-us', [PagesController::class, 'contact'])->name('contact.us');
+
+// Ruta para procesar el formulario de contacto
+Route::post('/contact-us', [ContactController::class, 'store'])->name('contact.store');
 
 // Rutas de servicios (públicas)
 Route::prefix('/servicios')->name('client.servicios.')->group(function () {
@@ -47,14 +71,43 @@ Route::get('/dashboard', function () {
     return view('client.welcome');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+Route::get('/download-invoice/product/{order}', function (Order $order) {
+    // Seguridad: Asegúrate de que solo el usuario propietario de la orden (o un administrador)
+    // pueda descargar este comprobante.
+    // Esto es CRUCIAL para evitar que cualquier persona descargue los comprobantes de otros.
+    if (Auth::id() !== $order->user_id && (!Auth::check() || !Auth::user()->is_admin)) { // Ajusta `is_admin` según cómo defines los roles de admin
+        abort(403, 'No tienes permiso para descargar este comprobante.');
+    }
+
+    $filePath = storage_path('app/public/invoices/products/comprobante_producto_' . $order->id . '.pdf');
+
+    if (file_exists($filePath)) {
+        return response()->download($filePath, 'comprobante_producto_' . $order->id . '.pdf', [
+            'Content-Type' => 'application/pdf',
+        ]);
+    } else {
+        // Registra en los logs si el archivo no se encuentra, esto es útil para depuración
+        Log::warning("Comprobante PDF no encontrado para la orden ID: {$order->id} en la ruta: {$filePath}");
+        abort(404, 'Comprobante no encontrado.');
+    }
+})->name('download.product_invoice'); // ¡Este es el nombre de ruta que Laravel está buscando!
+
+
 // Rutas de usuario autenticado
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
 
     // Rutas de perfil de usuario
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/CientsOrders', [ClientOrderController::class, 'index'])->name('ClientOrders.index');
+    Route::patch('/profile/update-personal', [ProfileController::class, 'updatePersonal'])->name('profile.update-personal');
+    Route::patch('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
 
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::get('/{notification}', [NotificationController::class, 'show'])->name('show');
+    Route::post('/mark-as-read/{notification}', [NotificationController::class, 'markAsRead'])->name('markAsRead');
+    Route::post('/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('markAllAsRead');
+});
     // Rutas de gestión de mascotas para el cliente
     Route::prefix('mi-mascota')->name('client.mascotas.')->group(function () {
         Route::get('/', [MascotaController::class, 'index'])->name('index');
@@ -73,6 +126,27 @@ Route::middleware(['auth'])->group(function () {
         // Ruta para el callback final de pago exitoso (si la ServiceOrder era para una cita)
         Route::get('/complete-booking', [CitaController::class, 'completeBookingAfterPayment'])->name('complete_booking');
         Route::get('/{appointment}', [CitaController::class, 'show'])->name('show'); // El nombre será 'client.citas.show'
+        
+
+        // --- INICIO: NUEVAS RUTAS PARA LA REPROGRAMACIÓN DE CITAS (AGREGAR ESTO) ---
+        // Muestra el formulario para solicitar una reprogramación
+        // El nombre de la ruta será 'client.citas.reprogram.form'
+        Route::get('/{appointment}/reprogramar', [CitaController::class, 'showReprogrammingForm'])->name('reprogram.form');
+        // Envía la solicitud de reprogramación
+        // El nombre de la ruta será 'client.citas.reprogram.submit'
+        Route::post('/{appointment}/reprogramar', [CitaController::class, 'storeReprogrammingRequest'])->name('reprogram.submit');
+        // Muestra el estado de la solicitud de reprogramación
+        // El nombre de la ruta será 'client.citas.reprogram.status'
+        Route::get('/{appointment}/reprogramacion/estado', [CitaController::class, 'showReprogrammingStatus'])->name('reprogram.status');
+        // Permite al cliente confirmar (aceptar/rechazar) una propuesta de reprogramación
+        // Esta ruta debe estar DENTRO del grupo 'auth' y 'verified', pero FUERA del grupo 'client.citas.'
+        // porque el `reprogrammingRequest` ya lleva el ID de la cita. Su nombre será 'client.reprogram.confirm'.
+        // LA COLOQUÉ FUERA PARA EVITAR DUPLICIDADES EN EL PREFIJO.
+        // Si el controlador hace las validaciones de propiedad, está bien así.
+        Route::post('/reprogramacion/{reprogrammingRequest}/confirmar', [CitaController::class, 'confirmReprogrammingRequest'])->name('reprogram.confirm');
+        
+        // --- FIN: NUEVAS RUTAS PARA LA REPROGRAMACIÓN DE CITAS ---
+        Route::get('/available-slots', [CitaController::class, 'getAvailableTimeSlots'])->name('get-available-slots');
     });
 
     // Bloque de Pagos con PayPal
@@ -119,6 +193,8 @@ Route::middleware(['auth'])->group(function () {
 
     });
 
+    
+
 }); // Fin del grupo de middleware 'auth'
 
 // Rutas de Socialite de Google OAuth (Estas DEBEN estar fuera del middleware 'auth')
@@ -150,27 +226,51 @@ Route::get('/test-perf', function () {
 });
 
 
-
 Route::get('/auth/google/callback', function () {
     try {
         $googleUser = Socialite::driver('google')->user();
-        $user = User::where('google_id', $googleUser->id)->first() ?? User::where('email', $googleUser->email)->first();
 
-        if ($user) {
-            Log::info('Usuario encontrado, vinculando ID de Google si es nuevo.', ['email' => $googleUser->email]);
-            $user->google_id = $googleUser->id;
-            $user->email_verified_at = now();
-            $user->save();
+        // Buscar usuario por google_id
+        $user = User::where('google_id', $googleUser->id)->first();
+
+        if (!$user) {
+            // Si no se encontró por google_id, buscar por email para vincular una cuenta existente
+            $user = User::where('email', $googleUser->email)->first();
+
+            if ($user) {
+                // Si el email ya existe y es una cuenta tradicional (o sin provider definido)
+                // y no tiene ya un google_id asignado, lo vinculamos.
+                if (($user->provider === 'email' || $user->provider === null) && $user->google_id === null) {
+                    $user->google_id = $googleUser->id;
+                    $user->provider = 'google'; // Marca la cuenta como vinculada a Google
+                    $user->email_verified_at = now(); // Google ya verificó el email
+                    $user->save();
+                    Log::info('Usuario existente vinculado con Google.', ['email' => $googleUser->email]);
+                } else {
+                    // El email existe pero ya está vinculado a otro proveedor o no es una cuenta tradicional a vincular.
+                    Log::warning('Intento de login con Google para email existente ya vinculado.', ['email' => $googleUser->email, 'existing_provider' => $user->provider]);
+                    return redirect('/login')->with('error', 'Ya existe una cuenta con este email. Inicia sesión con tu método original.');
+                }
+            } else {
+                // Si el usuario no existe por google_id ni por email, crear uno nuevo
+                Log::info('Creando nuevo usuario con datos de Google.', ['email' => $googleUser->email]);
+                $user = User::create([
+                    'name' => $googleUser->name,
+                    'email' => $googleUser->email,
+                    'google_id' => $googleUser->id,
+                    'password' => null, // <--- ¡AHORA ES NULL!
+                    'provider' => 'google', // <--- ¡INDICAMOS EL PROVEEDOR!
+                    'email_verified_at' => now(),
+                    'role' => 'Cliente', // Asegúrate de que el rol por defecto sea el correcto
+                ]);
+            }
         } else {
-            Log::info('Creando nuevo usuario con datos de Google.', ['email' => $googleUser->email]);
-            $user = User::create([
-                'name' => $googleUser->name,
-                'email' => $googleUser->email,
-                'google_id' => $googleUser->id,
-                'password' => Hash::make(Str::random(24)),
-                'email_verified_at' => now(),
-                'role' => 'Cliente',
-            ]);
+            Log::info('Login con Google: Usuario existente encontrado por google_id.', ['email' => $googleUser->email]);
+            // Asegurarse de que el proveedor esté correctamente establecido si no lo estaba antes
+            if ($user->provider !== 'google') {
+                $user->provider = 'google';
+                $user->save();
+            }
         }
 
         Auth::login($user);
@@ -178,10 +278,9 @@ Route::get('/auth/google/callback', function () {
 
     } catch (\Exception $e) {
         Log::error('Error al iniciar sesión con Google: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-        return redirect('/login')->with('error', 'No se pudo iniciar sesión con Google. Inténtalo de nuevo.');
+        return redirect('/login')->with('error', 'No se pudo iniciar sesión con Google. Inténtalo de nuevo. Error: ' . $e->getMessage());
     }
 });
-
 
 //VETERINARIO
 // Ruta raíz que redirige según el estado de autenticación
@@ -234,19 +333,45 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/perfil/editar/{id}', [VeterinarianController::class, 'edit'])->name('veterinarian.edit');
     Route::patch('/veterinario/perfil', [VeterinarianController::class, 'update'])->name('veterinarian.profile.update');
-
+ 
     // Citas
     Route::get('/citas-agendadas', [CitaController::class, 'citasAgendadas'])->name('veterinarian.citas');
-    Route::get('/citasagendadas/cliente/{id}', [CitaController::class, 'verMascotas'])->name('ver.mascotas');
+    Route::get('/citasagendadas/cliente/{id}/cita/{cita}', [CitaController::class, 'verMascotas'])->name('ver.mascotas');
     Route::get('/cita/{id}/atender', [VeterinarianController::class, 'formularioAtencion'])->name('veterinarian.atender');
     Route::post('/guardar-atencion', [VeterinarianController::class, 'guardarAtencion'])->name('veterinarian.guardar.atencion');
+    Route::post('/cancelar-cita', [VeterinarianController::class, 'cancelarCita'])->name('veterinarian.cancelar.cita');
+    Route::post('/veterinarian/reprogramar-cita', [VeterinarianController::class, 'reprogramarCita'])->name('veterinarian.reprogramar.cita');
 
+
+    // <-- NUEVA RUTA AGREGADA AQUÍ
+    // Rutas para las acciones de notificaciones de reprogramación
+    Route::post('/veterinario/reprogramacion/aceptar', [VeterinarianController::class, 'aceptarReprogramacion'])
+        ->name('veterinarian.reprogramacion.aceptar');
+    // <-- NUEVA RUTA AGREGADA AQUÍ
+    Route::post('/veterinario/reprogramacion/retirar-propuesta', [VeterinarianController::class, 'retirarPropuestaReprogramacion'])
+        ->name('veterinarian.reprogramacion.retirar_propuesta');
+    
     // Historial médico (desde controlador dedicado)
     Route::get('/historiales', [HistorialMedicoController::class, 'index'])->name('historialmedico.index');
     Route::get('/historiales/{id}', [HistorialMedicoController::class, 'verHistorial'])->name('historialmedico.show');
 
     // NUEVA RUTA: Historial médico por mascota (desde controlador VeterinarianController)
     Route::get('/veterinarian/historial/{mascota}', [VeterinarianController::class, 'verHistorial'])->name('veterinarian.historial');
+
+    Route::get('/datosestadisticos', [VeterinarianController::class, 'datosEstadisticos'])->name('datosestadisticos');
+
+    Route::get('/veterinario/notificaciones', [VeterinarianController::class, 'notificaciones'])
+    ->name('veterinarian.notificaciones');
+
+
+    // ¡NUEVAS RUTAS PARA EXPORTAR!
+    // Ruta para exportar el historial completo de una mascota
+    Route::get('/historial/{mascota}/export/completo', [HistorialMedicoController::class, 'exportHistorialCompleto'])->name('veterinarian.historial.exportCompleto');
+
+    // Ruta para exportar una sola cita (MedicalRecord)
+    // Usamos 'registro' como parámetro para el Route Model Binding con MedicalRecord
+    Route::get('/historial/cita/{registro}/export', [HistorialMedicoController::class, 'exportCita'])->name('veterinarian.historial.exportCita');
+
 });
 
 
@@ -260,6 +385,7 @@ Route::prefix('blog')->name('blog.')->group(function () {
 
 // Ruta específica para la sección de Preguntas Frecuentes (FAQ)
 Route::get('/preguntas-frecuentes', [FaqController::class, 'index'])->name('faqs.index'); 
+Route::get('/preguntas-frecuentes/{faq}', [App\Http\Controllers\FaqController::class, 'show'])->name('faq.show');
 // --- FIN DE NUEVAS RUTAS DEL BLOG Y FAQ ---
 
 

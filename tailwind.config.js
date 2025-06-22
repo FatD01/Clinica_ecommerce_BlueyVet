@@ -7,6 +7,8 @@ export default {
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
+        "./resources/**/*.js",
+        "./resources/**/*.vue",
     ],
 
     theme: {
@@ -15,7 +17,7 @@ export default {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
             colors: {
-            'bluey-dark': '#393859',
+                'bluey-dark': '#393859',
                 'bluey-primary': ' #74bcec ', // Usando 'primary-blue' como 'bluey-primary'
                 'bluey-light': '#CEE4F2', // Usando 'light-blue' como 'bluey-light'
                 'bluey-light-yellow': '#F2DC6D',
@@ -28,4 +30,5 @@ export default {
     },
 
     plugins: [forms],
+    important: true,
 };

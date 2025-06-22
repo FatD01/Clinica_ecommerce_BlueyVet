@@ -1,0 +1,7 @@
+
+        /* 🔧 Ajuste para que el contenido no se esconda detrás del sidebar */
+        .main-content {
+            margin-left: 250px; /* Ajusta si tu sidebar tiene otro ancho */
+            padding: 30px;
+        }
+    

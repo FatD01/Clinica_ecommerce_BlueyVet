@@ -1,9 +1,11 @@
 <?php
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
+use App\Observers\ProductObserver; // <<<<<<<< AÑADIR ESTA LÍNEA
 
 class Product extends Model
 {
@@ -16,7 +18,16 @@ class Product extends Model
         'stock',
         'category_id',
         'image',
+        'min_stock_threshold', // <<<<<<<< AÑADIR ESTA LÍNEA
     ];
+
+    // <<<<<<<< AÑADIR ESTE MÉTODO COMPLETO (Método boot() para registrar el observador)
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::observe(ProductObserver::class);
+    }
 
     public function promotions()
     {
@@ -29,7 +40,6 @@ class Product extends Model
         return $this->belongsTo(Category::class);
     }
 
-    
     /**
      * Obtiene TODAS las promociones activas y aplicables para este producto.
      *
@@ -114,4 +124,9 @@ class Product extends Model
         ];
     }
 
+    // <<<<<<<< AÑADIR ESTE MÉTODO COMPLETO (Scope para consultar productos con bajo stock)
+    public function scopeLowStock($query)
+    {
+        return $query->whereColumn('stock', '<=', 'min_stock_threshold');
+    }
 }

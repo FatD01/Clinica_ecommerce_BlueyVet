@@ -8,7 +8,7 @@ use Filament\Tables\Filters\TrashedFilter;
 use App\Filament\Resources\ProductResource\Pages;
 use App\Models\Product;
 use App\Models\Promotion;
-use App\Models\Category; // Asegúrate de este 'use'
+use App\Models\Category;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -16,10 +16,14 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Builder; // Importa Builder para los filtros
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Carbon\Carbon;
 use Filament\Tables\Actions\RestoreBulkAction;
+
+use Filament\Forms\Components\TextInput; // Asegúrate de importar TextInput
+use Filament\Forms\Components\Select; // Asegúrate de importar Select para el filtro
+use Filament\Tables\Filters\SelectFilter; // Asegúrate de importar SelectFilter
 
 class ProductResource extends Resource
 {
@@ -49,11 +53,23 @@ class ProductResource extends Resource
                     ->prefix('S/.')
                     ->minValue(0.01),
                 Forms\Components\TextInput::make('stock')
-                    ->label('Stock')
+                    ->label('Stock Actual') // Cambiado a 'Stock Actual' para claridad
                     ->required()
                     ->numeric()
                     ->integer()
                     ->minValue(0),
+
+                // ==============================================
+                // AÑADE ESTE CAMPO PARA EL UMBRAL MÍNIMO DE STOCK
+                // ==============================================
+                TextInput::make('min_stock_threshold')
+                    ->label('Umbral Mínimo de Stock')
+                    ->numeric()
+                    ->integer() // Asegura que sea un número entero
+                    ->minValue(0) // No puede ser negativo
+                    ->required() // Hazlo requerido para que siempre haya un valor
+                    ->default(10) // Valor por defecto, si la migración también tiene uno, deben coincidir
+                    ->helperText('Cuando el stock caiga por debajo de este valor, se activará una notificación.'),
 
                 // Campo para seleccionar la categoría
                 Forms\Components\Select::make('category_id')
@@ -71,7 +87,7 @@ class ProductResource extends Resource
                             ->label('Descripción')
                             ->nullable(),
                     ])
-                    ->nullable(), 
+                    ->nullable(),
 
                 Forms\Components\FileUpload::make('image')
                     ->label('Imagen del Producto')
@@ -94,9 +110,24 @@ class ProductResource extends Resource
                     ->label('Precio')
                     ->money('PEN')
                     ->sortable(),
+
+                // ==============================================
+                // MODIFICA LA COLUMNA DE STOCK PARA MOSTRAR ALERTA VISUAL
+                // ==============================================
                 Tables\Columns\TextColumn::make('stock')
                     ->label('Stock')
-                    ->sortable(),
+                    ->sortable()
+                    ->color(function (Product $record): string {
+                        // Si el stock actual es menor o igual al umbral, lo pinta de rojo
+                        return $record->stock <= $record->min_stock_threshold ? 'danger' : 'success';
+                    }),
+                // ==============================================
+                // AÑADE LA COLUMNA DEL UMBRAL MÍNIMO
+                // ==============================================
+                Tables\Columns\TextColumn::make('min_stock_threshold')
+                    ->label('Umbral Mín.')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true), // Puedes ocultarlo por defecto si no quieres que siempre sea visible
 
                 // Mostrar el nombre de la categoría relacionada
                 Tables\Columns\TextColumn::make('category.name')
@@ -142,7 +173,6 @@ class ProductResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-
                 TrashedFilter::make(),
                 // Filtro para promociones activas
                 Tables\Filters\Filter::make('active_promotions')
@@ -159,6 +189,28 @@ class ProductResource extends Resource
                     ->relationship('category', 'name')
                     ->searchable()
                     ->preload(),
+
+                // ==============================================
+                // AÑADE ESTE NUEVO FILTRO PARA BAJO STOCK
+                // ==============================================
+                SelectFilter::make('stock_status')
+                    ->label('Estado de Stock')
+                    ->options([
+                        'all' => 'Todos',
+                        'low_stock' => 'Bajo Stock',
+                        'in_stock' => 'En Stock',
+                    ])
+                    ->default('all') // Establece una opción por defecto
+                    ->query(function (Builder $query, array $data): Builder {
+                        if ($data['value'] === 'low_stock') {
+                            // Usa el scope 'lowStock' que definimos en el modelo Product
+                            $query->lowStock();
+                        } elseif ($data['value'] === 'in_stock') {
+                            // Filtra los que NO están en bajo stock
+                            $query->whereColumn('stock', '>', 'min_stock_threshold');
+                        }
+                        return $query;
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -169,6 +221,8 @@ class ProductResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                     RestoreBulkAction::make(),
+                    // Si tienes ForceDeleteAction en tus acciones, también puedes tener ForceDeleteBulkAction aquí
+                    // Tables\Actions\ForceDeleteBulkAction::make(),
                 ]),
             ]);
     }

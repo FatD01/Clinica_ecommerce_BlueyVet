@@ -17,7 +17,7 @@ class Service extends Model
         'duration_minutes', // Según tu diagrama
         'status', // Según tu diagrama
     ];
-//holaefea|holaemo good.|es god|iba a crear mascotas ahorita j ||| yay, deja repaso, no me acuerdo ya jsajd.|okkk
+
     // Relación Many-to-Many con promociones
     public function promotions()
     {

@@ -47,7 +47,7 @@ class OrderConfirmationMail extends Mailable
         return new Content(
             // markdown: 'emails.orders.confirmation', // Ruta a tu plantilla Markdown de correo
             // Cambia 'markdown:' a 'html:'
-            html: 'emails.order-confirmation', // La vista Blade HTML plano
+            html: 'client.emails.order-confirmation', // La vista Blade HTML plano
             with: [
                 'order' => $this->order, // Pasa la instancia de la orden a la vista
                 'total' => number_format($this->order->total, 2), // Ejemplo de datos adicionales

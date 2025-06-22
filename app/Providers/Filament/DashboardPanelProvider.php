@@ -2,17 +2,14 @@
 
 namespace App\Providers\Filament;
 
-use Filament\Http\Middleware\Authenticate;
-use Filament\Http\Middleware\AuthenticateSession;
-use Filament\Http\Middleware\DisableBladeIconComponents;
+use Illuminate\Auth\Middleware\Authenticate;
+use Illuminate\Session\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
 use Filament\Panel;
-use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
+use Filament\PanelProvider; // ¡Asegúrate de que esta línea esté presente y NO comentada!
 use Filament\Widgets;
-use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin; 
-
+use Filament\Widgets\AccountWidget;
 
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -22,10 +19,10 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 
-// ¡IMPORTA TU WIDGET AQUÍ!
-use App\Filament\Widgets\AppointmentsChart; //
+use App\Filament\Widgets\AppointmentsChart;
+// use App\Filament\Pages\Dashboard; // Commented out because Dashboard does not exist or is undefined
 
-class DashboardPanelProvider extends PanelProvider
+class DashboardPanelProvider extends PanelProvider // ¡Cambia esto de 'Panel' a 'PanelProvider'!
 {
     public function panel(Panel $panel): Panel
     {
@@ -35,20 +32,20 @@ class DashboardPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => '#FFC107', // amber color in hex
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                \App\Filament\Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 // \App\Filament\Widgets\VeterinarianCalendarWidget::class,
-                // Widgets\AccountWidget::class,
-                // Widgets\FilamentInfoWidget::class, // Descomenta si quieres el widget de info de Filament
-                // ¡AÑADE TU WIDGET DE GRÁFICO AQUÍ!
-                AppointmentsChart::class, //ya está emito, perdona - meeeeeeeeeeeeeee | no sé donde tengo la cabeza de la verga jajaja que (lo autocompletó copiloto)
+                AccountWidget::class,
+                // Widgets\FilamentInfoWidget::class,
+                AppointmentsChart::class,
+                
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -58,15 +55,15 @@ class DashboardPanelProvider extends PanelProvider
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
                 SubstituteBindings::class,
-                DisableBladeIconComponents::class,
-                DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
             ])
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('10s')
+            // ->notifications()
             ->plugins([
-                FilamentFullCalendarPlugin::make(),
+                // FilamentFullCalendarPlugin::make(),
             ]);
-    } //no me ignoresmr|calla tmr adna duerme, n¿ando viendo un videp  seguro así ya da |suerte oye :,3 te odio `calla emo novi de katherin y su mam[a]
-    
+    }
 }

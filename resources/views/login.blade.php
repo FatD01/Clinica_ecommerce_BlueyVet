@@ -28,26 +28,32 @@
 
         <div class="d-flex align-items-start h-custom-2 px-5 ms-xl-4 mt-4 pt-4">
 
-          <form method="POST" action="{{ route('veterinarian.login.submit') }}"style="width: 23rem;">
+          <form method="POST" action="{{ route('veterinarian.login.submit') }}" style="width: 23rem;">
             @csrf
 
             <h3 class="fw-normal mb-3 pb-3" style="letter-spacing: 1px;">Iniciar Sesión</h3>
 
             <div class="form-outline mb-4">
-              <input type="email" name="email" id="email" class="form-control form-control-lg" required />
+              <input type="email" name="email" id="email" class="form-control form-control-lg @error('email') is-invalid @enderror"
+                     value="{{ old('email') }}" required autocomplete="email" />
               <label class="form-label" for="email">Correo electrónico</label>
+              @error('email')
+                <small class="text-danger">{{ $message }}</small>
+              @enderror
             </div>
 
             <div class="form-outline mb-4">
-              <input type="password" name="password" id="password" class="form-control form-control-lg" required />
+              <input type="password" name="password" id="password" class="form-control form-control-lg @error('password') is-invalid @enderror"
+                     required autocomplete="current-password" />
               <label class="form-label" for="password">Contraseña</label>
+              @error('password')
+                <small class="text-danger">{{ $message }}</small>
+              @enderror
             </div>
 
             <div class="pt-1 mb-4">
               <button class="btn btn-lg btn-block mi-boton" type="submit">Acceder</button>
             </div>
-
-            
 
           </form>
 

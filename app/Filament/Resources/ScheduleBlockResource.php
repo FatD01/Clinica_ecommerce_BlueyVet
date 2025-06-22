@@ -57,7 +57,6 @@ class ScheduleBlockResource extends Resource
                                     'end_time' => 'La hora de fin debe ser posterior a la hora de inicio.',
                                 ]);
                             }
-
                             $overlappingBlocks = ScheduleBlock::where('veterinarian_id', $veterinarianId)
                                 ->where(function (Builder $query) use ($startTime, $endTime) {
                                     $query->whereBetween('start_time', [$startTime->copy()->addSecond(), $endTime->copy()->subSecond()])

@@ -47,7 +47,7 @@
     // $mascotaAvatarPath = $mascota->getFirstMediaUrl('avatars');
 
     if (empty($mascotaAvatarPath)) {
-        $mascotaAvatarPath = asset('images/default_pet_avatar.png');
+    $mascotaAvatarPath = asset('images/default_pet_avatar.png');
     }
     @endphp
 
@@ -144,20 +144,68 @@
                 </div>
 
                 {{-- CAMBIO AQUÍ: Botón para abrir el modal en lugar de un enlace directo --}}
-                <button type="button" class="view-details-btn" data-bs-toggle="modal" data-bs-target="#appointmentDetailModal"
-                    data-id="{{ $appointment->id }}"
-                    data-mascota-name="{{ $appointment->mascota->name }}"
-                    data-date="{{ $appointment->date->format('d/m/Y H:i') }}"
-                    data-service-name="{{ $appointment->service->name }}"
-                    {{-- AQUI EL CAMBIO PARA EL VETERINARIO --}}
-                    data-veterinarian-name="{{ $appointment->veterinarian->user?->name ?? 'Sin asignar' }}"
-                    data-reason="{{ $appointment->reason }}"
-                    data-status="{{ ucfirst($appointment->status) }}"
-                    data-amount="{{ isset($appointment->serviceOrder->amount) ? number_format($appointment->serviceOrder->amount, 2) : 'N/A' }}"
-                    data-currency="{{ isset($appointment->serviceOrder->currency) ? $appointment->serviceOrder->currency : '' }}">
-                    <i class="fas fa-eye me-2"></i>
-                    Ver Detalles Completos
-                </button>
+                <div class="appointment-actions mt-3 text-center"> {{-- Añade un contenedor para los botones --}}
+                    {{-- Botón de Reprogramar --}}
+                    @if(in_array($appointment->status, ['pending', 'confirmed']))
+                    {{-- El botón "Reprogramar" ahora lleva directamente al formulario de reprogramación --}}
+                    <a href="{{ route('client.citas.reprogram.form', $appointment->id) }}" class="btn btn-warning me-2"> {{-- Usa btn-warning para Reprogramar --}}
+                        <i class="fas fa-edit me-1"></i> Reprogramar
+                    </a>
+                    @elseif($appointment->status == 'pending_reprogramming')
+                    <span class="btn btn-info disabled me-2"> {{-- Un botón deshabilitado o un span para indicar estado --}}
+                        <i class="fas fa-clock me-1"></i> Reprogramación en curso
+                    </span>
+                    {{-- El botón "Ver Solicitud" lleva al estado de la solicitud de reprogramación --}}
+                    <a href="{{ route('client.citas.reprogram.status', $appointment->id) }}" class="btn btn-outline-info"> {{-- Para ver el estado de la solicitud --}}
+                        <i class="fas fa-info-circle me-1"></i> Ver Solicitud
+                    </a>
+                    @elseif($appointment->status == 'reprogrammed')
+                    <span class="btn btn-success disabled me-2">
+                        <i class="fas fa-check-circle me-1"></i> Reprogramada
+                    </span>
+                    {{-- Si la cita ya fue reprogramada, se asume que se quiere ver los detalles de la cita actualizada.
+         Podrías enlazar a la misma vista de detalles de cita o a una específica si tienes una para citas reprogramadas.
+         Por ahora, enlazaré a la vista de estado de reprogramación si hay una solicitud activa, o al modal de detalles. --}}
+                    @if($appointment->reprogrammingRequests->where('status', 'applied')->isNotEmpty()) {{-- Si hay una solicitud aplicada (cita ya actualizada) --}}
+                    <a href="{{ route('client.citas.reprogram.status', $appointment->id) }}" class="btn btn-outline-success">
+                        <i class="fas fa-info-circle me-1"></i> Ver Detalles Reprogramación
+                    </a>
+                    @else
+                    {{-- Si no hay una solicitud aplicada específica, simplemente se puede ver los detalles generales de la cita --}}
+                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#appointmentDetailModal"
+                        data-id="{{ $appointment->id }}"
+                        data-mascota-name="{{ $appointment->mascota->name }}"
+                        data-date="{{ $appointment->date->format('d/m/Y H:i') }}"
+                        data-service-name="{{ $appointment->service->name }}"
+                        data-veterinarian-name="{{ $appointment->veterinarian->user?->name ?? 'Sin asignar' }}"
+                        data-reason="{{ $appointment->reason }}"
+                        data-status="{{ ucfirst($appointment->status) }}"
+                        data-amount="{{ isset($appointment->serviceOrder->amount) ? number_format($appointment->serviceOrder->amount, 2) : 'N/A' }}"
+                        data-currency="{{ isset($appointment->serviceOrder->currency) ? $appointment->serviceOrder->currency : '' }}">
+                        <i class="fas fa-info-circle me-1"></i> Ver Detalles Cita
+                    </button>
+                    @endif
+                    @endif
+
+                    {{-- Botón para abrir el modal de detalles (MANTÉN ESTE, pero ajústalo para que coexista con los nuevos) --}}
+                    {{-- Este botón "Ver Detalles" siempre estará presente para cualquier estado,
+         excepto cuando ya se muestra uno más específico como "Ver Detalles Reprogramación" --}}
+                    @if(!in_array($appointment->status, ['reprogrammed']) || !$appointment->reprogrammingRequests->where('status', 'applied')->isNotEmpty())
+                    <button type="button" class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#appointmentDetailModal"
+                        data-id="{{ $appointment->id }}"
+                        data-mascota-name="{{ $appointment->mascota->name }}"
+                        data-date="{{ $appointment->date->format('d/m/Y H:i') }}"
+                        data-service-name="{{ $appointment->service->name }}"
+                        data-veterinarian-name="{{ $appointment->veterinarian->user?->name ?? 'Sin asignar' }}"
+                        data-reason="{{ $appointment->reason }}"
+                        data-status="{{ ucfirst($appointment->status) }}"
+                        data-amount="{{ isset($appointment->serviceOrder->amount) ? number_format($appointment->serviceOrder->amount, 2) : 'N/A' }}"
+                        data-currency="{{ isset($appointment->serviceOrder->currency) ? $appointment->serviceOrder->currency : '' }}">
+                        <i class="fas fa-eye me-1"></i> Ver Detalles
+                    </button>
+                    @endif
+                    {{-- Aquí irían otros botones como "Cancelar Cita" --}}
+                </div>
             </div>
             @endforeach
         </div>

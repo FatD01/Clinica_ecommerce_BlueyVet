@@ -1,3 +1,5 @@
+/* resources/css/Client/navbar.css */
+
 /* Variables de color (sin cambios) */
 :root {
     --primary-dark: #393859;
@@ -58,55 +60,151 @@ body {
     white-space: nowrap;
 }
 
-/* Menú principal (sin cambios) */
-.menu-link {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--primary-dark);
-    font-weight: 600;
-    text-decoration: none;
-    text-transform: uppercase;
-    font-size: 0.9rem;
-    letter-spacing: 0.5px;
-    padding: 0.8rem 0;
-    transition: var(--transition);
-    white-space: nowrap;
+@layer components {
+
+    .menu-link {
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem;
+        color: var(--primary-dark);
+        font-weight: 600;
+        text-decoration: none;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        letter-spacing: 0.5px;
+        padding: 0.8rem 0;
+        transition: var(--transition);
+        white-space: nowrap;
+    }
+
+    .menu-link i {
+        font-size: 1.1rem;
+    }
+
+    .menu-link:hover,
+    .menu-link.active {
+        color: var(--primary-blue);
+    }
+
+    .menu-link::after {
+        content: '' !important;
+        position: absolute !important;
+        bottom: 0;
+        left: 50% !important;
+        width: 100% !important;
+        height: 2px !important;
+        background-color: var(--primary-blue);
+        transition: var(--transition);
+        transform: translateX(-50%) scaleX(0) !important;
+        transform-origin: center !important;
+    }
+
+    .menu-link:hover::after,
+    .menu-link.active::after {
+        transform: translateX(-50%) scaleX(1) !important;
+    }
+
+    /* ESTILOS AÑADIDOS/AJUSTADOS PARA LOS ÍCONOS DE ACCIÓN (CARRITO Y NOTIFICACIONES) */
+
+    .icon-btn {
+        display: flex !important; /* Asegura el display flex */
+        align-items: center !important; /* Centra verticalmente el ícono */
+        justify-content: center !important; /* Centra horizontalmente el ícono */
+        width: 40px !important; /* Tamaño del círculo */
+        height: 40px !important; /* Tamaño del círculo */
+        border-radius: 50% !important; /* Forma redonda */
+        background-color: var(--light-blue) !important; /* Fondo color Bluey */
+        color: var(--primary-dark) !important; /* Color del ícono */
+        transition: var(--transition);
+        position: relative !important; /* Esencial para posicionar el badge */
+        cursor: pointer;
+        border: 1px solid transparent !important; /* Borde inicial transparente */
+    }
+
+    .icon-btn:hover {
+        background-color: var(--primary-blue) !important; /* Fondo más oscuro al hover */
+        color: var(--white) !important; /* Ícono blanco al hover */
+        border-color: var(--primary-dark) !important; /* Borde al hover */
+        transform: translateY(-2px) !important; /* Pequeña elevación */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important; /* Sombra */
+    }
+
+    /* ESTILOS AÑADIDOS/AJUSTADOS PARA EL CONTADOR DEL CARRITO/NOTIFICACIONES */
+    .cart-badge {
+        position: absolute !important;
+        top: -5px !important; /* Ajusta la posición vertical */
+        right: -5px !important; /* Ajusta la posición horizontal */
+        min-width: 20px !important; /* Ancho mínimo para el círculo */
+        height: 20px !important; /* Altura para el círculo */
+        background-color: var(--light-yellow) !important; /* Fondo del contador */
+        color: var(--primary-dark) !important; /* Color del texto */
+        border: 1px solid var(--white) !important; /* Borde blanco del contador */
+        border-radius: 50% !important; /* Redondo */
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 0.75rem !important; /* Tamaño de fuente del número */
+        font-weight: 700 !important; /* Negrita */
+        padding: 2px !important; /* Espacio interno */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important; /* Sombra suave */
+        z-index: 10 !important; /* Asegura que esté por encima */
+    }
+
+    /* ESTILOS AÑADIDOS/AJUSTADOS PARA EL BOTÓN DE NOTIFICACIONES */
+    /* Este selector es muy específico para "ganarle" a Tailwind sin cambiar el HTML */
+    .action-icons button[type="button"].relative.p-1.text-gray-700.hover\:text-bluey-primary.focus\:outline-none.focus\:ring-2.focus\:ring-offset-2.focus\:ring-bluey-primary.rounded-full {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50% !important;
+        background-color: var(--light-blue) !important;
+        color: var(--primary-dark) !important;
+        transition: var(--transition);
+        position: relative !important;
+        border: 1px solid transparent !important;
+        outline: none !important; /* Desactiva el outline de focus de Tailwind */
+        box-shadow: none !important; /* Desactiva el box-shadow de focus de Tailwind */
+    }
+    .action-icons button[type="button"].relative.p-1.text-gray-700.hover\:text-bluey-primary.focus\:outline-none.focus\:ring-2.focus\:ring-offset-2.focus\:ring-bluey-primary.rounded-full:hover {
+        background-color: var(--primary-blue) !important;
+        color: var(--white) !important;
+        border-color: var(--primary-dark) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* ESTILOS AÑADIDOS/AJUSTADOS PARA LA INICIAL DE USUARIO EN MÓVIL/TABLET */
+    .text-bluey-dark.font-bold.text-lg.p-2.rounded-full.bg-bluey-light.hidden.md\:inline.lg\:hidden {
+        display: flex !important; /* Asegura flex para centrar contenido */
+        align-items: center !important;
+        justify-content: center !important;
+        width: 32px !important; /* Tamaño del círculo de la inicial */
+        height: 32px !important; /* Tamaño del círculo de la inicial */
+        border-radius: 50% !important; /* Redondo */
+        background-color: var(--light-blue) !important; /* Fondo de la inicial */
+        color: var(--primary-dark) !important; /* Color del texto de la inicial */
+        font-size: 0.9rem !important; /* Tamaño de fuente de la inicial */
+        font-weight: 700 !important;
+    }
+
+} /* Fin de @layer components */
+
+/* Ajuste del tamaño de fuente de los iconos dentro de los botones de acción si es necesario */
+/* Se mueve fuera de @layer components para una aplicación más general si es necesario */
+.icon-btn i {
+    font-size: 1.2rem !important; /* Ajusta este valor si necesitas los iconos más grandes o más pequeños */
+}
+/* Para el ícono de la campana, ya que no tiene la clase .icon-btn directamente */
+.action-icons button[type="button"] i.bi {
+    font-size: 1.2rem !important; /* Asegura el tamaño de la campana */
 }
 
-.menu-link i {
-    font-size: 1.1rem;
-}
-
-.menu-link:hover,
-.menu-link.active {
-    color: var(--primary-blue);
-}
-
-.menu-link::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background-color: var(--primary-blue);
-    transition: var(--transition);
-}
-
-.menu-link:hover::after,
-.menu-link.active::after {
-    width: 100%;
-}
 
 /* Dropdown de PRODUCTOS (Desktop - manejado por Tailwind 'group-hover:block') */
-/* Si deseas una transición suave al mostrar/ocultar el dropdown con 'hidden'/'block',
-   necesitas una pequeña 'trampa' con la visibilidad y altura.
-   Para simplificar, mantendremos el comportamiento de 'block' instantáneo
-   y el efecto 'scale-95'/'opacity-0' lo dejaremos para los controlados por JS (perfil).
-   Si quieres animación en hover, necesitarías más CSS o AlpineJS.
-   Por ahora, solo aseguramos que se despliegue hacia abajo. */
+/* ... (todo lo demás sin cambios, ya está en tu código) ... */
 .dropdown-menu {
     /* Estas propiedades ya deberían estar en tu HTML por Tailwind o se añadirán si pones clases */
     /* position: absolute; */
@@ -122,11 +220,11 @@ body {
     /* flex-direction: column; */
 
     /* La clase 'hidden' de Tailwind es 'display: none !important;'
-       y 'block' es 'display: block !important;'.
-       Para un hover suave, tendrías que usar opacity/visibility/transform aquí en CSS.
-       Pero para mantener la simplicidad con 'group-hover:block', no es posible animar 'display'.
-       Si realmente quieres animación en hover, tendríamos que volver a JS para el dropdown de productos
-       o usar AlpineJS. Por ahora, asumimos que 'group-hover:block' es suficiente. */
+      y 'block' es 'display: block !important;'.
+      Para un hover suave, tendrías que usar opacity/visibility/transform aquí en CSS.
+      Pero para mantener la simplicidad con 'group-hover:block', no es posible animar 'display'.
+      Si realmente quieres animación en hover, tendríamos que volver a JS para el dropdown de productos
+      o AlpineJS. Por ahora, asumimos que 'group-hover:block' es suficiente. */
 }
 
 /* Aquí puedes poner estilos si el dropdown de productos en desktop también se controla con JS como el de perfil */
@@ -158,7 +256,8 @@ body {
     flex-shrink: 0;
 }
 
-.icon-btn {
+/* Estos estilos de .icon-btn y .cart-badge los trasladamos y mejoramos dentro de @layer components */
+/* .icon-btn {
     position: relative;
     cursor: pointer;
     transition: var(--transition);
@@ -174,7 +273,8 @@ body {
     background-color: var(--light-yellow);
     color: var(--primary-dark);
     border: 1px solid var(--white);
-}
+} */
+
 
 /* Estilos para el menú móvil (hamburguesa) - sin cambios */
 #mobile-menu {

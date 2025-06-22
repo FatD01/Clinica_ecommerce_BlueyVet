@@ -12,6 +12,7 @@ class CartFloating extends Component
     // Declara las propiedades públicas que la vista usará
     public $cart;
     public $total;
+    public $cliente;
 
     /**
      * Create a new component instance.

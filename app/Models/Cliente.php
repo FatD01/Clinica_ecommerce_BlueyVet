@@ -28,4 +28,8 @@ class Cliente extends Model
     {
         return $this->hasMany(Mascota::class);
     }
+    public function reprogrammingRequests()
+    {
+        return $this->hasMany(ReprogrammingRequest::class, 'client_id'); // Asegúrate de especificar la FK
+    }
 }

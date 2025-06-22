@@ -1,9 +1,9 @@
 <?php
-
+//borrar este archivo creo, esperen mi confirmacion Fabrc
 namespace App\Filament\Pages;
 
 use Filament\Pages\Page;
-use App\Filament\Widgets\ScheduleCalendarWidget; // Importa tu widget
+use App\Filament\Widgets\ScheduleCalendarWidget;
 
 class ScheduleCalendar extends Page
 {
@@ -12,21 +12,7 @@ class ScheduleCalendar extends Page
     protected static ?string $title = 'Calendario de Horarios del Personal';
     protected static ?string $slug = 'horarios-admin';
 
-    protected static string $view = 'filament.pages.schedule-calendar';
-
-    // ¡CRÍTICO! Esto le dice a Filament que incluya tu widget en esta página.
-    protected function getWidgets(): array
-    {
-        return [
-            ScheduleCalendarWidget::class,
-        ];
-    }
-
-    // Opcional: Si quieres que el widget aparezca en una sección específica del encabezado.
-    protected function getHeaderWidgets(): array
-    {
-        return [
-            ScheduleCalendarWidget::class,
-        ];
-    }
-}
+    // protected static string $view = 'filament.pages.schedule-calendar';
+    // protected static string $view = 'filament.Pages.veterinarian_schedules';
+}//donde aparecen errores?emo:(nomesientobien, habla con antony cualquiercosa y me llamas como a las 8 para poder viajar ya? abarzo de emo negro tecueme)}}}}
+// 

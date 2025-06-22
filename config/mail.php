@@ -96,6 +96,12 @@ return [
             ],
             'retry_after' => 60,
         ],
+        // 'stream' => [
+        //     'ssl' => [
+        //         'verify_peer' => false,
+        //         'verify_peer_name' => false,
+        //     ],
+        // ],
 
     ],
 

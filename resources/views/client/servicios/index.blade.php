@@ -15,7 +15,7 @@
     <div class="container mx-auto flex flex-col md:flex-row items-center justify-between relative z-10">
         <div class="w-full md:w-1/2 text-center md:text-left mb-10 md:mb-0">
             <h1 class="text-4xl lg:text-5xl font-bold mb-6 text-white leading-tight">
-            Cuidado Excepcional<br>para tu Compañero <span class="text-bluey-light-yellow">Favorito</span>
+                Cuidado Excepcional<br>para tu Compañero <span class="text-bluey-light-yellow">Favorito</span>
             </h1>
             <p class="text-xl text-white mb-8 max-w-lg">
                 En BlueyVet, combinamos medicina de vanguardia con compasión para ofrecer los mejores servicios veterinarios.
@@ -26,7 +26,7 @@
                     Agendar Cita
                 </a>
                 <a href="#servicios"
-                    class=" border-2 border-white hover:bg-gray-300 text-bluey-light hover:text-bluey-dark  font-bold py-3 px-8 rounded-lg transition-all duration-300"> 
+                    class=" border-2 border-white hover:bg-gray-300 text-bluey-light hover:text-bluey-dark  font-bold py-3 px-8 rounded-lg transition-all duration-300">
                     Nuestros Servicios
                 </a>
             </div>
@@ -87,7 +87,7 @@
                         <form action="{{ route('payments.purchase_service') }}" method="POST">
                             @csrf
                             <input type="hidden" name="service_id" value="{{ $service->id }}">
-                            <button type="submit" class="w-full bg-gradient-to-r from-bluey-primary to-bluey-secondary hover:from-bluey-secondary hover:to-bluey-primary text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] shadow-md">
+                            <button type="submit" class="w-full bg-bluey-primary hover:bg-bluey-dark text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] shadow-md">
                                 Comprar Ahora
                             </button>
                         </form>
@@ -117,11 +117,11 @@
             Contáctanos para servicios especializados o emergencias. Nuestro equipo está listo para ayudarte.
         </p>
         <div class="flex flex-col sm:flex-row justify-center gap-4">
-            <a href="#"
+            <a href="{{ route('contact.us') }}" {{-- Cambiado de '#' a la ruta nombrada --}}
                 class="bg-bluey-secondary hover:bg-bluey-secondary-light text-white font-bold py-3 px-8 rounded-lg transition-all duration-300">
                 Contáctanos
             </a>
-            <a href="tel:+123456789"
+            <a href="tel:+51944280482"
                 class="border-2 border-white hover:bg-white hover:text-bluey-dark font-bold py-3 px-8 rounded-lg transition-all duration-300">
                 Llamar Ahora
             </a>

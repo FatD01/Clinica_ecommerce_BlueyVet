@@ -5,9 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Vet Dashboard</title>
   
-  <link rel="stylesheet" href="{{ asset('info.css') }}">
+  @vite('resources/css/vet/views/info.css')
   <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ asset('seccionesactivas.css') }}">
+  @vite('resources/css/vet/views/seccionesactivas.css') 
+  @vite(['resources/css/Vet/panel.css'])
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  
 
 
   
@@ -16,34 +20,49 @@
   <div class="container">
     <!-- Sidebar -->
     <aside class="sidebar">
-      <div class="brand">BlueyVet</div>
-
-      <nav>
-    <ul>
-        <li>
-            <a href="{{ route('veterinarian.citas') }}"
-               class="{{ request()->routeIs('veterinarian.citas') ? 'active' : '' }}">
-               Consultar Citas
-            </a>
-        </li>
-        <li>
-  <a href="{{ route('historialmedico.index') }}"
-     class="{{ request()->routeIs('historialmedico.index') ? 'active' : '' }}">
-     Historial Médico
-  </a>
-</li>
-        
-        <li>
-            <a href="{{ route('veterinarian.profile') }}"
-   class="{{ request()->routeIs('veterinarian.profile*') || request()->routeIs('veterinarian.edit') ? 'active' : '' }}">
-   Mi Información
-</a>
-
-        </li>
-    </ul>
-</nav>
-      <div class="user">Hola, <strong>{{ Auth::user()->name }}</strong></div>
-    </aside>
+    <div class="brand">
+        <i class="fas fa-paw"></i> BlueyVet
+    </div>
+    <nav>
+        <ul>
+            <li>
+                <a href="{{ route('veterinarian.citas') }}"
+                   class="{{ request()->routeIs('veterinarian.citas') ? 'active' : '' }}">
+                    <i class="fas fa-calendar-alt"></i> Consultar Citas
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('historialmedico.index') }}"
+                   class="{{ request()->routeIs('historialmedico.index') ? 'active' : '' }}">
+                    <i class="fas fa-file-medical-alt"></i> Historial Médico
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('veterinarian.profile') }}"
+                   class="{{ request()->routeIs('veterinarian.profile*') || request()->routeIs('veterinarian.edit') ? 'active' : '' }}">
+                    <i class="fas fa-user"></i> Mi Información
+                </a>
+            </li>
+            <li>
+                        <a href="{{ route('datosestadisticos') }}" class="{{ request()->routeIs('datosestadisticos') ? 'active' : '' }}">
+                            <i class="fas fa-chart-bar"></i> Datos estadísticos
+                        </a>
+                    </li>
+                    <li>
+                <a href="{{ route('veterinarian.notificaciones') }}"
+                   class="{{ request()->routeIs('veterinarian.notificaciones') ? 'active' : '' }}">
+                    <i class="fas fa-bell"></i> Notificaciones
+                    @if($unreadCount)
+                        <span class="notification-dot"></span>
+                    @endif
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <div class="user">
+        Hola, <strong>{{ Auth::user()->name }}</strong>
+    </div>
+</aside>
 
     <!-- Main content -->
     <main class="main">

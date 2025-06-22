@@ -127,6 +127,7 @@
         </p> -->
 
         <div class="footer">
+            <p>Este comprobante será enviado a tu correo electrónico.</p>
             <p>Si tienes alguna pregunta, no dudes en contactarnos. <br> En BlueyVet encuentras los mejores precios</p>
             <p>&copy; {{ date('Y') }} BlueyVet. Todos los derechos reservados.</p>
         </div>

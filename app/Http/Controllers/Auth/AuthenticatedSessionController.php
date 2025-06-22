@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Filament\Facades\Filament;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -36,9 +37,14 @@ class AuthenticatedSessionController extends Controller
         return redirect()->intended(route('index', absolute: false)); // Dashboard veterinario
     }
 
+    // if ($role === 'admin') {
+    //     return redirect()->intended(route('admin.dashboard', absolute: false)); // Dashboard admin
+    // }
+
     if ($role === 'admin') {
-        return redirect()->intended(route('admin.dashboard', absolute: false)); // Dashboard admin
-    }
+    // Redirige al dashboard de Filament
+        return redirect()->intended(Filament::getUrl());
+    }   
 
         
 
