@@ -192,6 +192,7 @@ class Veterinarian_schedules extends Page implements HasTable, HasActions, HasFo
     public function createAction(): CreateAction
     {
         return CreateAction::make()
+            ->label('Crear Nuevo Horario')
             ->model(VeterinarianSchedule::class)
             ->createAnother(false)
             ->form(function (Form $form) {
