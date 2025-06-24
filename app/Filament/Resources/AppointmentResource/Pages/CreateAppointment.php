@@ -9,4 +9,5 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateAppointment extends CreateRecord
 {
     protected static string $resource = AppointmentResource::class;
+    protected static ?string $title = 'Crear Cita Pre Pagada'; 
 }

@@ -54,6 +54,7 @@ class PaymentController extends Controller
      * @param int $serviceOrderId El ID de la ServiceOrder a pagar.
      * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
+    //aqui solo pondre como string en vez de int, así estaaba antes: int $serviceOrderId || ya reverti esto
     public function showCheckoutPage(int $serviceOrderId)
     {
         Log::info('Accediendo a PaymentController@showCheckoutPage', ['service_order_id' => $serviceOrderId]);

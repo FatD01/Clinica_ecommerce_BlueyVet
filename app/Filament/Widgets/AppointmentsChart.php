@@ -3,26 +3,28 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Appointment;
-use App\Models\Mascota; // Asegúrate de que el modelo Mascota esté bien importado
+use App\Models\Mascota;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon; // Importa Carbon para el manejo de fechas
+use Carbon\Carbon;
 
 class AppointmentsChart extends ChartWidget
 {
-    // Título del widget que se mostrará en el dashboard
     protected static ?string $heading = 'Citas por Especie de Mascota';
 
-    // Orden en el que aparecerá el widget en el dashboard (opcional)
-    protected static ?int $sort = 2;
+    // Ajusta este sort. Si tu primer gráfico tiene sort = 0, y el AccountWidget tiene sort = 1 (y ambos son full-width),
+    // este debería tener un sort mayor para aparecer debajo, por ejemplo, 2 o más.
+    protected static ?int $sort = 2; // O 10, dependiendo de cómo quieras ordenarlo después de los full-width
 
-    // Propiedad pública que Filament usará para el valor seleccionado del filtro
-    public ?string $filter = 'all'; // Valor por defecto del filtro al cargar la página
+    protected static string $color = 'primary'; // Puedes dejar 'primary' o cambiarlo a un color Tailwind como 'success'
 
-    /**
-     * Define los filtros de tiempo disponibles para el gráfico.
-     * La clave es el valor interno que usaremos en la lógica, el valor es el texto a mostrar.
-     */
+    // Si quieres que ocupe todo el ancho, descomenta la línea de abajo.
+    // protected int | string | array $columnSpan = 'full';
+    // Si quieres que vaya en una columna al lado de otro, por ejemplo, '1/2'.
+    // Si tu otro gráfico ya es full, déjalo sin $columnSpan o en '1/2' si tienes espacio.
+
+    public ?string $filter = 'all';
+
     protected function getFilters(): ?array
     {
         return [
@@ -36,93 +38,74 @@ class AppointmentsChart extends ChartWidget
         ];
     }
 
-    /**
-     * Define el tipo de gráfico (bar, line, pie, doughnut, etc.).
-     */
     protected function getType(): string
     {
-        return 'pie'; // Para un gráfico circular (pastel)
+        return 'pie'; // Se mantiene el tipo 'pie' original
     }
 
-    /**
-     * Prepara y retorna los datos para el gráfico.
-     * Esta es la lógica principal que consulta la base de datos y formatea los datos.
-     */
     protected function getData(): array
     {
-        // 1. Inicia la consulta base para obtener citas y unirlas con mascotas
         $query = DB::table('appointments')
             ->join('mascotas', 'appointments.mascota_id', '=', 'mascotas.id')
-            // Selecciona la columna 'species' de la tabla 'mascotas' y cuenta las citas
             ->select('mascotas.species', DB::raw('count(*) as count'));
 
-        // 2. Aplica el filtro de fecha basado en el valor de $this->filter
         switch ($this->filter) {
             case 'today':
                 $query->whereDate('appointments.date', Carbon::today());
                 break;
             case 'week':
-                // Filtra por citas dentro de la semana actual (de lunes a domingo)
                 $query->whereBetween('appointments.date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
                 break;
             case 'month':
-                // Filtra por citas dentro del mes y año actual
                 $query->whereMonth('appointments.date', Carbon::now()->month)
                       ->whereYear('appointments.date', Carbon::now()->year);
                 break;
             case 'year':
-                // Filtra por citas dentro del año actual
                 $query->whereYear('appointments.date', Carbon::now()->year);
                 break;
             case 'last_month':
-                // Filtra por citas dentro del mes y año pasado
                 $query->whereMonth('appointments.date', Carbon::now()->subMonth()->month)
                       ->whereYear('appointments.date', Carbon::now()->subMonth()->year);
                 break;
             case 'last_year':
-                // Filtra por citas dentro del año pasado
                 $query->whereYear('appointments.date', Carbon::now()->subYear()->year);
                 break;
             case 'all':
             default:
-                // No se aplica filtro de fecha, se incluyen todas las citas
                 break;
         }
 
-        // 3. Ejecuta la consulta agrupando por especie
         $appointmentCounts = $query->groupBy('mascotas.species')->get();
 
-        // Inicializa arrays para los datos del gráfico
-        $labels = [];          // Etiquetas para cada rebanada (ej. 'Perro', 'Gato', 'Otro')
-        $data = [];            // Valores numéricos para cada rebanada
-        $backgroundColors = [];// Colores para cada rebanada
+        $labels = [];
+        $data = [];
+        $backgroundColors = [];
 
-        // Define los colores específicos para 'perro' y 'gato'
+        // --- INICIO DE CAMBIO DE COLORES ---
+        // Paleta de colores coherente:
         $colorsMap = [
-            'perro' => '#FF6384', // Rojo para perros
-            'gato' => '#36A2EB',  // Azul para gatos
-            // Si hay otras especies en la BD, se les asignará el color por defecto
+            'perro' => '#4F46E5', // Indigo 600 para Perros
+            'gato' => '#EF4444',  // Red 500 para Gatos
+            'otro' => '#6B7280',  // Gray 500 para Otros
         ];
+        // --- FIN DE CAMBIO DE COLORES ---
 
-        // Inicializa contadores para Perro, Gato y Otros
         $perroCount = 0;
         $gatoCount = 0;
         $otherCount = 0;
 
-        // 4. Procesa los resultados de la consulta
         foreach ($appointmentCounts as $item) {
-            $species = strtolower($item->species); // Convierte la especie a minúsculas para una comparación consistente
+            $species = strtolower($item->species);
 
             if ($species === 'perro') {
                 $perroCount += $item->count;
             } elseif ($species === 'gato') {
                 $gatoCount += $item->count;
             } else {
-                $otherCount += $item->count; // Suma a 'Otro' si no es perro ni gato
+                $otherCount += $item->count;
             }
         }
 
-        // 5. Rellena los arrays de datos y etiquetas solo con 'Perro', 'Gato' y 'Otro' si tienen datos
         if ($perroCount > 0) {
             $labels[] = 'Perro';
             $data[] = $perroCount;
@@ -136,45 +119,80 @@ class AppointmentsChart extends ChartWidget
         if ($otherCount > 0) {
             $labels[] = 'Otro';
             $data[] = $otherCount;
-            $backgroundColors[] = '#CCCCCC'; // Color gris para 'Otro'
+            $backgroundColors[] = $colorsMap['otro']; // Usamos el color 'otro' de la paleta
         }
 
-
-        // Si no hay datos en absoluto para el periodo seleccionado, muestra un mensaje
         if (empty($data)) {
             $labels = ['No hay citas registradas para este periodo'];
-            $data = [1]; // Un valor dummy para que el gráfico no esté completamente en blanco
-            $backgroundColors = ['#DDDDDD']; // Color muy claro
+            $data = [1];
+            $backgroundColors = ['#DDDDDD'];
         }
 
-        // 6. Retorna los datos formateados para Chart.js
         return [
             'datasets' => [
                 [
-                    'label' => 'Número de Citas', // Leyenda del conjunto de datos
-                    'data' => $data,             // Valores numéricos para cada segmento
-                    'backgroundColor' => $backgroundColors, // Colores de los segmentos
-                    'hoverOffset' => 4,          // Efecto visual al pasar el ratón por encima
+                    'label' => 'Número de Citas',
+                    'data' => $data,
+                    'backgroundColor' => $backgroundColors,
+                    'hoverOffset' => 4,
                 ],
             ],
-            'labels' => $labels,                 // Etiquetas de los segmentos (ej. 'Perro', 'Gato')
+            'labels' => $labels,
         ];
     }
 
-    /**
-     * Opciones adicionales para personalizar la visualización del gráfico de pastel.
-     * Utiliza las opciones de Chart.js.
-     */
     protected static ?array $options = [
         'plugins' => [
             'legend' => [
-                'position' => 'bottom', // Mueve la leyenda a la parte inferior del gráfico
+                'position' => 'bottom',
                 'labels' => [
-                    'boxWidth' => 20,   // Ancho de la caja de color en la leyenda
+                    'boxWidth' => 20,
+                    // Si quieres que las etiquetas de la leyenda tengan el mismo color de texto
+                    // que en el otro gráfico:
+                    'color' => '#374151', // Tailwind gray-700
+                    'font' => [
+                        'size' => 13,
+                        'weight' => 'bold',
+                        'family' => 'Inter, sans-serif',
+                    ],
                 ]
             ],
+            // Si quieres mejorar el tooltip para que muestre porcentajes (como el ejemplo anterior),
+            // puedes añadir la sección 'tooltip' aquí. De lo contrario, se usará el predeterminado.
+            // 'tooltip' => [
+            //     'mode' => 'point',
+            //     'intersect' => false,
+            //     'backgroundColor' => '#1F2937', // Tailwind gray-800
+            //     'titleColor' => '#F3F4F6', // Tailwind gray-100
+            //     'bodyColor' => '#D1D5DB', // Tailwind gray-300
+            //     'borderColor' => '#4B5563', // Tailwind gray-600
+            //     'borderWidth' => 1,
+            //     'cornerRadius' => 8,
+            //     'padding' => 14,
+            //     'caretPadding' => 10,
+            //     'displayColors' => true,
+            //     'boxPadding' => 4,
+            //     'callbacks' => [
+            //         'label' => 'function(context) {
+            //             let sum = 0;
+            //             let dataArr = context.chart.data.datasets[0].data;
+            //             dataArr.map(data => {
+            //                 sum += data;
+            //             });
+            //             let percentage = (context.parsed / sum * 100).toFixed(2) + "%";
+            //             return context.label + ": " + context.parsed + " (" + percentage + ")";
+            //         }'
+            //     ]
+            // ],
         ],
-        'responsive' => true,      // El gráfico se ajusta al tamaño de su contenedor
-        'maintainAspectRatio' => false, // No fuerza una relación de aspecto fija
+        'responsive' => true,
+        'maintainAspectRatio' => false,
+        // Puedes añadir una animación sencilla para que no aparezca de golpe:
+        'animation' => [
+            'duration' => 1000, // 1 segundo
+            'easing' => 'easeOutCubic',
+            'animateRotate' => true, // Animación de rotación para pastel
+            'animateScale' => false, // No animar escala para pastel
+        ],
     ];
 }

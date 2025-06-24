@@ -11,6 +11,8 @@ use App\Models\Service;
 use App\Models\Cliente;
 use App\Models\ServiceOrder;
 use App\Models\Veterinarian;
+use App\Models\Post;
+
 use App\Models\ReprogrammingRequest; // ¡Importa el nuevo modelo!
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -19,6 +21,11 @@ use Carbon\Carbon;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Log;
 use Carbon\CarbonPeriod; // Para generar los periodos de tiempo
+use Illuminate\Support\Facades\DB; //para manejar transacciones
+
+use App\Notifications\ReprogrammingRequestStatusUpdate; // La nueva notificación
+
+
 class CitaController extends Controller
 {
     protected function middleware(): array
@@ -69,8 +76,7 @@ class CitaController extends Controller
     /**
      * Muestra el formulario para crear una nueva cita.
      * Permite la preselección de un servicio si viene de una compra directa.
-     */
-    public function create(Request $request): View|\Illuminate\Http\RedirectResponse
+     */ public function create(Request $request): View|\Illuminate\Http\RedirectResponse
     {
         $cliente = Auth::user()->cliente;
 
@@ -79,9 +85,16 @@ class CitaController extends Controller
             return redirect()->route('dashboard');
         }
 
+        // Obtener las mascotas del cliente actual
         $mascotas = $cliente->mascotas;
-        $allServices = Service::all();
-        $veterinarians = Veterinarian::with('user')->get();
+
+        // Obtener todos los servicios que tienen veterinarios asociados a sus especialidades
+        $allServices = Service::whereHas('specialties.veterinarians')
+            ->with('specialties')
+            ->get();
+
+        // Los veterinarios inicialmente estarán vacíos, se cargarán dinámicamente con AJAX
+        $veterinarians = collect(); // Se mantiene como collect() ya que se carga vía AJAX
 
         $preselectedService = null;
         $preselectedServiceOrderId = $request->query('preselected_service_order_id');
@@ -119,9 +132,58 @@ class CitaController extends Controller
             }
         }
 
-        return view('client.citas.create', compact('mascotas', 'allServices', 'veterinarians', 'preselectedService'));
+        // Obtener los posts recientes.
+        // Si tienes un View Composer configurado para 'client.welcome' (o tu layout base),
+        // y tu vista `client.citas.create` extiende o incluye ese layout/vista,
+        // puedes eliminar la siguiente línea, ya que el View Composer ya se encargará de ello.
+        // De lo contrario, esta línea es necesaria.
+        $recentPosts = Post::orderBy('created_at', 'desc')->take(3)->get();
+
+
+        // Retornar la vista con TODAS las variables necesarias en una sola sentencia.
+        return view('client.citas.create', compact('mascotas', 'allServices', 'veterinarians', 'preselectedService', 'recentPosts'));
     }
 
+    public function getVeterinariansByService(Request $request)
+    {
+        $serviceId = $request->input('service_id');
+        Log::info('Solicitud AJAX para getVeterinariansByService. Service ID:', ['service_id' => $serviceId]);
+
+        if (!$serviceId) {
+            Log::warning('getVeterinariansByService: No se proporcionó service_id.');
+            return response()->json([], 400); // Bad request si no hay service_id
+        }
+
+        $service = Service::with('specialties')->find($serviceId);
+
+        if (!$service) {
+            Log::warning('getVeterinariansByService: Servicio no encontrado para ID:', ['service_id' => $serviceId]);
+            return response()->json([], 404); // Servicio no encontrado
+        }
+
+        // Obtener los IDs de las especialidades requeridas por el servicio
+        $requiredSpecialtyIds = $service->specialties->pluck('id');
+        Log::info('Especialidades requeridas para el servicio:', ['specialty_ids' => $requiredSpecialtyIds->toArray()]);
+
+        // Buscar veterinarios que tengan AL MENOS UNA de las especialidades requeridas
+        // Asegúrate de que Veterinarian tiene una relación 'specialties' (muchos a muchos)
+        // y una relación 'user' (uno a uno)
+        $veterinarians = Veterinarian::whereHas('specialties', function ($query) use ($requiredSpecialtyIds) {
+            $query->whereIn('specialties.id', $requiredSpecialtyIds);
+        })->with('user', 'specialties')->get(); // Cargar ambas relaciones
+
+        // Formatear los datos para la respuesta AJAX
+        $formattedVeterinarians = $veterinarians->map(function ($vet) {
+            return [
+                'id' => $vet->id,
+                'name' => $vet->user->name ?? 'Veterinario Desconocido', // Asegúrate de que el usuario exista
+                'specialties' => $vet->specialties->pluck('name')->implode(', ')
+            ];
+        });
+
+        Log::info('Veterinarios encontrados para el servicio:', ['veterinarians' => $formattedVeterinarians->toArray()]);
+        return response()->json($formattedVeterinarians);
+    }
     /**
      * Almacena una nueva cita en la base de datos.
      * Si hay una ServiceOrder pagada preseleccionada en la sesión, la vincula.
@@ -129,12 +191,17 @@ class CitaController extends Controller
      */
     public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
+        Log::info('--- INICIO Método store para agendar cita ---');
+        Log::info('Datos de la solicitud recibidos:', $request->all());
+
         $cliente = Auth::user()->cliente;
 
         if (!$cliente) {
+            Log::warning('No se encontró el perfil de cliente asociado para el usuario autenticado.', ['user_id' => Auth::id()]);
             return redirect()->back()->with('error', 'No se encontró el perfil de cliente asociado. Por favor, intente de nuevo.');
         }
 
+        // 1. Validación de los datos del formulario
         $validatedData = $request->validate([
             'mascota_id' => [
                 'required',
@@ -144,62 +211,177 @@ class CitaController extends Controller
                 }),
             ],
             'veterinarian_id' => 'required|exists:veterinarians,id',
-            'date' => 'required|date|after_or_equal:now',
+            'date' => [
+                'required',
+                'date_format:Y-m-d H:i', // Espera formato 'YYYY-MM-DD HH:MM' del campo 'time_slot'
+                // 'after_or_equal:now', // Esta validación es redundante con la lógica de abajo y puede ser removida
+            ],
             'reason' => 'nullable|string|max:255',
             'service_id' => 'required|exists:services,id',
+        ], [
+            // 'date.after_or_equal' => 'No puedes agendar citas en el pasado.', // Mensaje que ya no debería aparecer aquí
+            'date.date_format' => 'El formato de la fecha y hora no es válido. Asegúrate de seleccionar un horario válido.',
         ]);
 
         $selectedService = Service::findOrFail($validatedData['service_id']);
+        $veterinarian = Veterinarian::findOrFail($validatedData['veterinarian_id']);
 
-        $pendingServiceOrderIdToLink = Session::get('pending_service_order_id_to_link');
-        $linkedServiceOrder = null;
-
-        if ($pendingServiceOrderIdToLink) {
-            $checkOrder = ServiceOrder::find($pendingServiceOrderIdToLink);
-            if (
-                $checkOrder &&
-                $checkOrder->user_id === Auth::id() &&
-                strtolower($checkOrder->status) === 'completed' &&
-                $checkOrder->service_id == $selectedService->id
-            ) {
-                if (!Appointment::where('service_order_id', $checkOrder->id)->exists()) {
-                    $linkedServiceOrder = $checkOrder;
-                    Log::info('ServiceOrder ' . $pendingServiceOrderIdToLink . ' preseleccionada y válida para vincular a la cita.');
-                } else {
-                    Log::warning('ServiceOrder ' . $pendingServiceOrderIdToLink . ' ya vinculada a una cita. Ignorando preselección.');
-                    Session::flash('warning', 'La compra de servicio seleccionada ya tiene una cita agendada.');
-                }
-            } else {
-                Log::warning('ServiceOrder preseleccionada inválida o impagada/desajuste de servicio. Ignorando preselección.', ['order_id' => $pendingServiceOrderIdToLink]);
-            }
-        }
+        // Calcular la hora de fin de la cita
+        $startDateTime = Carbon::parse($validatedData['date']);
+        $endDateTime = $startDateTime->copy()->addMinutes($selectedService->duration_minutes);
 
         try {
-            // Calcular la end_datetime (asumiendo una duración por defecto, o según el servicio)
-            $startDateTime = Carbon::parse($validatedData['date']);
-            // CAMBIO AQUÍ: Usa la duración del servicio para calcular end_datetime
-            $durationMinutes = $selectedService->duration_minutes ?? 30; // Asumiendo una duración por defecto de 30 minutos si el servicio no la tiene
-            $endDateTime = $startDateTime->copy()->addMinutes($durationMinutes);
+            DB::beginTransaction(); // Inicia una transacción para asegurar la atomicidad
+
+            // --- INICIO DE LA LÓGICA DE SEGUNDA VERIFICACIÓN DE DISPONIBILIDAD (CRÍTICO) ---
+            // Mapeo de nombres de días de la semana de inglés a español (con tildes)
+            $dayOfWeekMapping = [
+                'monday' => 'lunes',
+                'tuesday' => 'martes',
+                'wednesday' => 'miércoles',
+                'thursday' => 'jueves',
+                'friday' => 'viernes',
+                'saturday' => 'sábado',
+                'sunday' => 'domingo',
+            ];
+            $dayOfWeekEnglish = strtolower($startDateTime->format('l'));
+            $dayOfWeek = $dayOfWeekMapping[$dayOfWeekEnglish] ?? null;
+
+            if (is_null($dayOfWeek)) {
+                Log::error('Error de lógica: Día de la semana no mapeado al intentar agendar cita.', [
+                    'english_day' => $dayOfWeekEnglish,
+                    'requested_date' => $validatedData['date']
+                ]);
+                throw new \Exception('No se pudo determinar el día de la semana para la cita.');
+            }
+
+            // ¡CAMBIO CLAVE AQUÍ! Obtener TODOS los horarios para ese día y veterinario
+            $schedules = VeterinarianSchedule::where('veterinarian_id', $veterinarian->id)
+                ->where('day_of_week', $dayOfWeek)
+                ->orderBy('start_time') // Asegurarse de tenerlos ordenados
+                ->get();
+
+            if ($schedules->isEmpty()) {
+                Log::warning('Intento de agendar cita fuera del horario de trabajo del veterinario (no se encontró schedule para el día).', [
+                    'veterinarian_id' => $veterinarian->id,
+                    'day_of_week' => $dayOfWeek
+                ]);
+                throw new \Exception('El veterinario no tiene un horario definido para ese día. Por favor, seleccione otro día o veterinario.');
+            }
+
+            $isWithinAnySchedule = false; // Bandera para saber si la cita cae en AL MENOS UN horario
+            foreach ($schedules as $schedule) {
+                $scheduleStartTime = Carbon::parse($schedule->start_time);
+                $scheduleEndTime = Carbon::parse($schedule->end_time);
+
+                // Ajustar el inicio y fin del horario al día de la cita para comparación
+                $dailyScheduleStart = $startDateTime->copy()->setTimeFrom($scheduleStartTime);
+                $dailyScheduleEnd = $startDateTime->copy()->setTimeFrom($scheduleEndTime);
+
+                // Verificar si el slot de la cita está completamente dentro de ESTE rango de horario
+                // La cita debe empezar en o después del inicio del turno Y terminar en o antes del fin del turno
+                if ($startDateTime->greaterThanOrEqualTo($dailyScheduleStart) && $endDateTime->lessThanOrEqualTo($dailyScheduleEnd)) {
+                    $isWithinAnySchedule = true;
+                    break; // Se encontró un horario válido, no es necesario verificar los demás
+                }
+            }
+
+            if (!$isWithinAnySchedule) {
+                Log::warning('Intento de agendar cita fuera de TODOS los horarios de trabajo del veterinario para el día.', [
+                    'requested_start' => $startDateTime->toDateTimeString(),
+                    'requested_end' => $endDateTime->toDateTimeString(),
+                    'day_of_week' => $dayOfWeek,
+                    'veterinarian_id' => $veterinarian->id,
+                    'schedules_checked' => $schedules->map(fn($s) => ['start' => $s->start_time, 'end' => $s->end_time])->toArray()
+                ]);
+                // Este es el mensaje que ve el usuario, hazlo claro.
+                throw new \Exception('La hora seleccionada está fuera del horario de trabajo del veterinario para ese día. Por favor, selecciona un horario válido.');
+            }
+
+            // Verificar que el slot no sea en el pasado
+            // Esta validación es CRÍTICA y debe estar ANTES de la verificación de superposiciones si no se hizo en el front.
+            // La validación `after_or_equal:now` en `$request->validate` es útil pero esta es una doble seguridad más precisa.
+            if ($startDateTime->lessThan(Carbon::now())) {
+                Log::warning('Intento de agendar cita en el pasado (verificación final en backend).', [
+                    'requested_start' => $startDateTime->toDateTimeString(),
+                    'current_time' => Carbon::now()->toDateTimeString()
+                ]);
+                throw new \Exception('No puedes agendar citas en el pasado. Por favor, selecciona un horario futuro.');
+            }
+
+            // Verificar superposiciones con otras citas existentes para ese veterinario en esa fecha
+            $existingOverlapAppointments = Appointment::where('veterinarian_id', $veterinarian->id)
+                ->whereDate('date', $startDateTime->toDateString())
+                ->where(function ($query) use ($startDateTime, $endDateTime) {
+                    // Citas que comienzan durante el slot propuesto O citas que terminan durante el slot propuesto
+                    // O citas que envuelven completamente el slot propuesto
+                    $query->where(function ($q) use ($startDateTime, $endDateTime) {
+                        $q->where('date', '<', $endDateTime) // La cita existente empieza antes de que termine nuestro slot
+                            ->where('end_datetime', '>', $startDateTime); // Y termina después de que empiece nuestro slot
+                    });
+                })
+                ->whereIn('status', ['pending', 'confirmed', 'completed']) // Considerar también 'completed' si ocupa el tiempo
+                ->count();
+
+            if ($existingOverlapAppointments > 0) {
+                Log::warning('Intento de agendar cita en un slot ya ocupado.', [
+                    'veterinarian_id' => $veterinarian->id,
+                    'date' => $startDateTime->toDateTimeString(),
+                    'overlaps_found' => $existingOverlapAppointments
+                ]);
+                throw new \Exception('El horario seleccionado ya no está disponible o se ha ocupado. Por favor, selecciona otro.');
+            }
+            // --- FIN DE LA LÓGICA DE SEGUNDA VERIFICACIÓN DE DISPONIBILIDAD ---
+
+
+            // Lógica de vinculación a ServiceOrder existente o creación de una nueva
+            $pendingServiceOrderIdToLink = Session::get('pending_service_order_id_to_link');
+            $linkedServiceOrder = null;
+
+            if ($pendingServiceOrderIdToLink) {
+                $checkOrder = ServiceOrder::find($pendingServiceOrderIdToLink);
+                if (
+                    $checkOrder &&
+                    $checkOrder->user_id === Auth::id() &&
+                    strtolower($checkOrder->status) === 'completed' &&
+                    $checkOrder->service_id == $selectedService->id
+                ) {
+                    if (!Appointment::where('service_order_id', $checkOrder->id)->exists()) {
+                        $linkedServiceOrder = $checkOrder;
+                        Log::info('ServiceOrder ' . $pendingServiceOrderIdToLink . ' preseleccionada y válida para vincular a la cita.');
+                    } else {
+                        Log::warning('ServiceOrder ' . $pendingServiceOrderIdToLink . ' ya vinculada a una cita. Ignorando preselección.');
+                        Session::flash('warning', 'La compra de servicio seleccionada ya tiene una cita agendada.');
+                        // No lanzamos excepción aquí, simplemente no vinculamos la orden y se creará una nueva si no hay otra forma de pago
+                    }
+                } else {
+                    Log::warning('ServiceOrder preseleccionada inválida o impagada/desajuste de servicio. Ignorando preselección.', ['order_id' => $pendingServiceOrderIdToLink]);
+                }
+            }
 
             if ($linkedServiceOrder) {
                 // Flujo 1: Cita agendada con un servicio PREVIAMENTE COMPRADO (ya pagado)
                 $appointment = Appointment::create([
+                    'user_id' => Auth::id(), // Asegúrate de guardar el user_id también
                     'mascota_id' => $validatedData['mascota_id'],
                     'veterinarian_id' => $validatedData['veterinarian_id'],
-                    'date' => $startDateTime,
-                    'end_datetime' => $endDateTime, // Agregado
-                    'reason' => $validatedData['reason'],
                     'service_id' => $validatedData['service_id'],
-                    'status' => 'pending', // La propia cita comienza como pendiente (a realizar)
+                    'date' => $startDateTime,
+                    'end_datetime' => $endDateTime,
+                    'reason' => $validatedData['reason'],
+                    'status' => 'pending', // La cita comienza como pendiente (a realizar)
                     'service_order_id' => $linkedServiceOrder->id, // Vincula a la orden de servicio ya pagada
+                    'notes' => 'Cita agendada con servicio pre-comprado.',
                 ]);
 
-                Session::forget('pending_service_order_id_to_link');
-                Session::flash('success', '¡Cita agendada exitosamente con tu servicio adquirido!');
+                Session::forget('pending_service_order_id_to_link'); // Limpia la sesión
+                DB::commit(); // Confirma la transacción
+                Session::flash('success', '¡Cita agendada exitosamente con tu servicio adquirido! Revisa tus citas.');
                 Log::info('Cita creada directamente y vinculada a ServiceOrder ' . $linkedServiceOrder->id . '.', ['appointment_id' => $appointment->id]);
-                return redirect()->route('client.citas.index');
+                return redirect()->route('client.citas.show', $appointment->id); // Redirige a los detalles de la cita
             } else {
                 // Flujo 2: Agendar cita normalmente (requiere pago)
+                // Se crea una ServiceOrder PENDIENTE y se redirige al pago
                 $newServiceOrder = ServiceOrder::create([
                     'user_id' => Auth::id(),
                     'service_id' => $selectedService->id,
@@ -208,18 +390,22 @@ class CitaController extends Controller
                     'currency' => config('app.locale_currency', 'PEN'),
                 ]);
 
+                // Guardamos los datos de la cita en la sesión para crearla después del pago exitoso
                 Session::put('current_service_order_id_for_payment', $newServiceOrder->id);
                 Session::put('pending_appointment_data', [
+                    'user_id' => Auth::id(),
                     'mascota_id' => $validatedData['mascota_id'],
                     'veterinarian_id' => $validatedData['veterinarian_id'],
+                    'service_id' => $validatedData['service_id'],
                     'date' => $startDateTime->toDateTimeString(), // Almacena como string para la sesión
                     'end_datetime' => $endDateTime->toDateTimeString(), // Almacena como string
                     'reason' => $validatedData['reason'],
-                    'service_id' => $validatedData['service_id'],
-                    'status' => 'pending', // Estado inicial
+                    'status' => 'pending', // Estado inicial de la cita (se confirmará después del pago)
                     'service_order_id' => $newServiceOrder->id, // Para vincularlo después del pago
+                    'notes' => 'Cita pendiente de pago.',
                 ]);
 
+                DB::commit(); // Confirma la creación de la ServiceOrder
                 Log::info('Nueva ServiceOrder PENDIENTE creada para la cita, datos de la cita en la sesión.', [
                     'service_order_id' => $newServiceOrder->id,
                     'user_id' => Auth::id(),
@@ -229,16 +415,30 @@ class CitaController extends Controller
                     ->with('info', 'Por favor, completa el pago para confirmar tu cita.');
             }
         } catch (\Exception $e) {
-            Log::error('Error al procesar la cita en CitaController@store: ' . $e->getMessage(), [
+            DB::rollBack(); // Deshace la transacción si algo salió mal
+            Log::error('Error al agendar cita en CitaController@store: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
-                'validated_data' => $validatedData
+                'validated_data' => $validatedData ?? 'N/A'
             ]);
-            return redirect()->back()->with('error', 'Hubo un error al procesar tu cita. Inténtalo de nuevo.');
+            // Mensaje de error más amigable para el usuario
+            $errorMessage = $e->getMessage();
+            if (strpos($errorMessage, 'Integrity constraint violation') !== false) {
+                $errorMessage = 'Hubo un problema de integridad de datos. Es posible que el horario ya no esté disponible. Por favor, inténtelo de nuevo.';
+            } else if (strpos($errorMessage, 'No se encontró el veterinario') !== false) {
+                $errorMessage = 'El veterinario seleccionado no es válido.';
+            } else if (strpos($errorMessage, 'El horario seleccionado ya no está disponible') !== false) {
+                // Este mensaje ya es específico, lo mantenemos
+            } else if (strpos($errorMessage, 'No puedes agendar citas en el pasado') !== false) {
+                // Este mensaje ya es específico, lo mantenemos
+            } else {
+                $errorMessage = 'Ocurrió un error inesperado al agendar la cita. Por favor, inténtalo de nuevo más tarde.';
+            }
+
+            return redirect()->back()->withInput($request->all())->with('error', $errorMessage);
         }
     }
-
     public function show(Appointment $appointment): View|\Illuminate\Http\RedirectResponse
     {
         $appointment->loadMissing('mascota');
@@ -255,112 +455,139 @@ class CitaController extends Controller
 
         return view('Client.citas.show', compact('appointment'));
     }
-
-    public function getAvailableTimeSlots(Request $request)
+    public function getAvailableTimeSlots(Request $request): \Illuminate\Http\JsonResponse
     {
-        Log::info('Request for available slots received.', $request->all());
+        $request->validate([
+            'veterinarian_id' => 'required|exists:veterinarians,id',
+            'date' => 'required|date_format:Y-m-d',
+            'service_id' => 'required|exists:services,id',
+        ]);
 
         $veterinarianId = $request->input('veterinarian_id');
-        $date = $request->input('date');
+        $selectedDate = Carbon::parse($request->input('date'));
         $serviceId = $request->input('service_id');
 
-        if (!$veterinarianId || !$date || !$serviceId) {
-            Log::warning('Missing parameters for getAvailableTimeSlots.', $request->all());
-            return response()->json(['error' => 'Parámetros incompletos.'], 400);
+        Log::info('--- INICIO getAvailableTimeSlots ---');
+        Log::info('Parámetros recibidos:', [
+            'veterinarian_id' => $veterinarianId,
+            'date' => $selectedDate->toDateString(),
+            'service_id' => $serviceId
+        ]);
+
+        $service = Service::find($serviceId);
+        if (!$service || is_null($service->duration_minutes) || $service->duration_minutes <= 0) {
+            Log::warning('Servicio no válido.', ['service_id' => $serviceId]);
+            return response()->json(['slots' => []], 200);
+        }
+        $slotDurationMinutes = $service->duration_minutes;
+        Log::info('Duración del servicio:', ['minutes' => $slotDurationMinutes]);
+
+        $dayOfWeekMapping = [
+            'monday' => 'lunes',
+            'tuesday' => 'martes',
+            'wednesday' => 'miércoles',
+            'thursday' => 'jueves',
+            'friday' => 'viernes',
+            'saturday' => 'sábado',
+            'sunday' => 'domingo',
+        ];
+
+        $dayOfWeekEnglish = strtolower($selectedDate->format('l'));
+        $dayOfWeek = $dayOfWeekMapping[$dayOfWeekEnglish] ?? null;
+
+        if (is_null($dayOfWeek)) {
+            Log::error('Día no reconocido:', ['english_day' => $dayOfWeekEnglish]);
+            return response()->json(['slots' => []], 500);
         }
 
-        try {
-            $selectedDate = Carbon::parse($date);
-            $service = Service::findOrFail($serviceId);
-            $veterinarian = Veterinarian::findOrFail($veterinarianId);
+        Log::info('Día mapeado:', ['day_of_week' => $dayOfWeek]);
 
-            $durationMinutes = $service->duration_minutes ?? 30;
-            $dayName = strtolower($selectedDate->format('l'));
+        $schedules = VeterinarianSchedule::where('veterinarian_id', $veterinarianId)
+            ->where('day_of_week', $dayOfWeek)
+            ->orderBy('start_time')
+            ->get();
 
-            Log::info("Fetching schedules for veterinarian_id: {$veterinarianId}, date: {$date}, day: {$dayName}");
+        if ($schedules->isEmpty()) {
+            Log::warning('No hay horarios:', ['vet_id' => $veterinarianId, 'day' => $dayOfWeek]);
+            return response()->json(['slots' => []], 200);
+        }
 
-            $workingSchedules = VeterinarianSchedule::where('veterinarian_id', $veterinarianId)
-                ->whereJsonContains('day_of_week', $dayName)
-                ->get();
+        Log::info('Horarios encontrados:', $schedules->map(function ($s) {
+            return ['start' => $s->start_time, 'end' => $s->end_time];
+        })->toArray());
 
-            if ($workingSchedules->isEmpty()) {
-                Log::info("No working schedules found for veterinarian {$veterinarianId} on {$dayName}.");
-                return response()->json(['slots' => []]);
-            }
+        $existingAppointments = Appointment::where('veterinarian_id', $veterinarianId)
+            ->whereDate('date', $selectedDate->toDateString())
+            ->whereIn('status', ['pending', 'confirmed', 'completed'])
+            ->get();
 
-            $availableSlots = [];
+        Log::info('Citas existentes:', $existingAppointments->map(function ($a) {
+            return ['start' => $a->date->format('H:i'), 'end' => $a->end_datetime->format('H:i')];
+        })->toArray());
 
-            foreach ($workingSchedules as $schedule) {
-                $workStart = $selectedDate->copy()->setTimeFromTimeString($schedule->start_time->format('H:i:s'));
-                $workEnd = $selectedDate->copy()->setTimeFromTimeString($schedule->end_time->format('H:i:s'));
+        $allAvailableSlots = [];
+        $now = Carbon::now();
+        $isToday = $selectedDate->isToday();
 
-                if ($workEnd->lte($workStart)) {
-                    $workEnd->addDay();
+        Log::debug('Hoy es hoy?', ['isToday' => $isToday, 'now' => $now->format('Y-m-d H:i:s')]);
+
+        foreach ($schedules as $schedule) {
+            $startTime = Carbon::parse($schedule->start_time);
+            $endTime = Carbon::parse($schedule->end_time);
+
+            $currentSlotStart = $selectedDate->copy()->setTimeFrom($startTime);
+            $endOfScheduleDay = $selectedDate->copy()->setTimeFrom($endTime);
+
+            while ($currentSlotStart->lessThan($endOfScheduleDay)) {
+                $currentSlotEnd = $currentSlotStart->copy()->addMinutes($slotDurationMinutes);
+
+                if ($currentSlotEnd->greaterThan($endOfScheduleDay)) {
+                    break;
                 }
 
-                Log::info("Processing schedule from {$workStart->toDateTimeString()} to {$workEnd->toDateTimeString()}");
+                $isAvailable = true;
 
-                $period = CarbonPeriod::create($workStart, "{$durationMinutes} minutes", $workEnd);
-
-                foreach ($period as $slotStart) {
-                    $slotEnd = $slotStart->copy()->addMinutes($durationMinutes);
-
-                    if ($slotEnd->gt($workEnd)) {
-                        continue;
+                if ($isToday && $currentSlotStart->lessThan($now)) {
+                    $isAvailable = false;
+                    Log::debug('Slot pasado:', [
+                        'slot_start' => $currentSlotStart->format('Y-m-d H:i:s'),
+                        'now' => $now->format('Y-m-d H:i:s')
+                    ]);
+                } else {
+                    foreach ($existingAppointments as $app) {
+                        if ($currentSlotStart->lt($app->end_datetime) && $currentSlotEnd->gt($app->date)) {
+                            $isAvailable = false;
+                            Log::debug('Solapado con cita:', [
+                                'slot_start' => $currentSlotStart->format('H:i'),
+                                'slot_end' => $currentSlotEnd->format('H:i'),
+                                'cita_start' => $app->date->format('H:i'),
+                                'cita_end' => $app->end_datetime->format('H:i'),
+                            ]);
+                            break;
+                        }
                     }
+                }
 
-                    // Asegurarse de que el slot sea en el futuro inmediato (al menos 5 minutos desde ahora)
-                    // Considerando la hora actual de Peru
-                    if ($slotStart->lt(Carbon::now('America/Lima')->addMinutes(5))) { // Cita: 1
-                        continue;
-                    }
-
-                    // Verificar superposición con citas existentes del veterinario
-                    $isBooked = Appointment::where('veterinarian_id', $veterinarianId)
-                        ->where(function ($query) use ($slotStart, $slotEnd) {
-                            $query->where(function ($q) use ($slotStart, $slotEnd) {
-                                $q->where('date', '>=', $slotStart)
-                                    ->where('date', '<', $slotEnd);
-                            })->orWhere(function ($q) use ($slotStart, $slotEnd) {
-                                $q->where('end_datetime', '>', $slotStart)
-                                    ->where('end_datetime', '<=', $slotEnd);
-                            })->orWhere(function ($q) use ($slotStart, $slotEnd) {
-                                $q->where('date', '<=', $slotStart)
-                                    ->where('end_datetime', '>=', $slotEnd);
-                            });
-                        })
-                        ->whereNotIn('status', ['cancelled', 'rejected', 'reprogramming_rejected_by_client', 'reprogrammed'])
-                        ->exists();
-
-                    if ($isBooked) {
-                        Log::info("Slot {$slotStart->format('H:i')} - {$slotEnd->format('H:i')} is booked.");
-                        continue;
-                    }
-
-
-                    // *** ESTA ES LA SECCIÓN QUE ELIMINASTE/COMENTASTE DE SCHEDULEBLOCK ***
-                    // Si en el futuro lo implementas, lo volverías a añadir aquí.
-
-                    $availableSlots[] = [
-                        'start' => $slotStart->format('H:i'),
-                        'end' => $slotEnd->format('H:i'),
+                if ($isAvailable) {
+                    $allAvailableSlots[] = [
+                        'start' => $currentSlotStart->format('H:i'),
+                        'end' => $currentSlotEnd->format('H:i'),
+                        'full_datetime' => $selectedDate->format('Y-m-d') . ' ' . $currentSlotStart->format('H:i'),
                     ];
+                    Log::debug('✅ Slot DISPONIBLE:', ['start' => $currentSlotStart->format('H:i')]);
+                } else {
+                    Log::debug('❌ Slot NO DISPONIBLE:', ['start' => $currentSlotStart->format('H:i')]);
                 }
+
+                $currentSlotStart->addMinutes($slotDurationMinutes);
             }
-
-            Log::info("Found " . count($availableSlots) . " available slots.");
-            return response()->json(['slots' => $availableSlots]);
-        } catch (\Exception $e) {
-            Log::error('Error in getAvailableTimeSlots: ' . $e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-                'request' => $request->all()
-            ]);
-            return response()->json(['error' => 'Error interno del servidor al obtener horarios.'], 500);
         }
-    }
 
+        Log::info('Slots finales:', $allAvailableSlots);
+        Log::info('--- FIN getAvailableTimeSlots ---');
+
+        return response()->json(['slots' => $allAvailableSlots]);
+    }
     /**
      * Maneja el callback de pago exitoso (llamado después de que PayPal confirma el pago
      * y PaymentController@success ha actualizado la ServiceOrder a COMPLETED).
@@ -400,10 +627,11 @@ class CitaController extends Controller
             $pendingAppointmentData['end_datetime'] = Carbon::parse($pendingAppointmentData['end_datetime']);
 
             $appointment = Appointment::create(array_merge($pendingAppointmentData, [
+                // 'user_id' => Auth::id(), //añadi aqui oye fea || actualizado...
                 'service_order_id' => $serviceOrder->id, // ¡VINCULA LA CITA A LA ORDEN DE SERVICIO PAGADA!
             ]));
             Log::info('Cita creada exitosamente y vinculada a ServiceOrder:', ['appointment_id' => $appointment->id, 'service_order_id' => $serviceOrder->id]);
-            return redirect()->route('client.citas.index')->with('success', '¡Pago procesado y cita agendada exitosamente!');
+            return redirect()->route('client.citas.index')->with('success', '¡Pago procesado y cita agendada exitosamente, te enviamos un email con los detalles!');
         } catch (\Exception $e) {
             Log::error('Error al crear la cita en CitaController@completeBookingAfterPayment: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
@@ -414,6 +642,83 @@ class CitaController extends Controller
             return redirect()->route('client.citas.create')->with('error', 'Hubo un error al agendar tu cita después del pago. Por favor, contacta a soporte.');
         }
     }
+
+
+    //intento con chatgpt :(
+
+    public function edit(Appointment $appointment)
+    {
+        // Asegúrate de que solo el dueño de la cita puede editarla
+        // if ($appointment->user_id !== Auth::id()) {
+        //     abort(403, 'No tienes permiso para reprogramar esta cita.');
+        // }
+
+        // Solo permitir reprogramar si está pendiente
+        if ($appointment->status !== 'pending') {
+            return redirect()->route('client.citas.index')->with('error', 'Solo puedes reprogramar citas pendientes.');
+        }
+
+        $mascotas = Auth::user()->cliente->mascotas;
+        $service = $appointment->service;
+
+        return view('client.citas.reprogramar', [
+            'appointment' => $appointment,
+            'mascotas' => $mascotas,
+            'preselectedService' => $service,
+        ]);
+    }
+    public function update(Request $request, Appointment $appointment)
+    {
+        // if ($appointment->user_id !== Auth::id()) {
+        //     abort(403, 'No tienes permiso para modificar esta cita.');
+        // }
+
+        if ($appointment->status !== 'pending') {
+            return redirect()->route('client.citas.index')->with('error', 'Solo puedes reprogramar citas pendientes.');
+        }
+
+        $request->validate([
+            'mascota_id' => 'required|exists:mascotas,id',
+            'date' => 'required|date|after_or_equal:today',
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        // Validar que no haya otra cita en ese horario
+        $start = Carbon::parse($request->date);
+        $end = $start->copy()->addMinutes($appointment->service->duration_minutes);
+
+        $solapamiento = Appointment::where('veterinarian_id', $appointment->veterinarian_id)
+            ->where('id', '!=', $appointment->id)
+            ->where(function ($q) use ($start, $end) {
+                $q->whereBetween('date', [$start, $end])
+                    ->orWhereBetween('end_datetime', [$start, $end])
+                    ->orWhere(function ($query) use ($start, $end) {
+                        $query->where('date', '<', $start)
+                            ->where('end_datetime', '>', $end);
+                    });
+            })
+            ->exists();
+
+        if ($solapamiento) {
+            return redirect()->back()->withInput()->with('error', 'Ya existe una cita en ese horario.');
+        }
+
+        $appointment->update([
+            'mascota_id' => $request->mascota_id,
+            'date' => $start,
+            'end_datetime' => $end,
+            'reason' => $request->reason,
+        ]);
+
+        return redirect()->route('client.citas.show', $appointment->id)
+            ->with('success', '¡Cita reprogramada exitosamente!');
+    }
+
+
+    //fin de intentoc con chatgtp
+
+
+
     /*
     |--------------------------------------------------------------------------
     | Métodos para la Reprogramación de Citas
@@ -422,30 +727,41 @@ class CitaController extends Controller
 
     public function showReprogrammingForm(Appointment $appointment): View|\Illuminate\Http\RedirectResponse
     {
-        // Validar que la cita pertenezca al cliente autenticado
         $client = Auth::user()->cliente;
-        if (!$client || $appointment->mascota->cliente_id !== $client->id) { // Usamos cliente_id
+
+        // Validar que la cita pertenezca al cliente autenticado
+        if (!$client || $appointment->mascota->cliente_id !== $client->id) {
             return redirect()->route('client.citas.index')->with('error', 'No tienes permiso para reprogramar esta cita.');
         }
 
-        // Si ya hay una solicitud de reprogramación 'activa' para esta cita,
-        // redirigir al estado de la solicitud para evitar duplicados.
-        // Los estados 'pending_client_confirmation' y 'pending_veterinarian_confirmation' indican una solicitud en curso.
-        $activeReprogrammingRequest = ReprogrammingRequest::where('appointment_id', $appointment->id)
-            ->whereIn('status', ['pending_client_confirmation', 'pending_veterinarian_confirmation'])
-            ->first();
-        if ($activeReprogrammingRequest) {
-            // CAMBIO AQUÍ: Usamos el nombre de ruta correcto 'client.citas.reprogram.status'
-            return redirect()->route('client.citas.reprogram.status', $appointment->id)->with('info', 'Ya existe una solicitud de reprogramación pendiente o en curso para esta cita.');
-        }
-
-        // Cargar las relaciones necesarias para mostrar la información de la cita original en el formulario
-        // CAMBIO AQUÍ: Asegurarse de cargar 'service' para tener la duración disponible
         $appointment->load('mascota', 'veterinarian.user', 'service');
 
+        // Buscar la solicitud de reprogramación ACTIVA para esta cita.
+        // Una solicitud activa es la última que no ha sido aplicada, cancelada o marcada como obsoleta.
+        // El estado 'pending_reprogramming' en la cita original indica que hay una negociación en curso.
+        $activeReprogrammingRequest = ReprogrammingRequest::where('appointment_id', $appointment->id)
+            ->whereNotIn('status', ['accepted_by_both', 'applied', 'cancelled_by_request', 'obsolete_by_new_proposal'])
+            ->orderBy('created_at', 'desc') // Obtener la más reciente entre las "no finalizadas"
+            ->first();
+
+        if ($activeReprogrammingRequest) {
+            Log::info('Redirigiendo a estado de reprogramación existente para cliente.', [
+                'appointment_id' => $appointment->id,
+                'request_id' => $activeReprogrammingRequest->id,
+                'status' => $activeReprogrammingRequest->status
+            ]);
+            return redirect()->route('client.citas.reprogram.status', $appointment->id)
+                ->with('info', 'Ya existe una solicitud de reprogramación en curso para esta cita. Por favor, gestiónala desde allí.');
+        }
+
+        // Si la cita ya está reprogramada o cancelada, no se debe permitir iniciar una nueva solicitud.
+        if ($appointment->status === 'reprogrammed' || $appointment->status === 'cancelled') {
+            return redirect()->route('client.citas.index')->with('info', 'Esta cita ya ha sido gestionada y no puede ser reprogramada.');
+        }
+
+        Log::info('Mostrando formulario de reprogramación inicial (sin solicitud activa) para cita.', ['appointment_id' => $appointment->id]);
         return view('client.citas.reprogram_form', compact('appointment'));
     }
-
     /**
      * Store a new reprogramming request.
      * Almacena una nueva solicitud de reprogramación en la base de datos.
@@ -457,51 +773,124 @@ class CitaController extends Controller
             return redirect()->route('client.citas.index')->with('error', 'No tienes permiso para reprogramar esta cita.');
         }
 
-        // CAMBIO AQUÍ: Carga la relación 'service' si no está ya cargada para asegurar que duration_minutes esté disponible
-        $appointment->loadMissing('service');
+        // 1. Validar campos básicos del formulario (sin Validator::make())
+        // CAMBIO: Usar 'proposed_start_date_time' en lugar de 'new_appointment_date'
+        if (empty($request->input('proposed_start_date_time'))) {
+            return redirect()->back()->withInput()->with('error', 'La nueva fecha y hora de la cita es obligatoria.');
+        }
+        if (empty($request->input('reprogramming_reason'))) {
+            return redirect()->back()->withInput()->with('error', 'El motivo de la reprogramación es obligatorio.');
+        }
+        if (strlen($request->input('reprogramming_reason')) > 500) {
+            return redirect()->back()->withInput()->with('error', 'El motivo de la reprogramación no debe exceder los 500 caracteres.');
+        }
 
-        // Validación de los datos de la propuesta
-        $request->validate([
-            'proposed_start_date_time' => 'required|date|after:now', // La nueva fecha y hora debe ser en el futuro
-            // CAMBIO AQUÍ: ¡Eliminamos la validación de 'proposed_end_date_time' del request!
-            'reprogramming_reason' => 'required|string|max:500',
-        ]);
+        // CAMBIO: Usar 'proposed_start_date_time'
+        $newDateTime = Carbon::parse($request->input('proposed_start_date_time'));
+
+        // Asegurarse de que la nueva fecha sea en el futuro
+        if ($newDateTime->lessThan(Carbon::now())) {
+            return redirect()->back()->withInput()->with('error', 'La nueva fecha y hora no puede ser en el pasado.');
+        }
+
+        // Cargar el servicio para obtener su duración
+        $appointment->loadMissing('service');
+        $veterinarianId = $appointment->veterinarian_id;
+        $serviceId = $appointment->service_id;
+        $appointmentId = $appointment->id; // ID de la cita actual para ignorarla en solapamientos
+
+        // Obtener la duración del servicio
+        $service = Service::find($serviceId);
+        if (!$service || empty($service->duration_minutes) || $service->duration_minutes <= 0) {
+            return redirect()->back()->withInput()->with('error', 'La duración del servicio para la validación no es válida. Contacte al administrador.');
+        }
+        $slotDurationMinutes = $service->duration_minutes;
+        $newEndDateTime = $newDateTime->copy()->addMinutes($slotDurationMinutes);
+
+        // 2. Verificar horarios de trabajo del veterinario para el nuevo día
+        $dayOfWeekEnglish = strtolower($newDateTime->format('l'));
+        $dayOfWeekMapping = [
+            'monday' => 'lunes',
+            'tuesday' => 'martes',
+            'wednesday' => 'miércoles',
+            'thursday' => 'jueves',
+            'friday' => 'viernes',
+            'saturday' => 'sábado',
+            'sunday' => 'domingo',
+        ];
+        $dayOfWeek = $dayOfWeekMapping[$dayOfWeekEnglish] ?? null;
+
+        if (!$dayOfWeek) {
+            return redirect()->back()->withInput()->with('error', 'Día de la semana no reconocido para el horario propuesto.');
+        }
+
+        $schedules = VeterinarianSchedule::where('veterinarian_id', $veterinarianId)
+            ->where('day_of_week', $dayOfWeek)
+            ->get();
+
+        $isInSchedule = false;
+        foreach ($schedules as $schedule) {
+            $scheduleStart = Carbon::parse($newDateTime->format('Y-m-d') . ' ' . $schedule->start_time);
+            $scheduleEnd = Carbon::parse($newDateTime->format('Y-m-d') . ' ' . $schedule->end_time);
+
+            if ($newDateTime->gte($scheduleStart) && $newEndDateTime->lte($scheduleEnd)) {
+                $isInSchedule = true;
+                break;
+            }
+        }
+
+        if (!$isInSchedule) {
+            return redirect()->back()->withInput()->with('error', 'La nueva hora seleccionada no está dentro del horario de trabajo del veterinario para ese día.');
+        }
+
+        // 3. Verificar solapamiento con otras citas existentes
+        $overlappingAppointment = Appointment::where('veterinarian_id', $veterinarianId)
+            ->where('id', '!=', $appointmentId) // Ignorar la cita que se está reprogramando
+            ->whereIn('status', ['pending', 'confirmed', 'completed', 'pending_reprogramming', 'reprogrammed'])
+            ->where(function ($query) use ($newDateTime, $newEndDateTime) {
+                $query->where(function ($q) use ($newDateTime, $newEndDateTime) {
+                    $q->where('date', '<', $newEndDateTime)
+                        ->where('end_datetime', '>', $newDateTime);
+                });
+            })
+            ->first();
+
+        if ($overlappingAppointment) {
+            return redirect()->back()->withInput()->with('error', 'La nueva fecha y hora se superpone con otra cita existente para este veterinario.');
+        }
+        // --- FIN DE TODAS LAS VALIDACIONES MANUALES ---
 
         try {
-            $proposedStart = Carbon::parse($request->proposed_start_date_time);
+            // Marcar cualquier solicitud de reprogramación NO FINALIZADA como obsoleta para esta cita.
+            ReprogrammingRequest::where('appointment_id', $appointment->id)
+                ->whereNotIn('status', ['accepted_by_both', 'applied', 'cancelled_by_request', 'obsolete_by_new_proposal'])
+                ->update(['status' => 'obsolete_by_new_proposal']);
 
-            // CAMBIO AQUÍ: Calcula proposed_end_date_time usando la duración del servicio de la cita original
-            $durationMinutes = $appointment->service->duration_minutes ?? 30; // Obtiene la duración del servicio o usa 30 minutos por defecto
-            $proposedEnd = $proposedStart->copy()->addMinutes($durationMinutes);
-
-            // 1. Crear la solicitud de reprogramación
+            // Crear la nueva solicitud de reprogramación (iniciada por el cliente)
             $reprogrammingRequest = ReprogrammingRequest::create([
                 'appointment_id' => $appointment->id,
                 'client_id' => $client->id,
-                'veterinarian_id' => $appointment->veterinarian_id,
+                'veterinarian_id' => $veterinarianId,
                 'requester_type' => 'client', // El cliente es quien inicia la solicitud
-                'requester_user_id' => Auth::id(),
-                'proposed_start_date_time' => $proposedStart,
-                'proposed_end_date_time' => $proposedEnd, // Usamos el valor calculado
+                'proposed_start_date_time' => $newDateTime,
+                'proposed_end_date_time' => $newEndDateTime,
                 'reprogramming_reason' => $request->reprogramming_reason,
                 'client_confirmed' => true, // El cliente confirma su propia propuesta al enviarla
-                'client_confirmed_at' => Carbon::now(),
                 'veterinarian_confirmed' => false, // Todavía no ha confirmado el veterinario
-                'veterinarian_confirmed_at' => null,
                 'status' => 'pending_veterinarian_confirmation', // Esperando confirmación del veterinario
-                'admin_notes' => null,
             ]);
 
-            // 2. Actualizar el estado de la cita original para reflejar que está en proceso de reprogramación
-            $appointment->status = 'pending_reprogramming';
-            $appointment->save();
+            // Actualizar el estado de la cita original a 'pending_reprogramming'
+            if ($appointment->status !== 'pending_reprogramming') {
+                $appointment->status = 'pending_reprogramming';
+                $appointment->save();
+            }
 
-            Log::info('Solicitud de reprogramación creada por cliente.', ['request_id' => $reprogrammingRequest->id, 'appointment_id' => $appointment->id]);
+            Log::info('Solicitud de reprogramación inicial creada por cliente.', ['request_id' => $reprogrammingRequest->id, 'appointment_id' => $appointment->id]);
 
-            // CAMBIO AQUÍ: Usamos el nombre de ruta correcto 'client.citas.reprogram.status'
             return redirect()->route('client.citas.reprogram.status', $appointment->id)->with('success', 'Tu solicitud de reprogramación ha sido enviada con éxito. El veterinario la revisará pronto.');
         } catch (\Exception $e) {
-            Log::error('Error al procesar solicitud de reprogramación en CitaController@storeReprogrammingRequest: ' . $e->getMessage(), [
+            Log::error('Error al procesar solicitud de reprogramación inicial por cliente: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
@@ -510,7 +899,6 @@ class CitaController extends Controller
             return redirect()->back()->withInput()->with('error', 'Hubo un error al procesar tu solicitud de reprogramación: ' . $e->getMessage());
         }
     }
-
     /**
      * Display the status of a specific reprogramming request for an appointment.
      * Muestra el estado de la solicitud de reprogramación de una cita específica.
@@ -522,107 +910,274 @@ class CitaController extends Controller
             return redirect()->route('client.citas.index')->with('error', 'No tienes permiso para ver el estado de esta cita.');
         }
 
-        // Buscar la solicitud de reprogramación más reciente para esta cita
-        // que el cliente inició o que está esperando su acción.
+        // Obtener la ÚLTIMA solicitud de reprogramación que NO ha sido FINALIZADA
         $reprogrammingRequest = ReprogrammingRequest::where('appointment_id', $appointment->id)
-            ->where(function ($query) {
-                $query->where('requester_type', 'client') // La solicitud fue iniciada por el cliente
-                    ->whereIn('status', ['pending_veterinarian_confirmation', 'accepted_by_both', 'applied', 'rejected_by_veterinarian', 'cancelled_by_request', 'obsolete_by_new_proposal'])
-                    ->orWhere(function ($q) { // O una solicitud iniciada por el veterinario esperando confirmación del cliente
-                        $q->where('requester_type', 'veterinarian')
-                            ->where('status', 'pending_client_confirmation');
-                    });
-            })
+            ->whereNotIn('status', ['accepted_by_both', 'applied', 'cancelled_by_request', 'obsolete_by_new_proposal'])
             ->orderBy('created_at', 'desc')
-            ->with(['appointment.mascota', 'appointment.veterinarian.user']) // Carga relaciones necesarias para la vista
+            ->with(['appointment.mascota', 'appointment.veterinarian.user'])
             ->first();
 
-
-        if (!$reprogrammingRequest) {
-            return redirect()->route('client.citas.index')->with('info', 'No se encontró una solicitud de reprogramación activa para esta cita. Puedes intentar reprogramarla si es posible.');
+        // Si no hay una solicitud activa pendiente o la cita ya está en un estado final
+        if (!$reprogrammingRequest || $appointment->status === 'reprogrammed' || $appointment->status === 'cancelled') {
+            if ($appointment->status === 'reprogrammed') {
+                return redirect()->route('client.citas.index')->with('success', 'Tu cita ya ha sido reprogramada exitosamente.');
+            }
+            if ($appointment->status === 'cancelled') {
+                return redirect()->route('client.citas.index')->with('info', 'Tu cita ha sido cancelada.');
+            }
+            // Si la cita está agendada pero no hay solicitudes activas, redirigir al formulario para iniciar.
+            Log::info('No se encontró una solicitud de reprogramación activa para la cita. Redirigiendo a formulario inicial.', ['appointment_id' => $appointment->id]);
+            return redirect()->route('client.citas.reprogram.form', $appointment->id)
+                ->with('info', 'No hay una solicitud de reprogramación activa para esta cita. Puedes iniciar una nueva si lo deseas.');
         }
 
-        return view('client.citas.reprogram_status', compact('reprogrammingRequest'));
+        Log::info('Mostrando estado de reprogramación para cita y solicitud.', ['appointment_id' => $appointment->id, 'request_id' => $reprogrammingRequest->id, 'status' => $reprogrammingRequest->status]);
+        return view('client.citas.reprogram_status', compact('reprogrammingRequest', 'appointment'));
     }
-
     /**
-     * Permite al cliente confirmar (aceptar o rechazar) una propuesta de reprogramación
-     * iniciada por el veterinario.
+     * Permite al cliente responder a una propuesta de reprogramación.
+     * Puede ACEPTAR o CONTRA-PROPONER.
+     * NO hay un rechazo simple que no involucre una contrapropuesta o cancelación.
      */
-    public function confirmReprogrammingRequest(Request $request, ReprogrammingRequest $reprogrammingRequest): \Illuminate\Http\RedirectResponse
+    public function respondToReprogrammingRequest(Request $request, Appointment $appointment): \Illuminate\Http\RedirectResponse
     {
         $client = Auth::user()->cliente;
 
-        // Verificar que la solicitud pertenezca al cliente o esté dirigida a él
-        if (!$client || $reprogrammingRequest->client_id !== $client->id) {
-            return redirect()->route('client.citas.index')->with('error', 'No tienes permiso para interactuar con esta solicitud de reprogramación.');
+        if (!$client || $appointment->mascota->cliente_id !== $client->id) {
+            return redirect()->route('client.citas.index')->with('error', 'No tienes permiso para interactuar con esta cita.');
         }
 
-        // Solo permitir acción si el estado es 'pending_client_confirmation'
-        if ($reprogrammingRequest->status !== 'pending_client_confirmation') {
-            // CAMBIO AQUÍ: Usamos el nombre de ruta correcto 'client.citas.reprogram.status'
-            return redirect()->route('client.citas.reprogram.status', $reprogrammingRequest->appointment_id)->with('info', 'Esta solicitud ya no está pendiente de tu confirmación.');
+        // Obtener la solicitud activa actual que el cliente debe responder
+        $currentRequest = ReprogrammingRequest::where('appointment_id', $appointment->id)
+            ->where('status', 'pending_client_confirmation') // Esperando respuesta del cliente
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$currentRequest) {
+            return redirect()->route('client.citas.reprogram.status', $appointment->id)->with('error', 'No hay una propuesta de reprogramación activa que requiera tu respuesta.');
         }
 
-        $action = $request->input('action'); // 'accept' o 'reject'
+        $action = $request->input('action'); // Puede ser 'accept' o 'counter_propose'
 
         try {
             if ($action === 'accept') {
-                $reprogrammingRequest->update([
-                    'client_confirmed' => true,
-                    'client_confirmed_at' => Carbon::now(),
-                    'status' => 'accepted_by_both', // Ambos han confirmado
+                if ($currentRequest->status !== 'pending_client_confirmation' || $currentRequest->requester_type !== 'veterinarian') {
+                    return redirect()->back()->with('error', 'No puedes aceptar esta propuesta en este momento.');
+                }
+
+                $currentRequest->client_confirmed = true;
+                $currentRequest->save();
+
+                if ($currentRequest->veterinarian_confirmed === true && $currentRequest->client_confirmed === true) {
+                    $appointment->update([
+                        'date' => $currentRequest->proposed_start_date_time,
+                        'end_datetime' => $currentRequest->proposed_end_date_time,
+                        'status' => 'reprogrammed',
+                    ]);
+                    $currentRequest->update(['status' => 'applied']);
+                    Log::info('Cita reprogramada automáticamente tras aceptación del cliente.', ['request_id' => $currentRequest->id, 'appointment_id' => $appointment->id]);
+                    return redirect()->route('client.citas.reprogram.status', $appointment->id)->with('success', '¡Has aceptado la nueva fecha! La cita ha sido reprogramada con éxito.');
+                }
+                Log::info('Cliente aceptó propuesta del veterinario. Esperando que el sistema actualice.', ['request_id' => $currentRequest->id, 'appointment_id' => $appointment->id]);
+                return redirect()->route('client.citas.reprogram.status', $appointment->id)->with('info', 'Has aceptado la propuesta. Esperando la confirmación final.');
+            } elseif ($action === 'counter_propose') {
+                // El cliente rechaza la propuesta actual y envía una nueva
+                $veterinarianId = $appointment->veterinarian_id;
+                $serviceId = $appointment->service_id;
+                $appointmentId = $appointment->id; // ID de la cita actual para ignorarla en solapamientos
+
+                // Validar campos básicos de la contrapropuesta
+                if (empty($request->input('proposed_start_date_time'))) {
+                    return redirect()->back()->withInput()->with('error', 'La nueva fecha y hora para la contrapropuesta es obligatoria.')->fragment('counterProposeModal'); // Vuelve al modal
+                }
+                if (empty($request->input('reprogramming_reason'))) {
+                    return redirect()->back()->withInput()->with('error', 'El motivo de la contrapropuesta es obligatorio.')->fragment('counterProposeModal');
+                }
+                if (strlen($request->input('reprogramming_reason')) > 500) {
+                    return redirect()->back()->withInput()->with('error', 'El motivo de la contrapropuesta no debe exceder los 500 caracteres.')->fragment('counterProposeModal');
+                }
+
+
+                $newProposedStart = Carbon::parse($request->input('proposed_start_date_time'));
+
+                // Asegurarse de que la nueva fecha propuesta sea en el futuro estricto
+                if ($newProposedStart->lessThanOrEqualTo(Carbon::now())) {
+                    return redirect()->back()->withInput()->with('error', 'La nueva fecha y hora de la contrapropuesta debe ser en el futuro.')->fragment('counterProposeModal');
+                }
+
+                // 1. Obtener la duración del servicio
+                $appointment->loadMissing('service'); // Asegurarse de que el servicio está cargado
+                $service = $appointment->service;
+                if (!$service || empty($service->duration_minutes) || $service->duration_minutes <= 0) {
+                    return redirect()->back()->withInput()->with('error', 'La duración del servicio para la validación no es válida. Contacte al administrador.')->fragment('counterProposeModal');
+                }
+                $slotDurationMinutes = $service->duration_minutes;
+                $newProposedEnd = $newProposedStart->copy()->addMinutes($slotDurationMinutes);
+
+                // 2. Verificar horarios de trabajo del veterinario para el nuevo día
+                $dayOfWeekEnglish = strtolower($newProposedStart->format('l'));
+                $dayOfWeekMapping = [
+                    'monday' => 'lunes',
+                    'tuesday' => 'martes',
+                    'wednesday' => 'miércoles',
+                    'thursday' => 'jueves',
+                    'friday' => 'viernes',
+                    'saturday' => 'sábado',
+                    'sunday' => 'domingo',
+                ];
+                $dayOfWeek = $dayOfWeekMapping[$dayOfWeekEnglish] ?? null;
+
+                if (!$dayOfWeek) {
+                    return redirect()->back()->withInput()->with('error', 'Día de la semana no reconocido para el horario propuesto.')->fragment('counterProposeModal');
+                }
+
+                $schedules = VeterinarianSchedule::where('veterinarian_id', $veterinarianId)
+                    ->where('day_of_week', $dayOfWeek)
+                    ->get();
+
+                $isInSchedule = false;
+                foreach ($schedules as $schedule) {
+                    $scheduleStart = Carbon::parse($newProposedStart->format('Y-m-d') . ' ' . $schedule->start_time);
+                    $scheduleEnd = Carbon::parse($newProposedStart->format('Y-m-d') . ' ' . $schedule->end_time);
+
+                    if ($newProposedStart->gte($scheduleStart) && $newProposedEnd->lte($scheduleEnd)) {
+                        $isInSchedule = true;
+                        break;
+                    }
+                }
+
+                if (!$isInSchedule) {
+                    return redirect()->back()->withInput()->with('error', 'La nueva hora seleccionada no está dentro del horario de trabajo del veterinario para ese día.')->fragment('counterProposeModal');
+                }
+
+                // 3. Verificar solapamiento con otras citas existentes
+                $overlappingAppointment = Appointment::where('veterinarian_id', $veterinarianId)
+                    ->where('id', '!=', $appointmentId)
+                    ->whereIn('status', ['pending', 'confirmed', 'completed', 'pending_reprogramming', 'reprogrammed'])
+                    ->where(function ($query) use ($newProposedStart, $newProposedEnd) {
+                        $query->where(function ($q) use ($newProposedStart, $newProposedEnd) {
+                            $q->where('date', '<', $newProposedEnd)
+                                ->where('end_datetime', '>', $newProposedStart);
+                        });
+                    })
+                    ->first();
+
+                if ($overlappingAppointment) {
+                    return redirect()->back()->withInput()->with('error', 'La nueva fecha y hora se superpone con otra cita existente para este veterinario.')->fragment('counterProposeModal');
+                }
+                // --- FIN DE TODAS LAS VALIDACIONES MANUALES PARA CONTRAPROPUESTA ---
+
+                // Marcar la solicitud actual como obsoleta
+                $currentRequest->update(['status' => 'obsolete_by_new_proposal']);
+
+                // Crear una NUEVA ReprogrammingRequest con la contrapropuesta del cliente
+                $newReprogrammingRequest = ReprogrammingRequest::create([
+                    'appointment_id' => $appointment->id,
+                    'client_id' => $client->id,
+                    'veterinarian_id' => $veterinarianId,
+                    'requester_type' => 'client',
+                    'proposed_start_date_time' => $newProposedStart,
+                    'proposed_end_date_time' => $newProposedEnd,
+                    'reprogramming_reason' => $request->reprogramming_reason,
+                    'client_confirmed' => true, // El cliente ya confirma su propia contrapropuesta
+                    'veterinarian_confirmed' => false, // Pendiente de la confirmación del veterinario
+                    'status' => 'pending_veterinarian_confirmation',
                 ]);
 
-                // Opcional: Aquí puedes disparar un evento para que un Job o Listener
-                // actualice la cita original con la nueva fecha.
-                // Por ejemplo, `dispatch(new ApplyReprogramming($reprogrammingRequest));`
-                // O puedes hacerlo directamente aquí si es simple:
-                $reprogrammingRequest->appointment->update([
-                    'date' => $reprogrammingRequest->proposed_start_date_time,
-                    'end_datetime' => $reprogrammingRequest->proposed_end_date_time,
-                    'status' => 'reprogrammed', // Estado de la cita actualizado
-                ]);
-                $reprogrammingRequest->update(['status' => 'applied']); // Marca la solicitud como aplicada
-
-                Log::info('Cliente aceptó solicitud de reprogramación.', ['request_id' => $reprogrammingRequest->id]);
-                // CAMBIO AQUÍ: Usamos el nombre de ruta correcto 'client.citas.reprogram.status'
-                return redirect()->route('client.citas.reprogram.status', $reprogrammingRequest->appointment_id)->with('success', '¡Has aceptado la nueva fecha! La cita ha sido reprogramada.');
-            } elseif ($action === 'reject') {
-                $reprogrammingRequest->update([
-                    'client_confirmed' => false,
-                    'client_confirmed_at' => Carbon::now(),
-                    'status' => 'rejected_by_client', // Cliente rechazó
-                ]);
-
-                // Opcional: Aquí podrías querer revertir el estado de la cita original a 'pending' o 'confirmed'
-                // O dejarla como 'pending_reprogramming_rejected' para que el veterinario la vea
-                $reprogrammingRequest->appointment->update([
-                    'status' => 'reprogramming_rejected_by_client', // Nuevo estado o similar
-                ]);
-
-                Log::info('Cliente rechazó solicitud de reprogramación.', ['request_id' => $reprogrammingRequest->id]);
-                // CAMBIO AQUÍ: Usamos el nombre de ruta correcto 'client.citas.reprogram.status'
-                return redirect()->route('client.citas.reprogram.status', $reprogrammingRequest->appointment_id)->with('info', 'Has rechazado la propuesta de reprogramación.');
+                Log::info('Cliente envió contrapropuesta de reprogramación.', ['old_request_id' => $currentRequest->id, 'new_request_id' => $newReprogrammingRequest->id, 'appointment_id' => $appointment->id]);
+                return redirect()->route('client.citas.reprogram.status', $appointment->id)->with('success', 'Tu contrapropuesta ha sido enviada al veterinario.');
+            } else {
+                return redirect()->back()->with('error', 'Acción inválida.');
             }
-
-            return redirect()->back()->with('error', 'Acción inválida.');
         } catch (\Exception $e) {
-            Log::error('Error al confirmar/rechazar solicitud de reprogramación por cliente: ' . $e->getMessage(), [
+            Log::error('Error al responder a solicitud de reprogramación por cliente: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'appointment_id' => $appointment->id,
+                'action' => $action
+            ]);
+            return redirect()->back()->withInput()->with('error', 'Hubo un error al procesar tu respuesta: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Permite al cliente retirar una propuesta de reprogramación que él mismo inició
+     * y que está pendiente de confirmación del veterinario.
+     */
+    public function retractClientProposal(ReprogrammingRequest $reprogrammingRequest): \Illuminate\Http\RedirectResponse
+    {
+        $client = Auth::user()->cliente;
+
+        // Validar que la solicitud pertenezca al cliente, que él sea el "requester"
+        // y que esté pendiente de la confirmación del veterinario.
+        if (!$client || $reprogrammingRequest->client_id !== $client->id || $reprogrammingRequest->requester_type !== 'client') {
+            return redirect()->route('client.citas.index')->with('error', 'No tienes permiso para retirar esta propuesta.');
+        }
+
+        if ($reprogrammingRequest->status !== 'pending_veterinarian_confirmation') {
+            return redirect()->route('client.citas.reprogram.status', $reprogrammingRequest->appointment_id)->with('info', 'Esta propuesta ya no está pendiente de tu retiro.');
+        }
+
+        try {
+            $reprogrammingRequest->update([
+                'status' => 'cancelled_by_request', // La solicitud de reprogramación fue anulada por el cliente.
+                'client_confirmed' => false,
+            ]);
+
+            // Restaurar la cita principal a su estado 'confirmed' si no hay otra razón para que esté en 'pending_reprogramming'.
+            $reprogrammingRequest->appointment->update(['status' => 'confirmed']);
+
+            Log::info('Cliente retiró su propia propuesta de reprogramación.', ['request_id' => $reprogrammingRequest->id, 'appointment_id' => $reprogrammingRequest->appointment_id]);
+            return redirect()->route('client.citas.reprogram.status', $reprogrammingRequest->appointment_id)->with('success', 'Tu propuesta de reprogramación ha sido retirada. La cita original ha sido restaurada a su estado confirmado.');
+        } catch (\Exception $e) {
+            Log::error('Error al retirar propuesta de reprogramación por cliente: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
                 'request_id' => $reprogrammingRequest->id,
-                'action' => $action
             ]);
-            return redirect()->back()->with('error', 'Hubo un error al procesar tu respuesta: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Hubo un error al retirar tu propuesta: ' . $e->getMessage());
         }
     }
 
-    // Métodos existentes (citasAgendadas, verMascotas) no se modifican ya que son para el lado del veterinario.
-    // Aunque el nombre del controlador es Client\CitaController, estos métodos parecen ser de un Veterinarian\CitaController.
-    // Esto podría causar confusión o problemas de permisos si no están correctamente manejados por middleware.
-    // Te recomiendo revisar la ubicación de estos métodos si están destinados solo al veterinario.
+
+    public function cancelAppointment(Request $request, Appointment $appointment): \Illuminate\Http\RedirectResponse
+    {
+        $client = Auth::user()->cliente;
+        if (!$client || $appointment->mascota->cliente_id !== $client->id) {
+            return redirect()->route('client.citas.index')->with('error', 'No tienes permiso para cancelar esta cita.');
+        }
+
+        // (Opcional: puedes añadir una confirmación JavaScript o un campo oculto si el usuario ya vio la advertencia)
+        // if (!$request->input('confirmed_cancel')) {
+        //     return redirect()->back()->with('confirm_cancel_message', 'Al cancelar esta cita, perderás el dinero pagado y la cita será eliminada. ¿Estás seguro?');
+        // }
+
+        try {
+            // 1. Marcar la cita como cancelada
+            $appointment->status = 'cancelled';
+            $appointment->save();
+
+            // 2. Marcar cualquier solicitud de reprogramación activa/pendiente para esta cita como cancelada
+            ReprogrammingRequest::where('appointment_id', $appointment->id)
+                ->whereNotIn('status', ['accepted_by_both', 'applied', 'cancelled_by_request', 'obsolete_by_new_proposal'])
+                ->update(['status' => 'cancelled_by_request']); // 'cancelled_by_request' abarca la cancelación de la negociación
+
+            Log::info('Cita cancelada definitivamente por el cliente.', ['appointment_id' => $appointment->id, 'client_id' => $client->id]);
+            return redirect()->route('client.citas.index')->with('success', 'Tu cita ha sido cancelada con éxito. Por favor, ten en cuenta nuestras políticas de cancelación.');
+        } catch (\Exception $e) {
+            Log::error('Error al cancelar cita por el cliente: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'appointment_id' => $appointment->id
+            ]);
+            return redirect()->back()->with('error', 'Hubo un error al cancelar tu cita: ' . $e->getMessage());
+        }
+    }
+
+
     public function citasAgendadas(Request $request)
     {
         $veterinario = Auth::user()->veterinarian;
@@ -632,7 +1187,7 @@ class CitaController extends Controller
         // o que tu sistema de permisos lo maneja.
 
         // Simplemente copio el cuerpo para que tu archivo no se modifique
-        $status = $request->input('status', 'pending');
+        $status = $request->input('status');
         $desde = $request->input('desde');
         $hasta = $request->input('hasta');
         $mascotaId = $request->input('mascota_id');
@@ -659,6 +1214,8 @@ class CitaController extends Controller
         $citas = Appointment::with(['mascota.cliente', 'service'])
             ->where('veterinarian_id', $veterinario->id)
             ->when($status, fn($q) => $q->where('status', $status))
+            ->when(!$status, fn($q) => $q->whereIn('status', ['pending', 'confirmed']))
+
             ->when($desde, fn($q) => $q->whereDate('date', '>=', $desde))
             ->when($hasta, fn($q) => $q->whereDate('date', '<=', $hasta))
             ->when($mascotaId, fn($q) => $q->where('mascota_id', $mascotaId))
@@ -722,11 +1279,169 @@ class CitaController extends Controller
         ]);
     }
 
+    ///metoodo que incluyo para usarlo en el create form de citas, par mostrar que dias trabaja el veterinario 
+    //escogido
+    public function getVeterinarianWorkingDays(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'veterinarian_id' => 'required|exists:veterinarians,id',
+        ]);
+
+        $veterinarianId = $request->input('veterinarian_id');
+
+        // Obtener los horarios del veterinario para ver qué días atiende
+        $schedules = VeterinarianSchedule::where('veterinarian_id', $veterinarianId)
+            ->orderByRaw("FIELD(day_of_week, 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo')")
+            ->pluck('day_of_week') // Obtiene solo los nombres de los días
+            ->toArray(); // Convierte la colección a un array
+
+        if (empty($schedules)) {
+            return response()->json(['message' => 'Este veterinario no tiene horarios definidos.', 'workingDays' => []], 200);
+        }
+
+        return response()->json(['workingDays' => $schedules], 200);
+    }
+
+    ## Lógica de Reprogramación de Citas para el Cliente
+
     /**
-     * Nuevo método para obtener los slots de tiempo disponibles de un veterinario para una fecha y servicio específicos.
-     * Este método se llama vía AJAX desde la vista.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * Muestra el detalle de una solicitud de reprogramación para que el cliente la revise.
+     * Esta es la página a la que el cliente es redirigido desde la notificación.
      */
+    public function showReprogrammingRequest(ReprogrammingRequest $reprogrammingRequest): View|\Illuminate\Http\RedirectResponse
+    {
+        // Cargamos la relación `client.user` explícitamente para asegurar que está disponible
+        // y poder verificar que el usuario autenticado sea el dueño de la solicitud.
+        $reprogrammingRequest->load('client.user');
+
+        // Verificamos que el usuario autenticado sea el propietario de la solicitud.
+        // Si tu modelo Cliente no tiene un campo user_id, necesitarás adaptar esto
+        // para la forma en que se relaciona Cliente con User.
+        if (Auth::id() !== ($reprogrammingRequest->client->user->id ?? null)) {
+            Log::warning('Intento de acceso no autorizado a solicitud de reprogramación.', [
+                'user_id' => Auth::id(),
+                'attempted_reprogramming_request_id' => $reprogrammingRequest->id,
+                'request_client_user_id' => $reprogrammingRequest->client->user->id ?? 'N/A'
+            ]);
+            return redirect()->route('client.citas.index')->with('error', 'No tienes permiso para ver esta solicitud de reprogramación.');
+        }
+
+        // Si la solicitud ya fue respondida (aceptada o rechazada), redirigimos o mostramos un mensaje.
+        if ($reprogrammingRequest->status !== 'pending') {
+            return redirect()->route('client.citas.index')->with('info', 'Esta solicitud ya ha sido procesada.');
+        }
+
+        return view('client.reprogramming_requests.show', compact('reprogrammingRequest'));
+    }
+
+    /**
+     * Procesa la aceptación de una solicitud de reprogramación por parte del cliente.
+     */
+    public function acceptReprogrammingRequest(Request $request, ReprogrammingRequest $reprogrammingRequest): \Illuminate\Http\RedirectResponse
+    {
+        // Verificamos que el cliente autenticado sea el dueño de la solicitud.
+        if (Auth::id() !== ($reprogrammingRequest->client->user->id ?? null)) {
+            return back()->with('error', 'No tienes permiso para realizar esta acción.');
+        }
+
+        // Verificamos si ya ha sido procesada.
+        if ($reprogrammingRequest->status !== 'pending') {
+            return back()->with('info', 'Esta solicitud ya ha sido procesada.');
+        }
+
+        try {
+            DB::beginTransaction(); // Iniciamos una transacción para asegurar la atomicidad.
+
+            // 1. Actualizamos la tabla 'reprogramming_requests'.
+            $reprogrammingRequest->update([
+                'client_confirmed' => true,
+                'client_confirmed_at' => now(),
+                'status' => 'accepted', // Estado final de la solicitud de reprogramación.
+            ]);
+
+            // 2. Actualizamos la tabla 'appointments' (la cita original).
+            $appointment = $reprogrammingRequest->appointment;
+            $appointment->update([
+                'date' => $reprogrammingRequest->proposed_start_date_time->format('Y-m-d'), // Solo la fecha
+                'time' => $reprogrammingRequest->proposed_start_date_time->format('H:i:s'), // La hora de inicio de la propuesta
+                'end_datetime' => $reprogrammingRequest->proposed_end_date_time, // La hora final de la propuesta
+                'status' => 'reprogramada', // Cambiamos el estado de la cita original.
+            ]);
+
+            // 3. Notificamos al veterinario que la solicitud ha sido aceptada.
+            $veterinarianUser = $reprogrammingRequest->veterinarian->user;
+            if ($veterinarianUser) {
+                $veterinarianUser->notify(new ReprogrammingRequestStatusUpdate($reprogrammingRequest, 'aceptada'));
+            }
+
+            DB::commit(); // Confirmamos la transacción.
+            return redirect()->route('client.citas.index')->with('success', '¡Cita reprogramada con éxito! Revisa los detalles en tus citas.');
+        } catch (\Exception $e) {
+            DB::rollBack(); // Deshacemos la transacción si algo sale mal.
+            Log::error('Error al aceptar reprogramación de cita en CitaController@acceptReprogrammingRequest: ' . $e->getMessage(), [
+                'request_id' => $reprogrammingRequest->id,
+                'user_id' => Auth::id(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return back()->with('error', 'Ocurrió un error al procesar tu aceptación. Por favor, inténtalo de nuevo.');
+        }
+    }
+
+    /**
+     * Procesa el rechazo de una solicitud de reprogramación por parte del cliente.
+     */
+    public function rejectReprogrammingRequest(Request $request, ReprogrammingRequest $reprogrammingRequest): \Illuminate\Http\RedirectResponse
+    {
+        // Verificamos que el cliente autenticado sea el dueño de la solicitud.
+        if (Auth::id() !== ($reprogrammingRequest->client->user->id ?? null)) {
+            return back()->with('error', 'No tienes permiso para realizar esta acción.');
+        }
+
+        // Verificamos si ya ha sido procesada.
+        if ($reprogrammingRequest->status !== 'pending') {
+            return back()->with('info', 'Esta solicitud ya ha sido procesada.');
+        }
+
+        try {
+            DB::beginTransaction(); // Iniciamos una transacción.
+
+            // 1. Actualizamos la tabla 'reprogramming_requests'.
+            $reprogrammingRequest->update([
+                'client_confirmed' => false,
+                'status' => 'rejected',
+            ]);
+
+            // La cita original NO se actualiza, queda como estaba antes de la solicitud de reprogramación.
+            // Si tenías un estado intermedio en Appointment para indicar que estaba "en proceso de reprogramación",
+            // podrías revertirlo aquí si fuera necesario.
+
+            // 2. Notificamos al veterinario que la solicitud ha sido rechazada.
+            $veterinarianUser = $reprogrammingRequest->veterinarian->user;
+            if ($veterinarianUser) {
+                $veterinarianUser->notify(new ReprogrammingRequestStatusUpdate($reprogrammingRequest, 'rechazada'));
+            }
+
+            DB::commit(); // Confirmamos la transacción.
+            return redirect()->route('client.citas.index')->with('info', 'Solicitud de reprogramación rechazada. La cita original se mantiene.');
+        } catch (\Exception $e) {
+            DB::rollBack(); // Deshacemos la transacción.
+            Log::error('Error al rechazar reprogramación de cita en CitaController@rejectReprogrammingRequest: ' . $e->getMessage(), [
+                'request_id' => $reprogrammingRequest->id,
+                'user_id' => Auth::id(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return back()->with('error', 'Ocurrió un error al procesar tu rechazo. Por favor, inténtalo de nuevo.');
+        }
+    }
 }
+
+//resources/views/client/citas/create.blade (blade para crear cita)
+
+//resources/views/client/citas/reprogram_form.blade (blade para el formulario de reprogramacion)
+
+//resources/views/client/citas/reprogma_status.blade 
+//resources/views/client/citas/index.blade (aqui se muestran las citas que ya tiene el boton para reprogamar)

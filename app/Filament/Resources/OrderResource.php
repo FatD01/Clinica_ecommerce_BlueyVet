@@ -39,7 +39,7 @@ class OrderResource extends Resource
     protected static ?int $navigationSort = 1;
 
     // Define el grupo de navegación, si tienes varios recursos relacionados
-    protected static ?string $navigationGroup = 'Ventas';
+   protected static ?string $navigationGroup = 'Gestión de Inventario y Ventas ';
 
     public static function form(Form $form): Form
     {

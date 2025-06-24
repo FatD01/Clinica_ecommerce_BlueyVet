@@ -2,8 +2,8 @@
 
 @section('content')
     <div class="container my-4">
-        <a href="{{ route('client.citas.index') }}" class="btn btn-outline-secondary mb-3">
-            <i class="fas fa-arrow-left me-2"></i> Volver a Mis Citas
+        <a href="{{ route('client.citas.index') }}" class="btn btn-outline-secondary mb-3 ">
+            <i class="fas fa-arrow-left me-2 "></i> Volver a Mis Citas
         </a>
         
         <h2 class="mb-4">Detalles de la Cita #{{ $appointment->id }}</h2>
@@ -13,7 +13,7 @@
                 <h5 class="card-title mb-3"><i class="fas fa-paw me-2"></i> Mascota: {{ $appointment->mascota->name }}</h5>
                 <p class="card-text mb-2"><strong><i class="fas fa-calendar-alt me-2"></i>Fecha y Hora:</strong> {{ $appointment->date->format('d/m/Y H:i') }}</p>
                 <p class="card-text mb-2"><strong><i class="fas fa-concierge-bell me-2"></i>Servicio:</strong> {{ $appointment->service->name }}</p>
-                <p class="card-text mb-2"><strong><i class="fas fa-user-md me-2"></i>Veterinario:</strong> {{ $appointment->veterinarian->name }}</p>
+                <p class="card-text mb-2"><strong><i class="fas fa-user-md me-2"></i>Veterinario:</strong> {{ $appointment->veterinarian->user->name }}</p>
                 <p class="card-text mb-2"><strong><i class="fas fa-comment-dots me-2"></i>Motivo de Consulta:</strong> {{ $appointment->reason }}</p>
                 <p class="card-text mb-2">
                     <strong><i class="fas fa-info-circle me-2"></i>Estado:</strong> 

@@ -179,8 +179,6 @@
 </section>
 
 
-
-
 @endsection
 
 @push('js')

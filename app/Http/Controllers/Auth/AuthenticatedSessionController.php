@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Filament\Facades\Filament;
+ // Asegúrate de que esto esté importado
+use Illuminate\Support\Facades\URL;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -17,8 +19,31 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
-        return view('auth.login');
+          // DD DE PRUEBA: ¿Llega aquí y cuál es la URL anterior?
+        // dd([
+        //     'LOCATION' => 'AuthenticatedSessionController create()',
+        //     'URL Previous' => URL::previous(),
+        //     'Request URL' => request()->fullUrl(),
+        // ]);
+
+
+        // Si la URL anterior (de donde vino la redirección) fue una ruta de admin,
+        // o si estamos en el login y la URL actual contiene 'admin'
+        if (
+            str_contains(URL::previous(), '/admin') ||
+            str_contains(request()->fullUrl(), '/admin')
+        ) {
+            // Si ya estamos en el login de Filament, no redirijas de nuevo.
+            if (request()->fullUrl() === Filament::getLoginUrl()) {
+                return view('auth.login'); // Muestra el login de cliente si es realmente el login de cliente
+            }
+            // Muestra una vista informando al usuario que debe iniciar sesión como admin
+            return view('auth.filament-redirect', ['loginUrl' => Filament::getLoginUrl()]);
+        }
+
+        return view('auth.login'); // Para todas las demás situaciones, muestra el login de cliente.
     }
+    
 
     /**
      * Handle an incoming authentication request.

@@ -32,7 +32,12 @@ use App\Models\Mascota;
 class AppointmentResource extends Resource
 {
     protected static ?string $model = Appointment::class;
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    // protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    
+    protected static ?string $navigationIcon = 'heroicon-o-calendar';
+ protected static ?string $navigationGroup = 'Gestión de Citas y Clínica';
+     protected static ?int $navigationSort = 1;
+
     protected static ?string $modelLabel = 'Cita';
     protected static ?string $pluralModelLabel = 'Citas';
     public static function form(Form $form): Form
@@ -63,6 +68,21 @@ class AppointmentResource extends Resource
                     ->native(false)
                     ->seconds(false)
                     ->columnSpanFull(),
+                Forms\Components\DateTimePicker::make('end_datetime')
+                    ->label('Hora final de la Cita')
+                    ->required()
+                    ->native(false)
+                    ->seconds(false)
+                    ->withoutDate() // Esto ocultará el selector de fecha y solo mostrará el de hora
+                    ->default(function (Forms\Get $get) {
+                        // Obtenemos la fecha del campo 'date'
+                        $startDate = $get('date');
+
+                        // Si 'date' tiene un valor, lo usamos. De lo contrario, usamos la fecha actual.
+                        // Combinamos la fecha con una hora predeterminada (por ejemplo, 17:00:00)
+                        return $startDate ? Carbon::parse($startDate)->setTime(17, 0, 0) : Carbon::now()->setTime(17, 0, 0);
+                    })
+                    ->columnSpanFull(),
                 Forms\Components\TextInput::make('reason')
                     ->label('Motivo')
                     ->maxLength(255)
@@ -73,6 +93,7 @@ class AppointmentResource extends Resource
                         'confirmed' => 'Confirmada',
                         'completed' => 'Completada',
                         'cancelled' => 'Cancelada',
+                        'reprogrammed' => 'Reprogramada',
                     ])
                     ->label('Estado')
                     ->required()
@@ -96,6 +117,10 @@ class AppointmentResource extends Resource
                     ->label('Fecha y Hora')
                     ->dateTime()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('end_datetime')
+                    ->label('Hora de finalización')
+                    ->Time()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('reason')
                     ->label('Motivo')
                     ->searchable()
@@ -110,6 +135,7 @@ class AppointmentResource extends Resource
                         'confirmed' => 'success',
                         'completed' => 'info', // Mantengo tu color original aquí
                         'cancelled' => 'danger',
+                        'reprogrammed' => 'warning',
                         default => 'gray',
                     })
                     ->searchable(),
@@ -157,9 +183,9 @@ class AppointmentResource extends Resource
 
                             if ($filter instanceof \Filament\Tables\Filters\SelectFilter) {
                                 $options = $filter->getOptions();
-                                
-                                
-                                
+
+
+
                                 if (is_string($filterValue) && isset($options[$filterValue])) {
                                     $readableValue = $options[$filterValue];
                                 } else if (is_array($filterValue)) {
@@ -204,6 +230,7 @@ class AppointmentResource extends Resource
                         'confirmed' => 'Confirmada',
                         'completed' => 'Completada',
                         'cancelled' => 'Cancelada',
+                        'reprogrammed' => 'Reprogramada',
                     ]),
                 SelectFilter::make('veterinarian_id')
                     ->relationship(

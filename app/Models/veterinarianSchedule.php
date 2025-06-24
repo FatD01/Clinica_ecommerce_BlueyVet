@@ -1,5 +1,7 @@
 <?php
 
+//Lo de reprogramar ya está?? oeee Tony :,,,,,,,,,,,,
+
 namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

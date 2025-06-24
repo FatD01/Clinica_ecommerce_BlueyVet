@@ -20,8 +20,6 @@ return new class extends Migration
             $table->string('paypal_order_id')->nullable()->unique(); // ID de la orden de PayPal
             $table->string('status')->default('pending'); // Estado del pago: pending, completed, failed, refunded
             $table->json('payment_details')->nullable(); // Detalles completos de la transacción de PayPal (JSON)
-            // Eliminamos: $table->string('customer_name')->nullable();
-            // Eliminamos: $table->string('customer_email')->nullable();
             $table->timestamps(); // created_at y updated_at
             $table->softDeletes(); // Para 'soft delete' si lo necesitas (deleted_at)
         });

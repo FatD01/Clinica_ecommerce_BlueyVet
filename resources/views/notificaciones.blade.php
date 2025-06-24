@@ -257,12 +257,18 @@
                                 </form>
 
                                 {{-- Botón Cancelar Cita Definitivamente --}}
+                                @if($request->appointment) {{-- Añade esta verificación --}}
                                 <button type="button" class="btn btn-danger btn-sm"
                                         data-bs-toggle="modal"
                                         data-bs-target="#modalCancelarCitaDefinitivamente"
                                         data-appointment-id="{{ $request->appointment->id }}">
                                     Cancelar Cita Definitivamente
                                 </button>
+                                @else
+    {{-- Opcional: Mostrar un mensaje alternativo si la cita no se encuentra --}}
+    <p class="text-danger">No se puede cancelar (cita no encontrada).</p>
+@endif
+
                             </div>
 
                         @endif

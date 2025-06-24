@@ -22,6 +22,10 @@ class MedicalRecordResource extends Resource
     protected static ?string $model = MedicalRecord::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static ?string $navigationGroup = 'Gestión de Citas y Clínica';
+    protected static ?int $navigationSort = 3; // Tercero
+
+    
     protected static ?string $modelLabel = 'Historial Médico';
     protected static ?string $pluralModelLabel = 'Historiales Médicos';
 

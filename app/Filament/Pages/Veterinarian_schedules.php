@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Pages;
 
 use App\Models\VeterinarianSchedule;
@@ -27,6 +28,11 @@ class Veterinarian_schedules extends Page implements HasTable, HasActions, HasFo
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
     protected static string $view = 'filament.pages.veterinarian_schedules';
+    protected static ?string $navigationGroup = 'Gestión de Citas y Clínica';
+
+    protected static ?string $modelLabel = 'Horario veterinario';
+    protected static ?string $pluralModelLabel = 'Horarios veterinarios';
+    protected static ?string $title = 'Gestión de Horarios de Veterinarios';
 
     public array $calendarEvents = [];
 
@@ -43,7 +49,7 @@ class Veterinarian_schedules extends Page implements HasTable, HasActions, HasFo
     {
         $this->calendarEvents = $this->getCalendarEvents();
     }
-    
+
     public function getCalendarEvents(): array
     {
         $daysOfWeek = [
@@ -106,9 +112,9 @@ class Veterinarian_schedules extends Page implements HasTable, HasActions, HasFo
                         $colorName = array_search($state, self::AVAILABLE_COLORS) ?: $state;
                         return new HtmlString(
                             '<div style="display: flex; align-items: center; gap: 8px;">' .
-                            '<div style="width: 20px; height: 20px; background-color: ' . $state . '; border-radius: 50%; border: 1px solid #ccc;"></div>' .
-                            '<span>' . $colorName . '</span>' .
-                            '</div>'
+                                '<div style="width: 20px; height: 20px; background-color: ' . $state . '; border-radius: 50%; border: 1px solid #ccc;"></div>' .
+                                '<span>' . $colorName . '</span>' .
+                                '</div>'
                         );
                     }),
 

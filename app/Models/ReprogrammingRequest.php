@@ -68,7 +68,7 @@ class ReprogrammingRequest extends Model
      */
     public function client()
     {
-        return $this->belongsTo(Cliente::class); // Asegúrate que 'Cliente' es el nombre de tu modelo de clientes
+        return $this->belongsTo(Cliente::class, 'client_id'); // Asegúrate que 'Cliente' es el nombre de tu modelo de clientes
     }
 
     /**

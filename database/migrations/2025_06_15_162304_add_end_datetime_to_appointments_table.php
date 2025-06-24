@@ -12,15 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('appointments', function (Blueprint $table) {
-            // Paso 1: Asegurar que la columna 'date' sea de tipo DATETIME.
-            // Si 'date' es actualmente solo DATE (sin hora), esta línea lo modificará a DATETIME.
-            // Si 'date' ya es DATETIME, esta línea es segura y no hará cambios.
-            // Esto es crucial para poder almacenar la hora de inicio de la cita.
             $table->dateTime('date')->change();
-
-            // Paso 2: Añadir la nueva columna 'end_datetime' de tipo DATETIME.
-            // `nullable()` permite que las citas existentes no fallen, ya que su valor será NULL inicialmente.
-            // `after('date')` coloca esta nueva columna justo después de la columna 'date' en tu tabla.
             $table->dateTime('end_datetime')->nullable()->after('date');
         });
     }

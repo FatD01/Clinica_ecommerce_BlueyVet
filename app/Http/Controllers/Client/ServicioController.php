@@ -16,6 +16,7 @@ class ServicioController extends Controller
     {
         $veterinarios = Veterinarian::with('user')->get();
         $servicios = Service::all(); // Asegúrate de que la variable aquí sea $servicios
+         $servicios = Service::with('specialties')->get();
 
         return view('client.servicios.index', compact('veterinarios', 'servicios'));
     }

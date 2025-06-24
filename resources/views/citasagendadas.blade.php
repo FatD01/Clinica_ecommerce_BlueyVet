@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales-all.global.min.js"></script>
 
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
 
@@ -90,13 +91,14 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary">Aplicar filtro</button>
+                    <button type="submit" class="btn mi-boton-personalizado">Aplicar filtro</button>
+
                 </div>
             </div>
         </form>
 
         <div class="mb-3">
-    <button type="button" class="btn btn-info" id="verReciente">📅 Ver cita más reciente</button>
+    <button type="button" class="btn boton-ver-cita" id="verReciente">Ver cita más reciente</button>
 </div>
 
 
@@ -108,11 +110,11 @@
 
     @if ($numeroCitasMascota > 0)
         <div class="alert alert-success mt-2">
-            La mascota <strong>{{ $mascotaSeleccionada->name }}</strong> tiene {{ $numeroCitasMascota }} cita{{ $numeroCitasMascota > 1 ? 's' : '' }} agendada{{ $numeroCitasMascota > 1 ? 's' : '' }}.
+            La mascota&nbsp;<strong> {{ $mascotaSeleccionada->name }} </strong>&nbsp;tiene {{ $numeroCitasMascota }} cita{{ $numeroCitasMascota > 1 ? 's' : '' }} agendada{{ $numeroCitasMascota > 1 ? 's' : '' }}.
         </div>
     @else
         <div class="alert alert-warning mt-2">
-            La mascota <strong>{{ $mascotaSeleccionada->name }}</strong> no tiene citas agendadas.
+            La mascota&nbsp;<strong>{{ $mascotaSeleccionada->name }}</strong> &nbsp;no tiene citas agendadas.
         </div>
     @endif
 @endif
@@ -125,7 +127,10 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales-all.global.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -139,6 +144,13 @@ document.addEventListener('DOMContentLoaded', function () {
             // ÚNICO CAMBIO: Quitar 'listWeek'
             right: 'dayGridMonth,dayGridWeek,timeGridDay'
         },
+
+        buttonText: {
+        today: 'Hoy',
+        month: 'Mes',
+        week: 'Semana',
+        day: 'Día'
+    },
         events: @json($eventos),
         eventClick: function(info) {
             info.jsEvent.preventDefault();

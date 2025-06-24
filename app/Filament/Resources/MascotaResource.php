@@ -33,8 +33,9 @@ class MascotaResource extends Resource
 {
     protected static ?string $model = Mascota::class;
 
+    protected static ?string $navigationGroup = 'Gestión de Citas y Clínica';
     protected static ?string $navigationIcon = 'heroicon-o-heart';
-    protected static ?string $navigationGroup = 'Gestión de Clientes';
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
@@ -94,15 +95,15 @@ class MascotaResource extends Resource
                                     ->maxLength(255),
                                 // Agrega otros campos del cliente que quieras crear rápidamente
                             ])
-                            // ->editOptionForm([
-                            //     TextInput::make('nombre')
-                            //         ->label('Nombre del Cliente')
-                            //         ->required()
-                            //         ->maxLength(255),
-                            //     TextInput::make('apellido') // Añade el campo apellido si lo tienes
-                            //         ->label('Apellido del Cliente')
-                            //         ->maxLength(255),
-                            // ]),
+                        // ->editOptionForm([
+                        //     TextInput::make('nombre')
+                        //         ->label('Nombre del Cliente')
+                        //         ->required()
+                        //         ->maxLength(255),
+                        //     TextInput::make('apellido') // Añade el campo apellido si lo tienes
+                        //         ->label('Apellido del Cliente')
+                        //         ->maxLength(255),
+                        // ]),
                     ])
                     ->columnSpan('full'),
             ]);
@@ -119,7 +120,7 @@ class MascotaResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('species')
                     ->label('Especie')
-                    ->searchable(), 
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('race')
                     ->label('Raza')
                     ->searchable(),
@@ -128,7 +129,7 @@ class MascotaResource extends Resource
                 Tables\Columns\TextColumn::make('birth_date')
                     ->label('Fecha de Nacimiento'),
 
-                
+
                 SpatieMediaLibraryImageColumn::make('avatar'),
 
                 Tables\Columns\TextColumn::make('created_at')

@@ -26,6 +26,13 @@ class DashboardPanelProvider extends PanelProvider // ¡Cambia esto de 'Panel' a
 {
     public function panel(Panel $panel): Panel
     {
+
+
+         // DD DE PRUEBA: ¿Se ejecuta este PanelProvider al acceder a /admin?
+        // Esto solo se ejecutará si Laravel registra y "arranca" este panel.
+        // Si no ves esto, es que Laravel no está llamando a este PanelProvider
+        // para la ruta /admin.
+        // dd('Filament Dashboard Panel Provider is being booted.');
         return $panel
             ->default()
             ->id('dashboard')
@@ -63,7 +70,7 @@ class DashboardPanelProvider extends PanelProvider // ¡Cambia esto de 'Panel' a
             ->databaseNotificationsPolling('10s')
             // ->notifications()
             ->plugins([
-                // FilamentFullCalendarPlugin::make(),
+                
             ]);
     }
 }

@@ -27,11 +27,14 @@ class ClienteResource extends Resource
     protected static ?string $model = Cliente::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group'; // Un icono más apropiado para clientes
+    protected static ?string $navigationGroup = 'Gestión de Citas y Clínica';
+    protected static ?int $navigationSort = 4; // Cuarto
 
+    
     protected static ?string $modelLabel = 'Cliente';
     protected static ?string $pluralModelLabel = 'Clientes';
-    protected static ?string $navigationGroup = 'Gestión de Clientes';
 
+    
     public static function form(Form $form): Form
     {
          return $form

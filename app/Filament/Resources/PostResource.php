@@ -28,7 +28,7 @@ class PostResource extends Resource
     protected static ?string $model = Post::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
-    protected static ?string $navigationGroup = 'Contenido'; // O un grupo que te guste, ej. 'Gestión de Contenido'
+       protected static ?string $navigationGroup = 'Administración y Contenido';
     protected static ?string $label = 'Artículo/FAQ'; // Etiqueta singular en el menú
     protected static ?string $pluralLabel = 'Artículos y FAQs'; // Etiqueta plural en el menú
 

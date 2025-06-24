@@ -21,7 +21,7 @@ class CategoryResource extends Resource
     protected static ?string $model = Category::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-tag'; // Opcional: Elige un icono
-    protected static ?string $navigationGroup = 'Gestión de Tienda'; // Agrupar con Productos
+   protected static ?string $navigationGroup = 'Gestión de Inventario y Ventas ';
     protected static ?string $modelLabel = 'Categoría';
     protected static ?string $pluralModelLabel = 'Categorías';
 

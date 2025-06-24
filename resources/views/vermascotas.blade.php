@@ -32,6 +32,20 @@
     </aside>
 
     <div class="main-content container mt-4">
+
+    @if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+@endif
         <h2 class="mb-4">Mascotas con citas agendadas de {{ $cliente->nombre }} {{ $cliente->apellido }}</h2>
 
         @if($mascotas->isEmpty())
@@ -56,17 +70,19 @@
                                      class="img-fluid mb-2" style="max-width: 200px;">
                             @endif
 
-                            @php
-                                 $cita = $mascota->appointments->where('status', 'pending')->first();
-                            @endphp
+                           @php
+    $cita = $citaEspecifica;
+@endphp
 
                             @if ($cita)
                                 @php
-                                    $fechaCita = \Carbon\Carbon::parse($cita->date);
-                                    $hoy = now();
-                                @endphp
+                                    $fechaCita = \Carbon\Carbon::parse($cita->date)->startOfDay();
+                                    $hoy = now()->startOfDay();
 
-                                @if ($fechaCita->isSameDay($hoy) || $fechaCita->lessThan($hoy))
+                                @endphp
+                                
+                                @if ($fechaCita->lessThanOrEqualTo($hoy))
+
                                     <a href="{{ route('veterinarian.atender', $cita->id) }}"
                                        class="btn btn-secondary w-100 text-center"
                                        style="background-color: #ffc609; height: 45px; display: flex; align-items: center; justify-content: center;">
@@ -79,6 +95,8 @@
                                         Atender Cita
                                     </button>
                                 @endif
+
+                                @if ($cita->status !== 'confirmed')
                                  <button type="button"
                                         class="btn btn-primary w-100 text-center"
                                         style="height: 45px; display: flex; align-items: center; justify-content: center; margin-top: 10px;"
@@ -87,7 +105,8 @@
                                         data-cita-id="{{ $cita->id }}">
                                     Reprogramar Cita
                                 </button>
-                                 <button type="button"
+
+                                <button type="button"
                                         class="btn btn-secondary w-100 text-center"
                                         style="height: 45px; display: flex; align-items: center; justify-content: center;"
                                         data-bs-toggle="modal"
@@ -95,9 +114,27 @@
                                         data-cita-id="{{ $cita->id }}">
                                     Cancelar Cita
                                 </button>
-                            @else
-                                <p>No hay citas pendientes para esta mascota.</p>
-                            @endif
+                            
+
+                               
+    <form method="POST" action="{{ route('veterinarian.confirmar.cita') }}">
+        @csrf
+        <input type="hidden" name="appointment_id" value="{{ $cita->id }}">
+        <button type="submit"
+            class="btn btn-success w-100 text-center"
+            style="height: 45px; display: flex; align-items: center; justify-content: center; margin-top: 10px;">
+            Confirmar Cita
+        </button>
+    </form>
+    @else
+                                <p>La cita ya ha sido confirmada.</p>
+                        
+@endif
+@endif
+
+
+
+                                 
                         </div>
                     </div>
                     <button class="btn btn-primary w-100 btn-toggle"
@@ -109,6 +146,7 @@
                         Mostrar más
                     </button>
                 </div>
+                
             @endforeach
         @endif
 

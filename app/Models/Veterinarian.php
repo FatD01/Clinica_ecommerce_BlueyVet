@@ -14,7 +14,7 @@ class Veterinarian extends Model
     protected $fillable = [
         'user_id',
         'license_number',
-        'specialty',
+        'specialty', //luego borrarlo 
         'phone',
         'address',
         'bio',
@@ -38,14 +38,19 @@ class Veterinarian extends Model
     {
         return $this->hasMany(Appointment::class, 'veterinarian_id');
     }
-
-    // public function scheduleBlocks(): HasMany
-    // {
-    //     return $this->hasMany(ScheduleBlock::class);
-    // }
-
     public function schedules(): HasMany
     {
         return $this->hasMany(VeterinarianSchedule::class);
+    }
+
+    public function specialties()
+    {
+        return $this->belongsToMany(Specialty::class, 'specialty_veterinarian');
+    }
+
+     // Puedes añadir un accessor si quieres obtener las especialidades como una cadena
+    public function getSpecialtyNamesAttribute()
+    {
+        return $this->specialties->pluck('name')->implode(', ');
     }
 }

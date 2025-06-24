@@ -143,6 +143,7 @@
                             // Redirige a tu ruta de éxito con los detalles de la transacción de PayPal
                             // Asegúrate de que el PayerID se pase correctamente (puede estar en data o details.payer)
                             window.location.href = "{{ route('payments.success') }}?token=" + data.orderID + "&PayerID=" + (details.payer ? details.payer.payer_id : data.payerID);
+                            // window.location.href = "{{ route('payments.success', ['serviceOrderId' => $order->id]) }}?token=" + data.orderID + "&PayerID=" + (details.payer ? details.payer.payer_id : data.payerID);
                         } else {
                             console.warn('Captura de PayPal no completada, estado:', details.status, details);
                             // Redirige a una página de cancelación o error

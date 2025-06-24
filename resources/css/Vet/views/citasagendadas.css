@@ -6,6 +6,32 @@ body {
     line-height: 1.6;
 }
 
+.boton-ver-cita {
+    background-color:   #ffde38; /* morado Bootstrap */
+    color: black;
+    border: none;
+}
+
+.boton-ver-cita:hover {
+    background-color:  #e9ca2e;
+
+}
+
+.mi-boton-personalizado {
+    background-color: #393859; /* Color púrpura */
+    color: white;
+    border: none;
+     height: 50px; /* <-- Cambia aquí el alto que desees */
+    padding: 10px 20px;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+    width: 180px;
+}
+
+.mi-boton-personalizado:hover {
+    background-color: #05022e;
+    color: white;
+}
 
 
 /* Main Content */

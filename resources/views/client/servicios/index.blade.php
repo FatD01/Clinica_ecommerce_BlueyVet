@@ -33,7 +33,6 @@
         </div>
         <div class="w-full md:w-1/4 mt-10 md:mt-0 flex justify-center">
             <div class="relative">
-                <!-- <img src="{{ asset('img/vet-hero.png') }}" alt="Mascota feliz" class="w-full max-w-md rounded-xl  z-10 relative "> -->
                 <div class="absolute -bottom-4 -right-4 w-full h-full rounded-xl z-0"></div>
             </div>
         </div>
@@ -51,10 +50,16 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             @foreach($servicios as $service)
-            <div class="group relative bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl
-                            {{ $service->status == 'desactivado' ? 'opacity-70 grayscale' : '' }}">
+            @php
+                // Determina si el servicio está disponible o "próximamente"
+                $isAvailable = $service->hasAvailableVeterinarians();
+                $cardClasses = $isAvailable ? '' : 'opacity-60 grayscale cursor-not-allowed'; // Clases para "grisear" y deshabilitar el cursor
+                $buttonClasses = $isAvailable ? 'bg-bluey-primary hover:bg-bluey-dark text-white' : 'bg-gray-400 text-gray-700 cursor-not-allowed'; // Clases para los botones
+                $agendaButtonClasses = $isAvailable ? 'border-2 border-bluey-primary text-bluey-primary hover:bg-bluey-primary hover:text-white' : 'border-2 border-gray-400 text-gray-700 cursor-not-allowed'; // Clases para el botón de agendar
+            @endphp
+            <div class="group relative bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl {{ $cardClasses }}">
                 {{-- Ribbon for featured services (optional) --}}
-                @if($service->is_featured)
+                @if($service->is_featured && $isAvailable) {{-- Solo si está disponible y es destacado --}}
                 <div class="absolute top-0 right-0 bg-bluey-secondary text-white px-4 py-1 text-sm font-bold transform rotate-12 translate-x-2 -translate-y-1 z-10 shadow-md">
                     ¡Popular!
                 </div>
@@ -62,7 +67,7 @@
 
                 {{-- Service Image --}}
                 <div class="h-48 overflow-hidden">
-                    <img src="{{ $service->image_url ?? asset('img/service-default.jpg') }}" alt="{{ $service->name }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                    <img src="{{ $service->image_url ?? asset('img/service-default.jpg') }}" alt="{{ $service->name }}" class="w-full h-full object-cover transition-transform duration-500 {{ $isAvailable ? 'group-hover:scale-110' : '' }}">
                 </div>
 
                 <div class="p-6">
@@ -82,24 +87,27 @@
                     </div>
                     @endif
 
-                    @if ($service->status != 'desactivado')
+                    @if ($isAvailable)
                     <div class="flex flex-col space-y-3">
+                        {{-- Botón Comprar Ahora --}}
                         <form action="{{ route('payments.purchase_service') }}" method="POST">
                             @csrf
                             <input type="hidden" name="service_id" value="{{ $service->id }}">
-                            <button type="submit" class="w-full bg-bluey-primary hover:bg-bluey-dark text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] shadow-md">
+                            <button type="submit" class="w-full font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] shadow-md {{ $buttonClasses }}">
                                 Comprar Ahora
                             </button>
                         </form>
 
+                        {{-- Botón Agendar Cita --}}
                         <a href="{{ route('client.citas.create', ['preselected_service_id_from_purchase' => $service->id]) }}"
-                            class="w-full border-2 border-bluey-primary text-bluey-primary hover:bg-bluey-primary hover:text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 text-center">
+                            class="w-full font-bold py-3 px-6 rounded-lg transition-all duration-300 text-center {{ $agendaButtonClasses }}">
                             Agendar Cita
                         </a>
                     </div>
                     @else
-                    <div class="bg-gray-200 text-gray-600 text-center py-3 px-6 rounded-lg font-bold">
-                        Servicio no disponible
+                    <div class="bg-gray-300 text-gray-700 text-center py-3 px-6 rounded-lg font-bold">
+                        Servicio Próximamente Disponible
+                        <p class="text-sm mt-1">Aún no hay veterinarios asociados a esta especialidad.</p>
                     </div>
                     @endif
                 </div>

@@ -44,7 +44,7 @@ class ServiceOrderResource extends Resource
 {
     protected static ?string $model = ServiceOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-receipt-percent';
-    protected static ?string $navigationGroup = 'Gestión de Pedidos';
+   protected static ?string $navigationGroup = 'Gestión de Inventario y Ventas ';
     protected static ?string $navigationLabel = 'Órdenes de Servicio';
 
     public static function form(Form $form): Form

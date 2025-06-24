@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Filament\Resources;
+
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\RestoreAction;
 use Filament\Tables\Actions\ForceDeleteAction; // Para eliminar permanentemente si es necesario
@@ -16,13 +17,18 @@ use Filament\Tables\Actions\RestoreBulkAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Components\Select; // Para el campo de selección
+use Filament\Tables\Filters\SelectFilter; // Importar SelectFilter correctamente
+use App\Models\Specialty;
 
 class ServiceResource extends Resource
 {
     protected static ?string $model = Service::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-briefcase';
-    protected static ?string $navigationGroup = 'Gestión de Tienda';
+          protected static ?string $navigationGroup = 'Gestión de Citas y Clínica';
+    protected static ?string $pluralLabel = 'Servicios';
+    protected static ?string $singularLabel = 'Servicio';
 
 
     public static function form(Form $form): Form
@@ -42,14 +48,31 @@ class ServiceResource extends Resource
                     ->numeric()
                     ->default(null),
 
-                 Forms\Components\Select::make('status')
-                ->label('Estado del Servicio')
-                ->options([
-                    'active' => 'Activo',
-                    'inactive' => 'Inactivo', 
-                ])
-                ->default('active') 
-                ->required(),
+                Forms\Components\Select::make('status')
+                    ->label('Estado del Servicio')
+                    ->options([
+                        'active' => 'Activo',
+                        'inactive' => 'Inactivo',
+                    ])
+                    ->default('active')
+                    ->required(),
+
+                // Campo de selección múltiple para las especialidades
+                Select::make('specialties')
+                    ->multiple() // Permite seleccionar varias especialidades para un mismo servicio
+                    ->relationship('specialties', 'name') // Conecta con la relación 'specialties' y muestra el 'name'
+                    ->preload() // Precarga todas las especialidades disponibles
+                    ->searchable() // Permite buscar especialidades dentro del selector
+                    ->label('Especialidades Requeridas') // Etiqueta visible en el formulario
+                    ->placeholder('Selecciona una o más especialidades')
+                    ->helperText('Las especialidades que un veterinario debe tener para ofrecer este servicio.'),
+
+                // Opcional: un toggle para el estado inicial de "disponible" si no quieres que sea solo dinámico
+                // Forms\Components\Toggle::make('is_available')
+                //     ->label('Servicio Disponible Inmediatamente')
+                //     ->default(false) // Por defecto, podría ser "pronto disponible"
+                //     ->helperText('Activa esto solo si sabes que hay veterinarios con las especialidades requeridas.'),
+
             ]);
     }
 
@@ -75,9 +98,20 @@ class ServiceResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('specialties.name') // Muestra los nombres de las especialidades
+                    ->badge()
+                    ->wrap()
+                    ->searchable()
+                    ->label('Especialidades Requeridas'),
             ])
             ->filters([
                 TrashedFilter::make(),
+                SelectFilter::make('specialties')
+                ->relationship('specialties', 'name')
+                ->multiple()
+                ->preload()
+                ->searchable()
+                ->label('Filtrar por Especialidad Requerida'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

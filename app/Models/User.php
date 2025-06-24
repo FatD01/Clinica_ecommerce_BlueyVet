@@ -132,7 +132,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             },
         );
     }
-    
+
     public function orders(): HasMany // Define la relación para los pedidos
     {
         return $this->hasMany(Order::class);
@@ -146,10 +146,22 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
      */
     public function canAccessPanel(Panel $panel): bool
     {
+        //      dd([
+        //     'panel_id' => $panel->getId(),
+        //     'user_role' => $this->role,
+        //     'is_admin_check' => ($this->role === 'admin')
+        // ]);
         if ($panel->getId() === 'dashboard') {
             return $this->role === 'admin';
         }
 
         return true;
     }
+
+
+    //acabo de añadir esto ya reverte
+    // public function appointments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    // {
+    //     return $this->hasMany(Appointment::class);
+    // }
 }
