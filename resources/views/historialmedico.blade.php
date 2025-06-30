@@ -92,7 +92,7 @@
                 <option value="">Selecciona una mascota...</option>
                 @foreach ($todasMascotas as $mascota)
                     <option value="{{ $mascota->id }}" {{ request('mascota_id') == $mascota->id ? 'selected' : '' }}>
-                        {{ $mascota->name }} ({{ $mascota->species }} - {{ $mascota->race }})
+                        {{ $mascota->name }} ({{ $mascota->species }} - {{ $mascota->race }}) - {{ $mascota->cliente->user->name }}
                     </option>
                 @endforeach
             </select>

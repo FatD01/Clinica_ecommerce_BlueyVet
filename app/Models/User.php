@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Support\Facades\Log;
 
 class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
@@ -33,6 +34,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         "role",
         'google_id',
         'email_verified_at',
+        'password_changed_at',
     ];
 
     /**
@@ -45,6 +47,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         'remember_token',
     ];
 
+
     /**
      * Get the attributes that should be cast.
      *
@@ -55,6 +58,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'password_changed_at' => 'datetime',
         ];
     }
 
@@ -144,20 +148,41 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
      * @param  \Filament\Panel $panel
      * @return bool
      */
+
+    // public function canAccessPanel(Panel $panel): bool
+    // {
+    //     if ($panel->getId() === 'admin' and $this->role === 'admin') { // Si es un panel de admin y el rol es admin
+    //         return str_ends_with($this->email, '@gmail.com') && $this->hasVerifiedEmail();
+    //     }
+    //     // return true;
+    //     return false;
+    // }
+
+
+    /**
+     * Determina si el usuario puede acceder al panel de Filament.
+     *
+     * @param  Panel  $panel
+     * @return bool
+     */
     public function canAccessPanel(Panel $panel): bool
     {
-        //      dd([
-        //     'panel_id' => $panel->getId(),
-        //     'user_role' => $this->role,
-        //     'is_admin_check' => ($this->role === 'admin')
-        // ]);
-        if ($panel->getId() === 'dashboard') {
-            return $this->role === 'admin';
-        }
+        // Registrar información para depuración
+        Log::info('canAccessPanel ejecutado', [
+            'id' => $this->id,
+            'email' => $this->email,
+            'role' => $this->role,
+            'panel_id' => $panel->getId(),
+        ]);
 
-        return true;
+        // Solo permite acceso al panel 'admin' si el usuario tiene el rol 'admin'
+        return $this->role === 'admin' && $panel->getId() === 'admin';
     }
 
+    public function getHasPasswordChangedAttribute(): bool
+    {
+        return $this->password_changed_at !== null;
+    }
 
     //acabo de añadir esto ya reverte
     // public function appointments(): \Illuminate\Database\Eloquent\Relations\HasMany

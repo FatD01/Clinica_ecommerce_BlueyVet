@@ -23,7 +23,7 @@ class ContactController extends Controller
 
             // 2. Enviar correo al administrador
             // Define aquí la dirección de correo del administrador
-            $adminEmail = env('MAIL_FROM_ADDRESS'); // Usa el email configurado en .env como admin email
+            $adminEmail = env('ADMIN_EMAIL'); // Usa el email configurado en .env como admin email
 
             // Si quieres enviar a un email específico (ej. info@blueyvet.com), usa:
             // $adminEmail = 'info@blueyvet.com';

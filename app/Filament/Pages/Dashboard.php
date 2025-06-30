@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 use App\Filament\Widgets\TopPurchasedServicesChart;
+use App\Filament\Widgets\MonthlyRevenueChart;
 use Filament\Pages\Dashboard as BaseDashboard; // Importa el Dashboard base de Filament
 
 class Dashboard extends BaseDashboard

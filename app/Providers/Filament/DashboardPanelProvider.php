@@ -10,6 +10,7 @@ use Filament\Panel;
 use Filament\PanelProvider; // ¡Asegúrate de que esta línea esté presente y NO comentada!
 use Filament\Widgets;
 use Filament\Widgets\AccountWidget;
+use App\Models\User;
 
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -17,16 +18,16 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-
+use Illuminate\Support\Facades\Auth;
 
 use App\Filament\Widgets\AppointmentsChart;
 // use App\Filament\Pages\Dashboard; // Commented out because Dashboard does not exist or is undefined
-
+use Illuminate\Support\Facades\Log;
 class DashboardPanelProvider extends PanelProvider // ¡Cambia esto de 'Panel' a 'PanelProvider'!
 {
     public function panel(Panel $panel): Panel
     {
-
+        // dd('PanelProvider initializing. Current User:', Auth::user()?->email, 'Role:', Auth::user()?->role);
 
          // DD DE PRUEBA: ¿Se ejecuta este PanelProvider al acceder a /admin?
         // Esto solo se ejecutará si Laravel registra y "arranca" este panel.
@@ -35,12 +36,13 @@ class DashboardPanelProvider extends PanelProvider // ¡Cambia esto de 'Panel' a
         // dd('Filament Dashboard Panel Provider is being booted.');
         return $panel
             ->default()
-            ->id('dashboard')
+            ->id('admin')
             ->path('admin')
-            ->login()
+            ->login() 
             ->colors([
                 'primary' => '#FFC107', // amber color in hex
             ])
+     
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
@@ -62,10 +64,16 @@ class DashboardPanelProvider extends PanelProvider // ¡Cambia esto de 'Panel' a
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
                 SubstituteBindings::class,
+
+                //esto puse yo
+                DispatchServingFilamentEvent::class,
             ])
+            
             ->authMiddleware([
                 Authenticate::class,
+                'admin',
             ])
+            
             ->databaseNotifications()
             ->databaseNotificationsPolling('10s')
             // ->notifications()

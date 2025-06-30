@@ -11,7 +11,49 @@
     @vite('resources/css/vet/views/datosestadisticos.css') 
     @vite('resources/css/vet/panel.css') 
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0 !important;
+        margin-top: 1rem;
+        padding: 0 1rem;
+    }
 
+    .main-content .row {
+        flex-direction: column;
+    }
+
+    .main-content .col-md-4 {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .main-content .card {
+        border-radius: 12px;
+    }
+
+    .main-content .form-select {
+        width: 100%;
+    }
+
+    .main-content label {
+        font-weight: 500;
+    }
+
+    .main-content .btn {
+        font-size: 0.95rem;
+    }
+
+    /* Centrar el botón de atrás si deseas */
+    .main-content a.btn.btn-outline-secondary.mb-3 {
+        display: inline-block;
+        margin-bottom: 1.5rem;
+    }
+}
+
+
+
+</style>
  
 </head>
 <body>

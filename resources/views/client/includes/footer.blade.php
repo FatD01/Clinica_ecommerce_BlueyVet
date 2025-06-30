@@ -10,13 +10,13 @@
                 </a>
                 <p class="text-bluey-dark">Cuidado excepcional para tus amigos peludos.</p>
                 <div class="flex space-x-4 pt-2">
-                    <a href="#" class="bg-bluey-dark hover:bg-bluey-primary text-bluey-primary hover:text-bluey-dark w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border border-bluey-primary">
+                    <a href="https://www.facebook.com/share/16jqdrieNJ/?mibextid=wwXIfr" class="bg-bluey-dark hover:bg-bluey-primary text-bluey-primary hover:text-bluey-dark w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border border-bluey-primary">
                         <i class="fab fa-facebook-f"></i>
                     </a>
-                    <a href="#" class="bg-bluey-dark hover:bg-bluey-primary text-bluey-primary hover:text-bluey-dark w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border border-bluey-primary">
+                    <a href="https://www.instagram.com/bluey_vet?igsh=NHl3MmUxMjM0NmEx&utm_source=qr" class="bg-bluey-dark hover:bg-bluey-primary text-bluey-primary hover:text-bluey-dark w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border border-bluey-primary">
                         <i class="fab fa-instagram"></i>
                     </a>
-                    <a href="#" class="bg-bluey-dark hover:bg-bluey-primary text-bluey-primary hover:text-bluey-dark w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border border-bluey-primary">
+                    <a href="https://x.com/blueyvet89340?s=21" class="bg-bluey-dark hover:bg-bluey-primary text-bluey-primary hover:text-bluey-dark w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border border-bluey-primary">
                         <i class="fab fa-twitter"></i>
                     </a>
                 </div>
@@ -89,8 +89,8 @@
                     &copy; {{ date('Y') }} BlueyVet. Todos los derechos reservados.
                 </p>
                 <div class="flex space-x-4">
-                    <a href="#" class="text-sm text-bluey-dark hover:text-bluey-primary transition duration-300">Política de Privacidad</a>
-                    <a href="#" class="text-sm text-bluey-dark hover:text-bluey-primary transition duration-300"> Términos de Servicio</a>
+                    <a href="{{ route('privacy.policy') }}" class="text-sm text-bluey-dark hover:text-bluey-primary transition duration-300">Política de Privacidad</a>
+                    <a href="{{ route('terms.of.service') }}" class="text-sm text-bluey-dark hover:text-bluey-primary transition duration-300"> Términos de Servicio</a>
                 </div>
             </div>
         </div>

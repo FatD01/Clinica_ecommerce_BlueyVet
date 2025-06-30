@@ -12,6 +12,8 @@ use App\Http\Controllers\Client\CartController;
 use App\Http\Controllers\Client\products\Petshop\ProductController;
 use App\Http\Controllers\Client\ContactController;
 use App\Http\Controllers\ClientOrderController; // Para ClientOrdersController
+use App\Http\Controllers\OrderExportController;
+
 
 // Importar otros controladores
 use App\Http\Controllers\PaymentController;
@@ -34,12 +36,18 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
+// use App\Http\Middleware\IsAdminMiddleware;
 
 // Ruta para el panel de administración (puede ser un spa o una vista de entrada)
 // Asegúrate de que tu lógica de admin SPA maneje sus propias rutas internamente
-Route::get('/admin/{any?}', function () {
-    return "¡Esta es la ruta de web.php para admin! URL: " . request()->fullUrl();
-})->where('any', '.*');
+
+
+// routes/web.php
+
+
+
+
+
 
 // Página de inicio del cliente
 Route::get('/', [HomeController::class, 'index'])->name('client.home');
@@ -52,6 +60,7 @@ Route::post('/contact-us', [ContactController::class, 'store'])->name('contact.s
 // Rutas de servicios (públicas)
 Route::prefix('/servicios')->name('client.servicios.')->group(function () {
     Route::get('/', [ServicioController::class, 'index'])->name('index');
+   Route::get('/{service}', [ServicioController::class, 'show'])->name('show');
 });
 
 // Rutas del carrito de compras (aunque se interactúe con él, los productos no requieren autenticación para ver)
@@ -74,11 +83,23 @@ Route::prefix('blog')->name('blog.')->group(function () {
 Route::get('/preguntas-frecuentes', [FaqController::class, 'index'])->name('faqs.index');
 Route::get('/preguntas-frecuentes/{faq}', [FaqController::class, 'show'])->name('faq.show');
 
+
+Route::get('/politica-de-privacidad', function () {
+    return view('client.privacy_policy');
+})->name('privacy.policy');
+
+Route::get('/terminos-de-servicio', function () {
+    return view('client.terms_of_service');
+})->name('terms.of.service');
+
 // Rutas de Socialite de Google OAuth (DEBEN estar fuera del middleware 'auth' inicial,
 // el login y registro se manejan en el callback)
 Route::get('/auth/google/redirect', function () {
     return Socialite::driver('google')->redirect();
 })->name('auth.google.redirect');
+
+
+
 
 Route::get('/auth/google/callback', function () {
     try {
@@ -164,15 +185,22 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 
-
+Route::get('/admin/orders/export-pdf', [OrderExportController::class, 'exportPdf'])
+            ->name('admin.orders.export-pdf');
+        // --- FIN DE LA RUTA DE EXPORTACIÓN ---
 
 Route::middleware(['auth', 'verified'])->group(function () {
-
     // Rutas de perfil de usuario
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile/update-personal', [ProfileController::class, 'updatePersonal'])->name('profile.update-personal');
     Route::patch('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
     Route::get('/CientsOrders', [ClientOrderController::class, 'index'])->name('ClientOrders.index'); // <-- Esto parece más un historial de órdenes de cliente
+
+
+    // --- RUTA PARA EXPORTACIÓN DE ÓRDENES DE FILAMENT A PDF ---
+        // Esta ruta debe estar dentro del middleware 'auth' y 'verified'.
+        // La lógica de autorización por rol ('Administrador') se encuentra en el controlador.
+        
 
     Route::prefix('notifications')->name('notifications.')->group(function () {
 
@@ -205,6 +233,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [MascotaController::class, 'index'])->name('index');
         Route::get('/registrar', [MascotaController::class, 'create'])->name('create');
         Route::post('/', [MascotaController::class, 'store'])->name('store');
+        Route::get('/{mascota}', [MascotaController::class, 'show'])->name('show');
         Route::get('/{mascota}/editar', [MascotaController::class, 'edit'])->name('edit');
         Route::put('/{mascota}', [MascotaController::class, 'update'])->name('update');
         Route::delete('/{mascota}', [MascotaController::class, 'destroy'])->name('destroy');

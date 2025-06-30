@@ -26,6 +26,7 @@
         "@fullcalendar/list": "^6.1.17",
         "@fullcalendar/timegrid": "^6.1.17",
         "@popperjs/core": "^2.11.8",
+        "@tailwindcss/typography": "^0.5.16",
         "animate.css": "^4.1.1",
         "bootstrap": "^5.3.7"
     }

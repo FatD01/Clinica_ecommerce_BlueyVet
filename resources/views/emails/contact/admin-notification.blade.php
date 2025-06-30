@@ -3,8 +3,8 @@
 
 Has recibido un nuevo mensaje a través del formulario de contacto de BlueyVet.
 
-**Nombre:** {{ $contactMessage->name }}
-**Email:** <a href="mailto:{{ $contactMessage->email }}">{{ $contactMessage->email }}</a>
+**Nombre:** {{ $contactMessage->name }} <br>
+**Email:** <a href="mailto:{{ $contactMessage->email }}">{{ $contactMessage->email }}</a> <br>
 **Asunto:** {{ $contactMessage->subject ?? 'N/A' }}
 
 **Mensaje:**

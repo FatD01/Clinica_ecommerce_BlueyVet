@@ -40,7 +40,7 @@ class CategoryResource extends Resource
                 
                 // Campo para seleccionar la categoría padre
                 Forms\Components\Select::make('parent_id')
-                    ->label('Categoría Padre')
+                    ->label('Farmacia o Petshop?')
                     ->relationship('parent', 'name') // La relación 'parent' en el modelo Category
                     ->searchable()
                     ->preload()

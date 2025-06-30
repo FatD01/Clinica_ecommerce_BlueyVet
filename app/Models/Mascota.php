@@ -69,4 +69,8 @@ class Mascota extends Model implements HasMedia
             ->height(100)
             ->sharpen(10);
     }
+    public function reminders()
+    {
+        return $this->hasMany(Reminder::class, 'mascota_id');
+    }
 }

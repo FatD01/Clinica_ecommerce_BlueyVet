@@ -55,8 +55,9 @@ body::-webkit-scrollbar-thumb:hover {
 /* Contenedor principal de Blade que envuelve sidebar y main */
 .container {
     display: flex;
-    height: 100vh; /* altura fija al 100% de la ventana */
-    overflow: hidden; /* evita scroll */
+    min-height: 100vh; /* Para permitir crecer si el contenido es más largo */
+    overflow: visible; /* Permite scroll si el contenido lo necesita */
+    flex-grow: 1;
 }
 
 
@@ -65,33 +66,41 @@ body::-webkit-scrollbar-thumb:hover {
 /* Ajustado para no modificar el HTML */
 /* --------------------------------------------------- */
 
-.main {
-    flex: 1; /* Permite que ocupe el espacio restante */
-    margin-left: 250px; /* Empuja el contenido a la derecha del sidebar fijo */
-    padding: 30px; /* Espaciado alrededor del contenido */
-    background-color: var(--light-blue);
-    display: flex;
-    flex-direction: column; /* Apila los elementos internos (header, container anidado) */
-    align-items: center; /* Centra horizontalmente el 'header' y el 'container' anidado */
-    min-height: 100vh; /* Asegura que ocupe toda la altura */
-    width: calc(100% - 250px); /* Ajusta el ancho para el sidebar */
-    box-sizing: border-box; /* Asegura que el padding se incluya en el width */
-    overflow-y: auto; /* Permite scroll solo en el main si el contenido es largo */
-    overflow-x: hidden; /* Evita scroll horizontal en el main */
-}
+
 
 /* Header (Logout button) */
 .header {
-    width: 100%; /* Ocupa todo el ancho disponible del .main */
-    max-width: 800px; /* Limita el ancho del header para que se alinee con el contenido centrado */
+    width: 100%!important; /* Ocupa todo el ancho disponible del .main */
+    max-width: none !important; /* Limita el ancho del header para que se alinee con el contenido centrado */
     display: flex;
     justify-content: flex-end; /* Alinea el botón de logout a la derecha dentro de su max-width */
     padding-bottom: 20px;
     padding-top: 10px;
     margin-left: auto; /* Centra el header dentro del .main si align-items no fuera suficiente */
     margin-right: auto;
+    margin: 1.5rem auto 0 auto; /* margen arriba y centrado horizontal */
+    background: transparent !important; /* blanco neutro para diferenciarlo del fondo */
+    
 }
 
+
+.main > .header {
+    position: relative;
+    
+    margin-bottom: 10px;
+    padding: 0 1rem;
+    z-index: 10;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    outline: none !important;
+}
+.header form {
+    background: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
 /* NUEVO: ESTILO PARA EL .container ANIDADO DENTRO DE .main */
 /* Esto centrará el contenido (título y tarjeta) dentro del .main */
 .main > .container {
@@ -663,6 +672,8 @@ strong {
         padding-bottom: 10px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         display: block;
+    white-space: nowrap;
+
     }
 
     .brand {
@@ -672,12 +683,16 @@ strong {
     }
 
     .sidebar nav ul {
-        margin: 0;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        padding-top: 10px;
-    }
+    display: flex;
+    flex-direction: row;
+    
+    white-space: nowrap;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    margin: 0;
+    
+}
+
 
     .sidebar li {
         margin: 5px 10px;
@@ -736,10 +751,7 @@ strong {
         overflow-y: visible; /* En móvil, no queremos scroll interno en la tarjeta si no es muy muy largo */
     }
 
-    .profile-card::-webkit-scrollbar,
-    .profile-edit-section::-webkit-scrollbar {
-        display: none; /* Ocultar scrollbar en móvil si no es necesario */
-    }
+    
     
     .profile-card {
         padding-bottom: 2.5rem; /* Asegura espacio si el botón se apila */
@@ -772,6 +784,31 @@ strong {
         padding: 0.75rem 1.5rem;
     }
 }
+
+.sidebar nav ul li {
+    flex: 0 0 auto;
+    display: inline-block;
+    margin: 0 !important;
+}
+
+.sidebar nav ul li a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1.1rem;
+    border-radius: 10px;
+    background-color: transparent;
+    color: var(--white);
+    font-size: 0.95rem;
+    white-space: nowrap;
+    transition: background-color 0.2s ease;
+}
+
+.sidebar nav ul li a.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: var(--white);
+}
+
 
 @media (max-width: 576px) {
     .main {

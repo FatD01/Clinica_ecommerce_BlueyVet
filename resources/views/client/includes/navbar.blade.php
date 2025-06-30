@@ -1,4 +1,4 @@
-<nav class="navbar fixed top-0 left-0 w-full bg-white shadow-md z-40">
+<nav class="navbar fixed top-0 left-0 w-full bg-white shadow-md z-40" x-data="{ mobileMenuOpen: false }">
     {{-- Componente de Notificación Flotante (sin cambios aquí) --}}
     @if (session('status'))
     <div x-data="{ show: true }"
@@ -11,7 +11,7 @@
         x-transition:leave-start="opacity-100 translate-y-0"
         x-transition:leave-end="opacity-0 translate-y-full"
         class="fixed bottom-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white text-sm font-semibold
-                    @if (session('status')) bg-bluey-dark @endif">
+                        @if (session('status')) bg-bluey-dark @endif">
         {{ session('status') }}
         <button @click="show = false" class="ml-2 text-white hover:text-gray-100 focus:outline-none">
             <i class="bi bi-x-lg"></i>
@@ -27,16 +27,19 @@
             <span class="logo-text text-bluey-dark text-2xl font-bold hidden sm:inline">BLUEYVET</span>
         </a>
 
-        {{-- Botón de Hamburguesa para el menú principal (solo en móviles) --}}
-        <div class="md:hidden flex-grow flex justify-end" x-data="{ mobileMenuOpen: false }">
+
+        {{-- Botón de Hamburguesa para el menú principal (solo en móviles y tablets) --}}
+        {{-- CAMBIOS AQUÍ: md:hidden a lg:hidden --}}
+        <div class="lg:hidden flex-grow flex justify-end">
             <button @click="mobileMenuOpen = !mobileMenuOpen"
                 class="text-bluey-dark hover:text-bluey-primary focus:outline-none focus:ring-2 focus:ring-bluey-primary rounded-md p-2">
                 <i class="bi bi-list text-3xl"></i>
             </button>
         </div>
 
-        {{-- Menú de Navegación (oculto en móviles, visible en md y arriba) --}}
-        <div id="main-menu" class="hidden md:flex flex-grow justify-center items-center space-x-6 lg:space-x-8">
+        {{-- Menú de Navegación (oculto en móviles y tablets, visible en lg y arriba) --}}
+        {{-- CAMBIOS AQUÍ: hidden md:flex a hidden lg:flex --}}
+        <div id="main-menu" class="hidden lg:flex flex-grow justify-center items-center space-x-6 lg:space-x-8">
             <div class="dropdown relative group">
                 <button class="menu-link dropdown-toggle flex items-center">
                     PRODUCTOS <i class="bi bi-chevron-down dropdown-icon ml-1 text-sm"></i>
@@ -69,8 +72,8 @@
             </a>
         </div>
 
-        {{-- Menú de Acción (Carrito, Notificaciones y Perfil) (sin cambios aquí) --}}
-        <div class="action-icons flex items-center space-x-3 ml-auto md:ml-6">
+        {{-- Menú de Acción (Carrito, Notificaciones y Perfil) --}}
+        <div class="action-icons flex items-center space-x-3 ml-auto ">
 
             {{-- Ícono de Carrito --}}
             <div id="carrito-icono" class="icon-btn cart-icon" title="Carrito" onclick="toggleCart()">
@@ -79,7 +82,7 @@
             </div>
             <x-cart-floating :cart="$cart ?? []" :total="$total ?? 0" />
 
-            {{-- Menú de Notificaciones (sin cambios aquí en el botón principal) --}}
+            {{-- Menú de Notificaciones --}}
             <div x-data="{ notificationOpen: false }" class="relative z-30">
                 <button @click="notificationOpen = !notificationOpen"
                     @click.outside="notificationOpen = false"
@@ -103,36 +106,51 @@
                     x-transition:leave="transition ease-in duration-75"
                     x-transition:leave-start="opacity-100 scale-100"
                     x-transition:leave-end="opacity-0 scale-95"
-                    class="absolute right-0 mt-2 w-80 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-50">
+                    class="absolute right-0 mt-2 w-64 md:w-80 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-50 overflow-y-auto max-h-96">
                     <div class="px-4 py-2 border-b border-gray-200 text-sm font-semibold text-gray-800">
                         Notificaciones
                     </div>
                     @auth
-                    @forelse (Auth::user()->unreadNotifications->take(5) as $notification)
-                    {{-- Contenedor flex para la notificación y el botón de eliminar --}}
+                    @forelse (Auth::user()->unreadNotifications->take(4) as $notification)
                     <div class="px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 border-b border-gray-100 flex justify-between items-start">
-                        <div> {{-- Contenido de la notificación --}}
-                            <p class="font-semibold">{{ $notification->data['title'] ?? 'Nueva notificación' }}</p>
-                            <p class="text-xs text-gray-500 mt-0.5">{{ Str::limit($notification->data['body'] ?? $notification->type, 50) }}</p>
+                        <div>
+                            @if(isset($notification->data['type']) && $notification->data['type'] === 'App\\Notifications\\ReminderNotification')
+                            <p class="font-semibold">{{ $notification->data['title'] ?? 'Recordatorio Importante' }}</p>
+                            <p class="text-xs text-gray-500 mt-0.5">
+                                Recordatorio de tu mascota {{ $notification->data['pet_name'] ?? 'desconocida' }}.
+                                {{ $notification->data['formatted_text'] ?? Str::limit($notification->data['description'] ?? 'Haz click para ver detalles.', 50) }}
+                            </p>
                             <span class="text-xs text-gray-400 mt-1 block">{{ $notification->created_at->diffForHumans() }}</span>
-
-                            @if(isset($notification->data['type']) && $notification->data['type'] === 'reprogramacion' && !empty($notification->data['reprogramming_request_id']))
+                            @if(isset($notification->data['link']))
+                            <a href="{{ $notification->data['link'] }}" class="text-xs bg-bluey-primary hover:bg-bluey-dark text-white px-2 py-1 rounded mt-2 inline-block">
+                                Ver Recordatorio
+                            </a>
+                            @endif
+                            @elseif(isset($notification->data['type']) && $notification->data['type'] === 'reprogramacion_propuesta_veterinario' && !empty($notification->data['reprogramming_request_id']))
+                            <p class="font-semibold">{{ $notification->data['title'] ?? 'Reprogramación de Cita' }}</p>
+                            <p class="text-xs text-gray-500 mt-0.5">{{ Str::limit($notification->data['body'] ?? 'Cita pospuesta. Haz click para revisar.', 50) }}</p>
+                            <span class="text-xs text-gray-400 mt-1 block">{{ $notification->created_at->diffForHumans() }}</span>
                             <form action="{{ route('notifications.reprogramacion.aceptar', $notification->data['reprogramming_request_id']) }}" method="POST" class="mt-2">
                                 @csrf
                                 <button type="submit" class="text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded">
                                     Aceptar reprogramación
                                 </button>
                             </form>
+                            @else
+                            <p class="font-semibold">{{ $notification->data['title'] ?? 'Nueva notificación' }}</p>
+                            <p class="text-xs text-gray-500 mt-0.5">{{ Str::limit($notification->data['body'] ?? $notification->type, 50) }}</p>
+                            <span class="text-xs text-gray-400 mt-1 block">{{ $notification->created_at->diffForHumans() }}</span>
+                            @if(isset($notification->data['link']))
+                            <a href="{{ $notification->data['link'] }}" class="text-xs text-bluey-primary hover:underline mt-2 inline-block">Ver Detalles</a>
+                            @endif
                             @endif
                         </div>
 
-                        {{-- FORMULARIO PARA ELIMINAR NOTIFICACIÓN INDIVIDUAL --}}
-                        {{-- Añadimos margen a la izquierda y un tamaño más pequeño para el ícono --}}
                         <form action="{{ route('notifications.destroy', $notification->id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta notificación?');" class="ml-2 flex-shrink-0">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="text-gray-400 hover:text-red-500 text-xs p-1 rounded hover:bg-gray-200">
-                                <i class="bi bi-trash-fill"></i> {{-- Usamos trash-fill para que sea más visible --}}
+                                <i class="bi bi-trash-fill"></i>
                             </button>
                         </form>
                     </div>
@@ -140,7 +158,6 @@
                     <p class="px-4 py-3 text-sm text-gray-500">No tienes notificaciones nuevas.</p>
                     @endforelse
 
-                    {{-- Pie del menú de notificaciones (Ver todas) --}}
                     @if (Auth::user()->notifications->count() > 0)
                     <div class="border-t border-gray-200 mt-1">
                         <a href="{{ route('notifications.index') }}" class="block text-center py-2 text-sm text-bluey-primary hover:bg-gray-50">Ver todas las notificaciones</a>
@@ -151,18 +168,18 @@
                     @endauth
                 </div>
             </div>
+
             {{-- Menú de Usuario/Perfil unificado (sin cambios aquí) --}}
-            <div x-data="{ userMenuOpen: false, showTooltip: false }" class="relative z-30">
+            <div x-data="{ userMenuOpen: false, showTooltip: false }" class="relative z-30 p-0 m-0">
                 <button @click="userMenuOpen = !userMenuOpen"
                     @click.outside="userMenuOpen = false"
                     @mouseenter="showTooltip = true"
                     @mouseleave="showTooltip = false"
-                    class="flex items-center space-x-1 text-bluey-dark hover:text-bluey-primary focus:outline-none px-1 py-1 rounded-md transition-colors duration-200"
+                    class="flex items-center text-bluey-dark hover:text-bluey-primary focus:outline-none px-1 py-1 rounded-md transition-colors duration-200"
                     id="user-profile-menu-button" aria-expanded="userMenuOpen" aria-haspopup="true">
                     @auth
                     <span class="relative">
                         <span class="text-sm font-semibold hidden lg:inline">{{ __('Hola,') }} {{ Str::limit(Auth::user()->name, 10, '...') }}</span>
-                        <!-- <span class="text-bluey-dark font-bold text-lg p-2 rounded-full bg-bluey-light hidden md:inline lg:hidden">{{ substr(Auth::user()->name, 0, 1) }}</span> -->
                     </span>
                     <span class="relative">
                         <i class="bi bi-person text-xl md:text-2xl"></i>
@@ -236,18 +253,20 @@
     </div>
 
     {{-- Menú móvil desplegable --}}
-    <div id="mobile-menu" x-show="mobileMenuOpen"
-        x-transition:enter="transition ease-out duration-200"
+    {{-- CAMBIOS AQUÍ: md:hidden a lg:hidden --}}
+    <div id="mobile-menu" x-show="mobileMenuOpen" x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0 -translate-y-2"
         x-transition:enter-end="opacity-100 translate-y-0"
         x-transition:leave="transition ease-in duration-75"
         x-transition:leave-start="opacity-100 translate-y-0"
         x-transition:leave-end="opacity-0 -translate-y-2"
-        class="md:hidden absolute top-16 left-0 w-full bg-white shadow-lg py-2 z-20">
+        class="lg:hidden absolute top-16 left-0 w-full bg-white shadow-lg py-2 z-20"
+        @click.outside="mobileMenuOpen = false">
+
         <div class="px-2 pt-2 pb-3 space-y-1">
             <div x-data="{ mobileProductOpen: false }" class="relative px-2">
                 <button @click="mobileProductOpen = !mobileProductOpen"
-                    class="menu-link w-full text-left flex items-center justify-between py-2 px-3 rounded-md hover:bg-bluey-light hover:text-bluey-dark **text-base font-medium**">
+                    class="menu-link w-full text-left flex items-center justify-between py-2 px-3 rounded-md hover:bg-bluey-light hover:text-bluey-dark text-base font-medium">
                     PRODUCTOS <i class="bi bi-chevron-down dropdown-icon ml-1 text-sm" :class="{'rotate-180': mobileProductOpen}"></i>
                 </button>
                 <div x-show="mobileProductOpen"
@@ -257,11 +276,100 @@
                     x-transition:leave="transition ease-in duration-75"
                     x-transition:leave-start="opacity-100 scale-100"
                     x-transition:leave-end="opacity-0 scale-95"
-                    class="**pl-4 pt-1 pb-2**"> {{-- Quitamos `dropdown-menu` de aquí --}}
-                    <a href="{{ route('productos.por_categoria', ['id' => 2]) }}" class="**menu-link block px-4 py-2 text-sm text-gray-700 hover:bg-bluey-light hover:text-bluey-dark font-medium**">
+                    class="pl-4 pt-1 pb-2">
+                    <a href="{{ route('productos.por_categoria', ['id' => 2]) }}" class="menu-link block px-4 py-2 text-sm text-gray-700 hover:bg-bluey-light hover:text-bluey-dark font-medium">
                         <i class="bi bi-capsule mr-2"></i> Farmacia
                     </a>
-                    <a href="{{ route('productos.por_categoria', ['id' => 1]) }}" class="**menu-link block px-4 py-2 text-sm text-gray-700 hover:bg-bluey-light hover:text-bluey-dark font-medium**">
+                    <a href="{{ route('productos.por_categoria', ['id' => 1]) }}" class="menu-link block px-4 py-2 text-sm text-gray-700 hover:bg-bluey-light hover:text-bluey-dark font-medium">
+                        <i class="bi bi-bag-heart mr-2"></i> Petshop
+                    </a>
+                </div>
+            </div>
+
+            <a href="{{ url('/') }}" class="menu-link block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('home') ? 'active' : '' }} hover:bg-bluey-light hover:text-bluey-dark">
+                <i class="bi bi-house mr-2"></i> INICIO
+            </a>
+            <a href="{{ route('blog.index') }}" class="menu-link block px-3 py-2 rounded-md text-base font-medium hover:bg-bluey-light hover:text-bluey-dark">
+                <i class="bi bi-newspaper mr-2"></i> BLOG
+            </a>
+
+            <a href="{{ route('client.servicios.index') }}" class="menu-link block px-3 py-2 rounded-md text-base font-medium hover:bg-bluey-light hover:text-bluey-dark">
+                <i class="bi bi-heart-pulse mr-2"></i> SERVICIOS
+            </a>
+            <a href="{{ route('client.mascotas.index') }}" class="menu-link block px-3 py-2 rounded-md text-base font-medium hover:bg-bluey-light hover:text-bluey-dark">
+                <i class="bi bi-clipboard-heart mr-2"></i> MASCOTAS
+            </a>
+            <a href="{{ route('client.citas.index') }}" class="menu-link block px-3 py-2 rounded-md text-base font-medium hover:bg-bluey-light hover:text-bluey-dark">
+                <i class="bi bi-calendar-check mr-2"></i> CITAS
+            </a>
+
+            {{-- Ícono de Campana de Notificaciones para el menú móvil --}}
+            @auth
+            <a href="{{ route('notifications.index') }}" class="menu-link block px-3 py-2 rounded-md text-base font-medium hover:bg-bluey-light hover:text-bluey-dark flex items-center justify-between">
+                <span class="flex items-center">
+                    <i class="bi bi-bell text-lg mr-2"></i> NOTIFICACIONES
+                </span>
+                @if (Auth::user()->unreadNotifications->count() > 0)
+                <span class="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+                    {{ Auth::user()->unreadNotifications->count() }}
+                </span>
+                @endif
+            </a>
+            <hr class="my-2 border-gray-200">
+            <a href="{{ route('profile.edit') }}" class="menu-link block px-3 py-2 rounded-md text-base font-medium hover:bg-bluey-light hover:text-bluey-dark flex items-center justify-between">
+                <span class="flex items-center">
+                    <i class="bi bi-person-fill text-lg mr-2"></i> MI PERFIL
+                </span>
+                @if (Auth::user()->needsProfileCompletion)
+                <span class="w-2.5 h-2.5 bg-red-500 rounded-full animate-ping-once-small"></span>
+                @endif
+            </a>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="menu-link block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-100 hover:text-red-800">
+                    <i class="bi bi-box-arrow-right mr-2"></i> CERRAR SESIÓN
+                </button>
+            </form>
+            @else
+            <a href="{{ route('login') }}" class="menu-link block px-3 py-2 rounded-md text-base font-medium hover:bg-bluey-light hover:text-bluey-dark">
+                <i class="bi bi-box-arrow-in-right mr-2"></i> INICIAR SESIÓN
+            </a>
+            @endauth
+        </div>
+    </div>
+    </div>
+    </div>
+    </div>
+
+    {{-- Menú móvil desplegable --}}
+    {{-- Ahora x-show="mobileMenuOpen" se referencia directamente de la data global del nav --}}
+    <div id="mobile-menu" x-show="mobileMenuOpen" x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 -translate-y-2"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-75"
+        x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 -translate-y-2"
+        class="md:hidden absolute top-16 left-0 w-full bg-white shadow-lg py-2 z-20"
+        @click.outside="mobileMenuOpen = false"> {{-- Añadido para cerrar el menú al hacer click fuera --}}
+
+        <div class="px-2 pt-2 pb-3 space-y-1">
+            <div x-data="{ mobileProductOpen: false }" class="relative px-2">
+                <button @click="mobileProductOpen = !mobileProductOpen"
+                    class="menu-link w-full text-left flex items-center justify-between py-2 px-3 rounded-md hover:bg-bluey-light hover:text-bluey-dark text-base font-medium">
+                    PRODUCTOS <i class="bi bi-chevron-down dropdown-icon ml-1 text-sm" :class="{'rotate-180': mobileProductOpen}"></i>
+                </button>
+                <div x-show="mobileProductOpen"
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 scale-95"
+                    x-transition:enter-end="opacity-100 scale-100"
+                    x-transition:leave="transition ease-in duration-75"
+                    x-transition:leave-start="opacity-100 scale-100"
+                    x-transition:leave-end="opacity-0 scale-95"
+                    class="pl-4 pt-1 pb-2"> {{-- Quitamos `dropdown-menu` de aquí --}}
+                    <a href="{{ route('productos.por_categoria', ['id' => 2]) }}" class="menu-link block px-4 py-2 text-sm text-gray-700 hover:bg-bluey-light hover:text-bluey-dark font-medium">
+                        <i class="bi bi-capsule mr-2"></i> Farmacia
+                    </a>
+                    <a href="{{ route('productos.por_categoria', ['id' => 1]) }}" class="menu-link block px-4 py-2 text-sm text-gray-700 hover:bg-bluey-light hover:text-bluey-dark font-medium">
                         <i class="bi bi-bag-heart mr-2"></i> Petshop
                     </a>
                 </div>

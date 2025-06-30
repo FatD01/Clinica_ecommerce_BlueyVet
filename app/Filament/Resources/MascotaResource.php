@@ -7,6 +7,7 @@ use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\RestoreAction;
 use Filament\Tables\Actions\ForceDeleteAction; // Para eliminar permanentemente si es necesario
 use Filament\Tables\Filters\TrashedFilter;
+use Filament\Tables\Filters\Filter;
 use App\Filament\Resources\MascotaResource\Pages;
 use App\Filament\Resources\MascotaResource\RelationManagers;
 use App\Models\Mascota;
@@ -28,6 +29,7 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Tables\Actions\RestoreBulkAction;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
+use Illuminate\Database\Eloquent\Builder;
 
 class MascotaResource extends Resource
 {
@@ -73,7 +75,9 @@ class MascotaResource extends Resource
                                     ->label('Alergias')
                                     ->rows(2)
                                     ->maxLength(65535),
-                                SpatieMediaLibraryFileUpload::make('avatar'),
+                                SpatieMediaLibraryFileUpload::make('avatar')
+                                    ->collection('avatars') // <--- ¡Añade esto!
+                                    ->label('Avatar de la Mascota'),
                             ]),
                     ]),
 
@@ -130,7 +134,10 @@ class MascotaResource extends Resource
                     ->label('Fecha de Nacimiento'),
 
 
-                SpatieMediaLibraryImageColumn::make('avatar'),
+                SpatieMediaLibraryImageColumn::make('avatar')
+                    ->collection('avatars')
+                    ->label('Avatar')
+                    ->circular(), //c
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime(),
@@ -139,6 +146,23 @@ class MascotaResource extends Resource
             ])
             ->filters([
                 TrashedFilter::make(),
+                Filter::make('owner_name_search') // Nombre único para tu filtro
+                    ->form([
+                        TextInput::make('name') // El nombre de este TextInput será 'name' en el array $data
+                            ->label('Buscar Dueño (Nombre o Apellido)')
+                            ->placeholder('Escribe nombre o apellido del dueño'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        // dd('Depuración del filtro de dueño:', $data); // ¡Deja este DD por ahora!
+
+                        if (isset($data['name']) && filled($data['name'])) {
+                            $query->whereHas('cliente', function (Builder $subQuery) use ($data) {
+                                $subQuery->where('nombre', 'like', '%' . $data['name'] . '%')
+                                    ->orWhere('apellido', 'like', '%' . $data['name'] . '%');
+                            });
+                        }
+                        return $query;
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

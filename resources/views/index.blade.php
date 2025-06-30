@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Vet Dashboard</title>
 
-  
+
 
   @vite(['resources/css/vet/views/styles.css'])
   <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
@@ -26,14 +26,7 @@
       /* Quitado: overflow: hidden; */
     }
 
-    /* Contenedor principal de la aplicación para permitir scroll interno si es necesario */
-    .container-fluid {
-      display: flex;
-      min-height: 100vh;
-      /* Asegura que el contenedor ocupe al menos el 100% del alto de la ventana */
-      overflow: auto;
-      /* Permite scroll solo en este contenedor si el contenido se desborda */
-    }
+
 
     /* Asegúrate de que tu main content pueda hacer scroll si es necesario */
     .main {
@@ -360,13 +353,40 @@
             </div>
           </div>
 
+          <div class="form-grid mt-4">
+            <div class="form-group">
+              <label for="password" class="form-label">Nueva Contraseña:</label>
+              <input type="password" name="password" id="password"
+                class="form-input @error('password') input-error @enderror"
+                {{ $user->hasPasswordChanged ? 'disabled' : '' }} {{-- Deshabilita si ya fue cambiada --}}
+                placeholder="Deja vacío para no cambiar">
+              @error('password')
+              <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
+              @enderror
+            </div>
+
+            <div class="form-group">
+              <label for="password_confirmation" class="form-label">Confirmar Nueva Contraseña:</label>
+              <input type="password" name="password_confirmation" id="password_confirmation"
+                class="form-input"
+                {{ $user->hasPasswordChanged ? 'disabled' : '' }} {{-- Deshabilita si ya fue cambiada --}}
+                placeholder="Repite tu nueva contraseña">
+            </div>
+          </div>
+          @if ($user->hasPasswordChanged)
+          <p class="text-red-600 text-sm mt-3 text-center">
+            * La contraseña ya fue cambiada una vez. Para futuras modificaciones, contacta al área de administración.
+          </p>
+          @endif
+
           <div class="form-grid">
             <div class="form-group">
               <label for="license_number" class="form-label">Número de Licencia:</label>
               <input type="text" id="license_number" name="license_number"
                 class="form-input @error('license_number') input-error @enderror"
                 value="{{ old('license_number', $veterinarian->license_number ?? '') }}"
-                placeholder="Ej: AB12345">
+                placeholder="Ej: 12345"
+                maxlength="5">
               @error('license_number')
               <p class="error-message">{{ $message }}</p>
               @enderror
@@ -405,7 +425,10 @@
               <input type="tel" id="phone" name="phone"
                 class="form-input @error('phone') input-error @enderror"
                 value="{{ old('phone', $veterinarian->phone ?? '') }}"
-                placeholder="Ej: +51 987 654 321">
+                placeholder="Ej: +51 987 654 321"
+                maxlength="11"
+                pattern="[0-9]{3} [0-9]{3} [0-9]{3}"
+                inputmode="numeric">
               @error('phone')
               <p class="error-message">{{ $message }}</p>
               @enderror
@@ -557,6 +580,31 @@
       }
     });
   </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const phoneInput = document.getElementById('phone');
+
+        phoneInput.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, ''); // Elimina todo lo que no sea dígito
+
+            let formattedValue = '';
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 3 === 0) {
+                    formattedValue += ' '; // Añade un espacio cada 3 dígitos
+                }
+                formattedValue += value[i];
+            }
+
+            // Limitar a 9 dígitos (ignorando los espacios para el conteo)
+            if (formattedValue.replace(/\s/g, '').length > 9) {
+                formattedValue = formattedValue.substring(0, 11); // Corta la cadena formateada a 11 (9 digitos + 2 espacios)
+                formattedValue = formattedValue.replace(/\s/g, '').substring(0, 9).replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3'); // Re-formatea por si el corte fue raro
+            }
+
+            e.target.value = formattedValue;
+        });
+    });
+</script>
 </body>
 
 </html>

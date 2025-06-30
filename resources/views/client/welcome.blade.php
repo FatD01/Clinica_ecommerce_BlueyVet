@@ -53,26 +53,20 @@
         </div>
     </div>
 </section>
-
 <section class="seccion-servicios py-12 bg-amarillo-claro">
     <div class="container">
         <h2 class="titulo-seccion text-center">Nuestros Servicios Destacados</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div class="card-servicio bg-blanco">
-                <h3 class="titulo-servicio">Consultas Veterinarias</h3>
-                <p class="texto-servicio">Atención médica profesional para tus compañeros.</p>
-                <a href="#" class="enlace-servicio">Ver más</a>
-            </div>
-            <div class="card-servicio bg-blanco">
-                <h3 class="titulo-servicio">Farmacia Veterinaria</h3>
-                <p class="texto-servicio">Medicamentos y productos de salud de alta calidad.</p>
-                <a href="#" class="enlace-servicio">Ver más</a>
-            </div>
-            <div class="card-servicio bg-blanco">
-                <h3 class="titulo-servicio">Peluquería Canina y Felina</h3>
-                <p class="texto-servicio">Servicios de estética para mantener a tu mascota feliz y saludable.</p>
-                <a href="#" class="enlace-servicio">Ver más</a>
-            </div>
+            {{-- Inicia el bucle para cada servicio en la colección $featuredServices --}}
+            @foreach($featuredServices as $service)
+                <div class="card-servicio bg-blanco">
+                    <h3 class="titulo-servicio">{{ $service->name }}</h3>
+                    <p class="texto-servicio">{{ $service->description }}</p>
+                    {{-- Asegúrate de que esta ruta exista y pueda mostrar los detalles de un servicio --}}
+                    <a href="{{ route('client.servicios.show', $service->id) }}" class="enlace-servicio">Ver más</a>
+                </div>
+            @endforeach
+            {{-- Fin del bucle --}}
         </div>
     </div>
 </section>
@@ -96,17 +90,16 @@
     </div>
 
     @if($recentPosts->isNotEmpty())
-      <div class="grid gap-0 md:gap-8 lg:gap-12">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         @foreach($recentPosts as $post)
           <div class="relative group" data-aos="fade-up">
             {{-- Contenedor principal con efecto de superposición --}}
-            <div class="relative z-10 @if($loop->odd) ml-0 md:ml-8 lg:ml-16 @else mr-0 md:mr-8 lg:mr-16 @endif 
-                        mt-8 hover:mt-4 transition-all duration-500">
+           <div class="relative z-10 mt-8 hover:mt-3 transition-all duration-700">
               
               {{-- Tarjeta base (sombra) --}}
               <div class="absolute inset-0 bg-bluey-primary rounded-xl 
                          @if($loop->odd) rotate-2 @else -rotate-2 @endif
-                         translate-y-4 group-hover:translate-y-2 transition-transform duration-500"></div>
+                         translate-y-4 group-hover:translate-y-2 transition-transform duration-700"></div>
               
               {{-- Tarjeta principal --}}
               <div class="relative bg-white rounded-xl shadow-lg overflow-hidden border-2 border-bluey-light/20 

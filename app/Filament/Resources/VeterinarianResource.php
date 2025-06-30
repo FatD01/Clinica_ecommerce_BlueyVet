@@ -42,10 +42,13 @@ class VeterinarianResource extends Resource
                         'user',
                         'name',
                         fn(Builder $query) =>
-                        $query->whereDoesntHave('veterinarian') // Excluye usuarios que ya son veterinarios
-                            ->where('role', '!=', 'admin')
-                            ->where('role', '!=', 'cliente') //oe creo que se como hacerlo| lte complicaste oye jjasjdjas la iaaaa|    pero creo qeu ya estaría tod, deja pruebo    ee| que quieres hacer? que solo aparezcan usuarios con rol veterinario qeu aun no hayan sido asignados coomo veterinario, qeu no aparezcan admin ni  lcientes
-                    )
+                        // Solo filtra por el rol 'Veterinario'
+                        $query->where('role', 'Veterinario')
+                        // fn(Builder $query) =>
+                        // $query->whereDoesntHave('veterinarian') // Excluye usuarios que ya son veterinarios
+                        //     ->where('role', '!=', 'admin')
+                        //     ->where('role', '!=', 'cliente') //oe creo que se como hacerlo| lte complicaste oye jjasjdjas la iaaaa|    pero creo qeu ya estaría tod, deja pruebo    ee| que quieres hacer? que solo aparezcan usuarios con rol veterinario qeu aun no hayan sido asignados coomo veterinario, qeu no aparezcan admin ni  lcientes
+                    ) //donde dice que excluye a veterunario
                     ->label('Usuario Asociado')
                     ->required()
                     ->searchable()
@@ -54,7 +57,7 @@ class VeterinarianResource extends Resource
                     ->label('Número de Licencia')
                     ->required()
                     ->maxLength(255),
-                
+
                 Forms\Components\TextInput::make('phone')
                     ->label('Teléfono')
                     ->tel()
@@ -88,7 +91,7 @@ class VeterinarianResource extends Resource
                     ->label('Licencia')
                     ->searchable()
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Teléfono')
                     ->searchable(),
@@ -114,12 +117,12 @@ class VeterinarianResource extends Resource
                 TrashedFilter::make(),
                 // Aquí puedes añadir un filter para la columna 'specialties.name' para buscar por nombre de especialidad
                 SelectFilter::make('specialties') // El nombre del filtro puede ser el nombre de la relación
-                ->relationship('specialties', 'name') // Conecta con la relación 'specialties' y muestra el 'name'
-                ->multiple() // Permite seleccionar una o varias especialidades para filtrar
-                ->preload() // Carga todas las opciones de especialidades al abrir el filtro
-                ->searchable() // Permite buscar especialidades dentro del filtro
-                ->label('Filtrar por Especialidad') // Etiqueta visible del filtro
-                ->placeholder('Selecciona especialidades'),
+                    ->relationship('specialties', 'name') // Conecta con la relación 'specialties' y muestra el 'name'
+                    ->multiple() // Permite seleccionar una o varias especialidades para filtrar
+                    ->preload() // Carga todas las opciones de especialidades al abrir el filtro
+                    ->searchable() // Permite buscar especialidades dentro del filtro
+                    ->label('Filtrar por Especialidad') // Etiqueta visible del filtro
+                    ->placeholder('Selecciona especialidades'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

@@ -40,6 +40,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'filament' => [ // Puedes añadir este, aunque 'web' es el default para Filament si no especificas otro
+        'driver' => 'session',
+        'provider' => 'users',
+    ],
     ],
 
     /*
@@ -62,7 +66,7 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
+            'model' =>  App\Models\User::class,
         ],
 
         // 'users' => [

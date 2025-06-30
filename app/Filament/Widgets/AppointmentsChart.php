@@ -24,6 +24,7 @@ class AppointmentsChart extends ChartWidget
     // Si tu otro gráfico ya es full, déjalo sin $columnSpan o en '1/2' si tienes espacio.
 
     public ?string $filter = 'all';
+    protected int | string | array $columnSpan = '2/3';
 
     protected function getFilters(): ?array
     {

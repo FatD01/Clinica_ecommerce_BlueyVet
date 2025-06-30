@@ -84,15 +84,17 @@
                     <button type="submit" class="btn btn-secondary">Filtrar</button>
                 </div>
                 <div class="mb-4">
-                    <a href="{{ route('veterinarian.historial.exportCompleto', ['mascota' => $mascota->id]) }}" class="btn btn-primary" target="_blank">
-                        <i class="fas fa-file-pdf"></i> Exportar Historial Completo
+                    <a href="{{ route('veterinarian.historial.exportCompleto', ['mascota' => $mascota->id]) }}" class="btn btn-primary" target="_blank"
+                    style= "background-color: #393859 !important; color:white !important;">
+                        
+                    <i class="fas fa-file-pdf"></i> Exportar Historial Completo
                     </a>
                 </div>
             </form>
 
             {{-- Tarjeta única con contenido desplegable --}}
             <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-primary text-white" style="background: linear-gradient(135deg, var(--bluey-dark) 0%, var(--bluey-primary) 100%)!important;">
                     <h5 class="mb-0">Historial Clínico</h5>
                 </div>
                 <div class="card-body">
@@ -111,12 +113,15 @@
                         <h6>Datos de la Mascota</h6>
                         <div class="row align-items-center mb-3">
                             <div class="col-md-3">
-                                @if($mascota->image)
-                                <img src="{{ asset('storage/' . $mascota->image) }}" class="mascota-img" alt="Imagen de la mascota">
-                                @else
-                                <p><em>No hay imagen disponible.</em></p>
-                                @endif
-                            </div>
+    @if($mascota->hasMedia('avatars'))
+        <img src="{{ $mascota->getFirstMediaUrl('avatars', 'thumb') }}" 
+             class="mascota-img rounded border border-primary img-fluid" 
+             alt="Imagen de {{ $mascota->name }}">
+    @else
+        <p><em>No hay imagen disponible.</em></p>
+    @endif
+</div>
+
                             <div class="col-md-9">
                                 <p><strong>Nombre:</strong> {{ $mascota->name }}</p>
                                 <p><strong>Especie:</strong> {{ $mascota->species }}</p>

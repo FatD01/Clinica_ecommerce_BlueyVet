@@ -34,8 +34,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        User::observe(UserObserver::class);
 
-         Product::observe(ProductObserver::class);
+        Product::observe(ProductObserver::class);
 
         // === INICIO: COMPARTIR VARIABLE DE NOTIFICACIONES ===
         View::composer('*', function ($view) {

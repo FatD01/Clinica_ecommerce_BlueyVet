@@ -32,4 +32,8 @@ class Cliente extends Model
     {
         return $this->hasMany(ReprogrammingRequest::class, 'client_id'); // Asegúrate de especificar la FK
     }
+    public function reminder()
+    {
+        return $this->hasMany(Reminder::class, 'cliente_id');
+    }
 }

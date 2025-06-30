@@ -117,7 +117,7 @@
         Total: <span id="cart-total">S/.{{ number_format($total, 2) }}</span> {{-- $total is expected from the controller --}}
     </p>
 
-<!-- 0000000000000000000000000000  -->
+
 
     <div class="shipping-info-container bg-bluey-light rounded-lg shadow-sm p-6 mb-6 border border-bluey-light2">
         <h3 class="text-base font-semibold text-bluey-dark mb-2 flex items-center">
@@ -212,11 +212,17 @@
                 // Mostrar mensaje de carrito vacío si es necesario
                 const cartItemsList = document.getElementById('cart-items-list');
                 const emptyCartMessage = document.getElementById('empty-cart-message');
+
+
                 if (data.cart_count === 0) {
+
+                await updateCartFloatingComponent
                     cartItemsList.innerHTML = ''; // Limpiar la lista si no hay elementos
                     if (emptyCartMessage) {
                         emptyCartMessage.style.display = 'block'; // Mostrar el mensaje de carrito vacío
                     }
+
+                    
                 } else {
                     if (emptyCartMessage) {
                         emptyCartMessage.style.display = 'none'; // Asegurarse de que esté oculto

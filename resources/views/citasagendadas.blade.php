@@ -85,11 +85,14 @@
                         <option value="">-- Todas las mascotas --</option>
                         @foreach ($mascotas as $mascota)
                             <option value="{{ $mascota->id }}" {{ request('mascota_id') == $mascota->id ? 'selected' : '' }}>
-                                {{ $mascota->name }}
+                                {{ $mascota->name }}({{ $mascota->species }} - {{ $mascota->race }}) - {{ $mascota->cliente->user->name }}
                             </option>
                         @endforeach
                     </select>
                 </div>
+
+             
+
                 <div class="col-md-2">
                     <button type="submit" class="btn mi-boton-personalizado">Aplicar filtro</button>
 
@@ -153,36 +156,74 @@ document.addEventListener('DOMContentLoaded', function () {
     },
         events: @json($eventos),
         eventClick: function(info) {
-            info.jsEvent.preventDefault();
+    info.jsEvent.preventDefault();
+    
+    const data = info.event.extendedProps;
+    const fechaEvento = new Date(info.event.start);
+    const ahora = new Date();
 
-            const data = info.event.extendedProps;
-            const modalHtml = `
-                <div class="modal fade" id="detalleCitaModal" tabindex="-1">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content p-3">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Detalle de la Cita</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <p><strong>Cliente:</strong> ${data.cliente}</p>
-                                <p><strong>Email:</strong> ${data.email}</p>
-                                <p><strong>Teléfono:</strong> ${data.telefono}</p>
-                                <p><strong>Dirección:</strong> ${data.direccion}</p>
-                                <p><strong>Servicio:</strong> ${data.servicio}</p>
-                                <a href="${data.verMascotasUrl}" class="btn btn-primary mt-2">Ver mascotas</a>
-                            </div>
+    const fechaEventoSimple = fechaEvento.toISOString().slice(0, 10);
+    const ahoraSimple = ahora.toISOString().slice(0, 10);
+
+    if (fechaEventoSimple < ahoraSimple) {
+        // Modal para citas pasadas
+        const modalPasada = `
+    <div class="modal fade" id="citaPasadaModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-3 border-warning">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Cita No Atendida
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning mb-0">
+                        <p><strong>Esta cita ya pasó</strong> y no puede ser modificada ni atendida.</p>
+                        <p><strong>Fecha de la cita:</strong> ${fechaEvento.toLocaleDateString()}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+`;
+        document.body.insertAdjacentHTML('beforeend', modalPasada);
+        const modal = new bootstrap.Modal(document.getElementById('citaPasadaModal'));
+        modal.show();
+        document.getElementById('citaPasadaModal').addEventListener('hidden.bs.modal', function () {
+            this.remove();
+        });
+
+    } else {
+        // Modal para citas vigentes o futuras
+        const modalHtml = `
+            <div class="modal fade" id="detalleCitaModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content p-3">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Detalle de la Cita</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p><strong>Cliente:</strong> ${data.cliente}</p>
+                            <p><strong>Email:</strong> ${data.email}</p>
+                            <p><strong>Teléfono:</strong> ${data.telefono}</p>
+                            <p><strong>Dirección:</strong> ${data.direccion}</p>
+                            <p><strong>Servicio:</strong> ${data.servicio}</p>
+                            <a href="${data.verMascotasUrl}" class="btn btn-primary mt-2">Ver mascotas</a>
                         </div>
                     </div>
                 </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            const modal = new bootstrap.Modal(document.getElementById('detalleCitaModal'));
-            modal.show();
-            document.getElementById('detalleCitaModal').addEventListener('hidden.bs.modal', function () {
-                this.remove();
-            });
-        },
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById('detalleCitaModal'));
+        modal.show();
+        document.getElementById('detalleCitaModal').addEventListener('hidden.bs.modal', function () {
+            this.remove();
+        });
+    }
+},
         views: {
             // Mantener dayGridWeek tal como estaba en tu código original
             dayGridWeek: {

@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
-<div class="container mt-4">
+<div class="layout">
     <aside class="sidebar">
         <div class="brand">
             <i class="fas fa-paw"></i> BlueyVet
@@ -31,7 +31,7 @@
         <div class="user">Hola, <strong>{{ Auth::user()->name }}</strong></div>
     </aside>
 
-    <div class="main-content container mt-4">
+    <div class="main-content">
 
     @if(session('success'))
     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -85,13 +85,13 @@
 
                                     <a href="{{ route('veterinarian.atender', $cita->id) }}"
                                        class="btn btn-secondary w-100 text-center"
-                                       style="background-color: #ffc609; height: 45px; display: flex; align-items: center; justify-content: center;">
+                                       style="background-color: #393859 !important; color:white !important; height: 45px; display: flex; align-items: center; justify-content: center;">
                                         Atender Cita
                                     </a>
                                 @else
                                     <button type="button"
                                             class="btn btn-secondary w-100 text-center btn-restringido"
-                                            style="background-color: #ffc609; height: 45px; display: flex; align-items: center; justify-content: center;">
+                                            style="background-color: #393859 !important; color:white !important; height: 45px; display: flex; align-items: center; justify-content: center;">
                                         Atender Cita
                                     </button>
                                 @endif
@@ -99,7 +99,7 @@
                                 @if ($cita->status !== 'confirmed')
                                  <button type="button"
                                         class="btn btn-primary w-100 text-center"
-                                        style="height: 45px; display: flex; align-items: center; justify-content: center; margin-top: 10px;"
+                                        style="background-color: #ffc609 !important; color:white !important;height: 45px; display: flex; align-items: center; justify-content: center; margin-top: 10px;"
                                         data-bs-toggle="modal"
                                         data-bs-target="#modalReprogramarCita"
                                         data-cita-id="{{ $cita->id }}">
@@ -108,7 +108,7 @@
 
                                 <button type="button"
                                         class="btn btn-secondary w-100 text-center"
-                                        style="height: 45px; display: flex; align-items: center; justify-content: center;"
+                                        style="background-color: #dc3545 !important;color: white !important;height: 45px; display: flex; align-items: center; justify-content: center;"
                                         data-bs-toggle="modal"
                                         data-bs-target="#modalCancelarCita"
                                         data-cita-id="{{ $cita->id }}">
@@ -186,7 +186,7 @@
             </div>
             <div class="modal-body text-center">
                 <p class="mb-3">Todavía no puedes atender esta cita...</p>
-                <img src="{{ asset('img/perrito-no.png') }}" alt="Perrito negando" class="img-fluid" style="max-width: 100%; border-radius: 10px;">
+                <img src="{{ asset('img/perrito-no.jpg') }}" alt="Perrito negando" class="img-fluid" style="max-width: 100%; border-radius: 10px;">
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Entendido</button>

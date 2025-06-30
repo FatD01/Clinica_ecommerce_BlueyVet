@@ -43,7 +43,7 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
 
-        $user = Auth::user(); // ✅ Se guarda antes de cerrar sesión
+        $user = Auth::user(); // Se guarda antes de cerrar sesión
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -51,6 +51,6 @@ class AuthController extends Controller
     if ($user && strtolower($user->role) === 'veterinario') {
          return redirect()->route('veterinarian.login'); // Login del veterinario
     }
-        return redirect()->route('login');
+        return redirect()->route('client.home');
     }
 }

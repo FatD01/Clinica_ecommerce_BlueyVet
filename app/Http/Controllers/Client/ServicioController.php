@@ -20,5 +20,11 @@ class ServicioController extends Controller
 
         return view('client.servicios.index', compact('veterinarios', 'servicios'));
     }
+
+    public function show(Service $service) // Laravel automáticamente encuentra el servicio por el ID/slug
+    {
+       
+        return view('client.servicios.show', compact('service'));
+    }
     // ¡No debe haber NINGÚN otro método aquí (como sendContactMail)!
 }

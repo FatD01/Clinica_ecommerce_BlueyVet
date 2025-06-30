@@ -15,18 +15,7 @@
                 </h2>
             </div>
             <div class="mt-8 space-y-6">
-                @if(Session::has('success'))
-                    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-                        <strong class="font-bold">¡Éxito!</strong>
-                        <span class="block sm:inline">{{ Session::get('success') }}</span>
-                    </div>
-                @else
-                    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-                        <strong class="font-bold">¡Éxito!</strong>
-                        <span class="block sm:inline">Tu pago ha sido procesado correctamente. ¡Gracias por tu compra!</span>
-                    </div>
-                @endif
-
+    
                 <p class="text-gray-700 text-center">
                     Hemos recibido tu pago y tu orden ha sido confirmada. En breve recibirás un correo electrónico con los detalles de tu compra.
                     Ahora puedes programar tu cita para el servicio adquirido.

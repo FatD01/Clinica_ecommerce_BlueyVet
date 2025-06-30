@@ -44,7 +44,8 @@ body {
 .logo {
     text-decoration: none;
     transition: var(--transition);
-    /* gap: 0.7rem; */ /* COMENTAR/ELIMINAR si usas space-x-2 */
+    /* gap: 0.7rem; */
+    /* COMENTAR/ELIMINAR si usas space-x-2 */
 }
 
 .logo:hover {
@@ -66,7 +67,8 @@ body {
         position: relative !important;
         display: flex !important;
         align-items: center !important;
-        gap: 0.5rem;
+        /* gap: 0.5rem; */
+        gap: clamp(0.2rem, 0.4vw, 0.5rem);
         color: var(--primary-dark);
         font-weight: 600;
         text-decoration: none;
@@ -74,6 +76,7 @@ body {
         font-size: 0.9rem;
         letter-spacing: 0.5px;
         padding: 0.8rem 0;
+
         transition: var(--transition);
         white-space: nowrap;
     }
@@ -108,47 +111,75 @@ body {
     /* ESTILOS AÑADIDOS/AJUSTADOS PARA LOS ÍCONOS DE ACCIÓN (CARRITO Y NOTIFICACIONES) */
 
     .icon-btn {
-        display: flex !important; /* Asegura el display flex */
-        align-items: center !important; /* Centra verticalmente el ícono */
-        justify-content: center !important; /* Centra horizontalmente el ícono */
-        width: 40px !important; /* Tamaño del círculo */
-        height: 40px !important; /* Tamaño del círculo */
-        border-radius: 50% !important; /* Forma redonda */
-        background-color: var(--light-blue) !important; /* Fondo color Bluey */
-        color: var(--primary-dark) !important; /* Color del ícono */
+        display: flex !important;
+        /* Asegura el display flex */
+        align-items: center !important;
+        /* Centra verticalmente el ícono */
+        justify-content: center !important;
+        /* Centra horizontalmente el ícono */
+        width: 40px !important;
+        /* Tamaño del círculo */
+        height: 40px !important;
+        /* Tamaño del círculo */
+        border-radius: 50% !important;
+        /* Forma redonda */
+        background-color: var(--light-blue) !important;
+        /* Fondo color Bluey */
+        color: var(--primary-dark) !important;
+        /* Color del ícono */
         transition: var(--transition);
-        position: relative !important; /* Esencial para posicionar el badge */
+        position: relative !important;
+        /* Esencial para posicionar el badge */
         cursor: pointer;
-        border: 1px solid transparent !important; /* Borde inicial transparente */
+        border: 1px solid transparent !important;
+        /* Borde inicial transparente */
     }
 
     .icon-btn:hover {
-        background-color: var(--primary-blue) !important; /* Fondo más oscuro al hover */
-        color: var(--white) !important; /* Ícono blanco al hover */
-        border-color: var(--primary-dark) !important; /* Borde al hover */
-        transform: translateY(-2px) !important; /* Pequeña elevación */
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important; /* Sombra */
+        background-color: var(--primary-blue) !important;
+        /* Fondo más oscuro al hover */
+        color: var(--white) !important;
+        /* Ícono blanco al hover */
+        border-color: var(--primary-dark) !important;
+        /* Borde al hover */
+        transform: translateY(-2px) !important;
+        /* Pequeña elevación */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+        /* Sombra */
     }
 
     /* ESTILOS AÑADIDOS/AJUSTADOS PARA EL CONTADOR DEL CARRITO/NOTIFICACIONES */
     .cart-badge {
         position: absolute !important;
-        top: -5px !important; /* Ajusta la posición vertical */
-        right: -5px !important; /* Ajusta la posición horizontal */
-        min-width: 20px !important; /* Ancho mínimo para el círculo */
-        height: 20px !important; /* Altura para el círculo */
-        background-color: var(--light-yellow) !important; /* Fondo del contador */
-        color: var(--primary-dark) !important; /* Color del texto */
-        border: 1px solid var(--white) !important; /* Borde blanco del contador */
-        border-radius: 50% !important; /* Redondo */
+        top: -5px !important;
+        /* Ajusta la posición vertical */
+        right: -5px !important;
+        /* Ajusta la posición horizontal */
+        min-width: 20px !important;
+        /* Ancho mínimo para el círculo */
+        height: 20px !important;
+        /* Altura para el círculo */
+        background-color: var(--light-yellow) !important;
+        /* Fondo del contador */
+        color: var(--primary-dark) !important;
+        /* Color del texto */
+        border: 1px solid var(--white) !important;
+        /* Borde blanco del contador */
+        border-radius: 50% !important;
+        /* Redondo */
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-size: 0.75rem !important; /* Tamaño de fuente del número */
-        font-weight: 700 !important; /* Negrita */
-        padding: 2px !important; /* Espacio interno */
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important; /* Sombra suave */
-        z-index: 10 !important; /* Asegura que esté por encima */
+        font-size: 0.75rem !important;
+        /* Tamaño de fuente del número */
+        font-weight: 700 !important;
+        /* Negrita */
+        padding: 2px !important;
+        /* Espacio interno */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        /* Sombra suave */
+        z-index: 10 !important;
+        /* Asegura que esté por encima */
     }
 
     /* ESTILOS AÑADIDOS/AJUSTADOS PARA EL BOTÓN DE NOTIFICACIONES */
@@ -165,9 +196,12 @@ body {
         transition: var(--transition);
         position: relative !important;
         border: 1px solid transparent !important;
-        outline: none !important; /* Desactiva el outline de focus de Tailwind */
-        box-shadow: none !important; /* Desactiva el box-shadow de focus de Tailwind */
+        outline: none !important;
+        /* Desactiva el outline de focus de Tailwind */
+        box-shadow: none !important;
+        /* Desactiva el box-shadow de focus de Tailwind */
     }
+
     .action-icons button[type="button"].relative.p-1.text-gray-700.hover\:text-bluey-primary.focus\:outline-none.focus\:ring-2.focus\:ring-offset-2.focus\:ring-bluey-primary.rounded-full:hover {
         background-color: var(--primary-blue) !important;
         color: var(--white) !important;
@@ -178,28 +212,40 @@ body {
 
     /* ESTILOS AÑADIDOS/AJUSTADOS PARA LA INICIAL DE USUARIO EN MÓVIL/TABLET */
     .text-bluey-dark.font-bold.text-lg.p-2.rounded-full.bg-bluey-light.hidden.md\:inline.lg\:hidden {
-        display: flex !important; /* Asegura flex para centrar contenido */
+        display: flex !important;
+        /* Asegura flex para centrar contenido */
         align-items: center !important;
         justify-content: center !important;
-        width: 32px !important; /* Tamaño del círculo de la inicial */
-        height: 32px !important; /* Tamaño del círculo de la inicial */
-        border-radius: 50% !important; /* Redondo */
-        background-color: var(--light-blue) !important; /* Fondo de la inicial */
-        color: var(--primary-dark) !important; /* Color del texto de la inicial */
-        font-size: 0.9rem !important; /* Tamaño de fuente de la inicial */
+        width: 32px !important;
+        /* Tamaño del círculo de la inicial */
+        height: 32px !important;
+        /* Tamaño del círculo de la inicial */
+        border-radius: 50% !important;
+        /* Redondo */
+        background-color: var(--light-blue) !important;
+        /* Fondo de la inicial */
+        color: var(--primary-dark) !important;
+        /* Color del texto de la inicial */
+        font-size: 0.9rem !important;
+        /* Tamaño de fuente de la inicial */
         font-weight: 700 !important;
     }
 
-} /* Fin de @layer components */
+}
+
+/* Fin de @layer components */
 
 /* Ajuste del tamaño de fuente de los iconos dentro de los botones de acción si es necesario */
 /* Se mueve fuera de @layer components para una aplicación más general si es necesario */
 .icon-btn i {
-    font-size: 1.2rem !important; /* Ajusta este valor si necesitas los iconos más grandes o más pequeños */
+    font-size: 1.2rem !important;
+    /* Ajusta este valor si necesitas los iconos más grandes o más pequeños */
 }
+
 /* Para el ícono de la campana, ya que no tiene la clase .icon-btn directamente */
 .action-icons button[type="button"] i.bi {
-    font-size: 1.2rem !important; /* Asegura el tamaño de la campana */
+    font-size: 1.2rem !important;
+    /* Asegura el tamaño de la campana */
 }
 
 
@@ -256,6 +302,8 @@ body {
     flex-shrink: 0;
 }
 
+
+
 /* Estos estilos de .icon-btn y .cart-badge los trasladamos y mejoramos dentro de @layer components */
 /* .icon-btn {
     position: relative;
@@ -283,11 +331,13 @@ body {
     opacity: 0;
     pointer-events: none;
 }
+
 #mobile-menu:not(.hidden) {
     transform: translateY(0);
     opacity: 1;
     pointer-events: auto;
 }
+
 #mobile-menu .menu-link {
     padding: 0.6rem 1rem;
 }
@@ -297,6 +347,7 @@ body {
     .action-icons #user-profile-menu-button .text-sm.font-semibold.hidden.lg\:inline {
         display: none !important;
     }
+
     .action-icons #user-profile-menu-button .text-bluey-dark.hidden.md\:inline.lg\:hidden {
         display: flex !important;
         align-items: center;
@@ -308,40 +359,75 @@ body {
     .navbar-container {
         padding: 0 1rem;
     }
+
     .action-icons #user-profile-menu-button .text-bluey-dark.hidden.md\:inline.lg\:hidden,
     .action-icons #user-profile-menu-button .bi-chevron-down {
         display: none !important;
     }
+
     /* Estilos para el dropdown de productos en el menú móvil (se controla por JS) */
     #mobile-menu .dropdown-menu {
-        position: static; /* Importante para que no sea absolute dentro del menú móvil */
+        position: static;
+        /* Importante para que no sea absolute dentro del menú móvil */
         width: 100%;
         box-shadow: none;
         border: none;
         padding: 0;
-        opacity: 1; /* Para que sea visible si JS lo muestra */
+        opacity: 1;
+        /* Para que sea visible si JS lo muestra */
         visibility: visible;
         transform: none;
         transition: none;
     }
+
     #mobile-menu .dropdown-toggle .dropdown-icon {
         transition: transform var(--transition);
     }
+
     #mobile-menu .dropdown-toggle .dropdown-icon.rotate-180 {
         transform: rotate(180deg);
     }
 }
 
+@media (max-width: 1304px) {
+    a.menu-link {
+        gap: 0 !important;
+    }
+
+    .action-icons #user-profile-menu-button .text-sm.font-semibold.hidden.lg\:inline {
+        display: none !important;
+    }
+
+    /* Nuevo: Reducir padding del contenedor principal */
+    .navbar-container {
+        padding-left: .5rem !important;
+        /* equivalente a px-4 */
+        padding-right: .5rem !important;
+        /* equivalente a px-4 */
+        gap: 1rem;
+        /* <-- REDUCE EL GAP AQUÍ */
+    }
+
+    .menu-link {
+        padding: 0.8rem 0 !important;
+    }
+}
+
+
+
 @media (max-width: 480px) {
     .navbar-container {
         padding: 0 0.5rem;
     }
+
     .logo-text {
         font-size: 1.2rem;
     }
+
     .logo-img {
         height: 35px;
     }
+
     .cart-badge {
         width: 18px;
         height: 18px;
@@ -420,13 +506,16 @@ body {
 .ps-carrito::-webkit-scrollbar {
     width: 6px;
 }
+
 .ps-carrito::-webkit-scrollbar-track {
     background: #f1f1f1;
 }
+
 .ps-carrito::-webkit-scrollbar-thumb {
     background: var(--primary-blue);
     border-radius: 3px;
 }
+
 .ps-carrito::-webkit-scrollbar-thumb:hover {
     background: #555;
 }

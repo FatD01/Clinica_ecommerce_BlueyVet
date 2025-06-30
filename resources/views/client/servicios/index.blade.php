@@ -57,6 +57,8 @@
                 $buttonClasses = $isAvailable ? 'bg-bluey-primary hover:bg-bluey-dark text-white' : 'bg-gray-400 text-gray-700 cursor-not-allowed'; // Clases para los botones
                 $agendaButtonClasses = $isAvailable ? 'border-2 border-bluey-primary text-bluey-primary hover:bg-bluey-primary hover:text-white' : 'border-2 border-gray-400 text-gray-700 cursor-not-allowed'; // Clases para el botón de agendar
             @endphp
+
+            
             <div class="group relative bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl {{ $cardClasses }}">
                 {{-- Ribbon for featured services (optional) --}}
                 @if($service->is_featured && $isAvailable) {{-- Solo si está disponible y es destacado --}}
@@ -102,6 +104,14 @@
                         <a href="{{ route('client.citas.create', ['preselected_service_id_from_purchase' => $service->id]) }}"
                             class="w-full font-bold py-3 px-6 rounded-lg transition-all duration-300 text-center {{ $agendaButtonClasses }}">
                             Agendar Cita
+                        </a>
+
+                        {{-- NUEVO: Botón "Ver Detalles" --}}
+                        <a href="{{ route('client.servicios.show', $service->id) }}"
+                           class="w-full text-center font-semibold py-2 rounded-lg transition-all duration-300 mt-2 
+                                  text-bluey-primary hover:text-bluey-dark hover:bg-gray-200
+                                  border border-white hover:border-transparent">
+                            Ver Detalles
                         </a>
                     </div>
                     @else

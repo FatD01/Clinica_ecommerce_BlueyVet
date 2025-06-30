@@ -10,7 +10,8 @@ use Carbon\Carbon;
 use App\Models\Appointment; // Necesitarás importar el modelo Appointment
 use App\Models\ReprogrammingRequest; // Necesitarás importar el modelo ReprogrammingRequest
 
-class ReprogramacionCitaNotification extends Notification implements ShouldQueue
+class ReprogramacionCitaNotification extends Notification
+
 {
     use Queueable;
 

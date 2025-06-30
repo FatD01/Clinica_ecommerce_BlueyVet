@@ -65,6 +65,7 @@ class Appointment extends Model
         return $this->hasMany(ReprogrammingRequest::class);
     }
 
+   
 
     //ACABO DE OPNER ESTO 
     // public function user(): BelongsTo

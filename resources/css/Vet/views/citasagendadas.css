@@ -194,53 +194,102 @@ h2 {
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* Responsive */
-@media (max-width: 992px) { /* Adjust breakpoint for better tablet experience */
-    .main-content {
-        margin-left: 0;
-        width: 100%;
-        padding: 2rem 1.5rem; /* Adjusted padding for smaller screens */
-    }
+@media (max-width: 992px) {
+  .layout {
+    flex-direction: column;
+  }
 
-    .sidebar {
-        position: static;
-        width: 100%;
-        height: auto;
-        box-shadow: none; /* Remove shadow when sidebar is static */
-    }
+  .sidebar {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch;
+    padding: 1rem !important;
+    background: linear-gradient(135deg, var(--bluey-dark) 0%, var(--bluey-primary) 100%);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+  }
 
-    h2 {
-        font-size: 1.8rem; /* Smaller heading on mobile */
-    }
+  .sidebar .brand {
+    text-align: center;
+    font-size: 1.6rem;
+    margin-bottom: 1rem;
+    color: var(--bluey-light-yellow);
+  }
 
-    .filter-card .col-md-3 {
-        width: 100%; /* Stack filter inputs on smaller screens */
-        margin-bottom: 15px;
-    }
+  .sidebar nav {
 
-    .filter-card .d-flex.gap-2 {
-        flex-direction: column; /* Stack buttons on smaller screens */
-        gap: 10px !important; /* Ensure gap is applied */
-    }
+    
+    white-space: nowrap;
+  }
 
-    .btn {
-        width: 100%; /* Full width buttons on mobile */
-        padding: 10px 20px; /* Slightly less padding */
-    }
+  .sidebar nav ul {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    padding: 0;
+    margin: 0;
+    overflow-x: auto;
+    list-style: none;
+    
+  }
+
+  
+
+  .sidebar nav ul li {
+    flex: 0 0 auto;
+  }
+
+  .sidebar nav ul li a {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    color: white !important;
+    background-color: transparent;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .sidebar nav ul li a:hover,
+  .sidebar nav ul li a.active {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .sidebar .user {
+    text-align: center;
+    margin-top: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+    padding: 1.5rem 1rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  .btn {
+    width: 100%;
+    font-size: 0.95rem;
+  }
+
+  .form-label {
+    font-size: 0.9rem;
+  }
+
+  .form-select,
+  .form-control {
+    font-size: 0.9rem;
+  }
+
+  .alert {
+    font-size: 0.9rem;
+  }
 }
-
-@media (max-width: 576px) { /* Further adjustments for small mobile devices */
-    .main-content {
-        padding: 1.5rem 1rem;
-    }
-
-    h2 {
-        font-size: 1.6rem;
-    }
-
-    .card-title {
-        font-size: 1.2rem;
-    }
-}
-
-

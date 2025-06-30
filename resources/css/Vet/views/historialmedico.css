@@ -150,7 +150,7 @@ h2::after {
     border-radius: 8px;
     font-weight: 600;
     transition: all 0.3s ease;
-    background-color: transparent;
+    background-color:#ffea06 ;
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -159,8 +159,8 @@ h2::after {
 }
 
 .btn-outline-secondary:hover {
-    background-color: #85C8F2;
-    color: #FFFFFF;
+    background-color: #ffcd06;
+    color: black;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -279,24 +279,38 @@ h2::after {
     }
 
     .sidebar {
-        position: static;
-        width: 100%;
-        height: auto;
-        padding-bottom: 10px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch;
+    padding: 1rem !important;
+    background: linear-gradient(135deg, var(--bluey-dark) 0%, var(--bluey-primary) 100%);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+  }
+
+
+    
 
     .sidebar nav ul {
-        margin: 0;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        padding-top: 10px;
-    }
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    margin: 0;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
 
     .sidebar li {
-        margin: 5px 8px;
-    }
+    flex: 0 0 auto;
+    display: inline-block;
+    margin: 0;
+}
 
     .brand {
         text-align: center;
@@ -343,6 +357,23 @@ h2::after {
         text-align: center;
         justify-content: center;
     }
+
+    .sidebar li a {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    background-color: transparent;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    color: var(--white);
+    transition: background-color 0.2s ease;
+}
+
+.sidebar li a.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: var(--white);
+}
 }
 
 @media (max-width: 576px) {
@@ -364,3 +395,5 @@ h2::after {
         font-size: 1rem;
     }
 }
+
+

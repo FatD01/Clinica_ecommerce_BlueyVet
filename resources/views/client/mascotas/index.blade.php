@@ -56,6 +56,8 @@
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-bluey-dark uppercase tracking-wider">Peso (kg)</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-bluey-dark uppercase tracking-wider">F. Nacimiento</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-bluey-dark uppercase tracking-wider">Acciones</th>
+                                    {{-- ¡NUEVA COLUMNA! --}}
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-bluey-dark uppercase tracking-wider">Recordatorios</th> 
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-bluey-light">
@@ -100,6 +102,13 @@
                                                 </button>
                                             </form>
                                         </div>
+                                    </td>
+                                    {{-- ¡NUEVA CELDA CON EL BOTÓN! --}}
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <a href="{{ route('client.mascotas.show', $mascota->id) }}#reminders" 
+                                           class="inline-flex items-center px-4 py-2 bg-bluey-primary border border-transparent rounded-md font-semibold text-white text-xs uppercase tracking-widest hover:bg-bluey-dark focus:outline-none focus:border-bluey-dark focus:ring ring-bluey-light-yellow disabled:opacity-25 transition ease-in-out duration-150">
+                                            Ver Recordatorios
+                                        </a>
                                     </td>
                                 </tr>
                                 @endforeach

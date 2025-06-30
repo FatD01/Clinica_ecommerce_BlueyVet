@@ -119,6 +119,114 @@
             gap: 0.5rem;
             margin-top: 1rem;
         }
+@media (max-width: 768px) {
+    .notificaciones-container {
+        margin-left: 0;
+        padding: 1rem;
+    }
+
+    .sidebar {
+        position: static;
+        width: 100%;
+        height: auto;
+        background: linear-gradient(135deg, var(--bluey-dark) 0%, var(--bluey-primary) 100%);
+        padding: 1rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        color: var(--white);
+    }
+
+    .sidebar .brand {
+        color: var(--bluey-light-yellow) !important;
+        margin-bottom: 1rem;
+        font-size: 1.6rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .sidebar .user {
+        color: rgba(255, 255, 255, 0.8) !important;
+        margin-top: 1rem;
+        text-align: center;
+        font-size: 0.95rem;
+    }
+
+    .sidebar .user strong {
+        color: var(--bluey-light-yellow) !important;
+    }
+
+    .sidebar nav ul {
+        display: flex;
+        flex-direction: row;
+        gap: 0.75rem;
+        overflow-x: auto;
+        white-space: nowrap;
+        padding: 0.5rem 0;
+        scrollbar-width: thin; /* Firefox */
+    }
+
+    .sidebar nav ul::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .sidebar nav ul::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .sidebar nav ul::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+    }
+
+    .sidebar nav ul li {
+        flex: 0 0 auto;
+        width: auto;
+    }
+
+    .sidebar nav ul li a {
+        display: flex;
+        align-items: center;
+        padding: 0.6rem 1rem;
+        border-radius: 8px;
+        background-color: transparent;
+        color: var(--white) !important;
+        font-weight: 500;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+    }
+
+    .sidebar nav ul li a i {
+        color: var(--white) !important;
+        margin-right: 8px;
+    }
+
+    .sidebar nav ul li a:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar nav ul li a.active {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: var(--white) !important;
+    }
+
+    .titulo {
+        font-size: 1.3rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .notificacion-card {
+        padding: 1rem;
+    }
+
+    .d-flex.flex-wrap.gap-2 {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+
+
     </style>
 </head>
 <body>

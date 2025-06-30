@@ -19,7 +19,7 @@
 </head>
 
 <body>
-    <div class="container">
+    <div class="historial-wrapper">
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="brand">

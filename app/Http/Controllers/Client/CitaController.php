@@ -1214,7 +1214,7 @@ class CitaController extends Controller
         $citas = Appointment::with(['mascota.cliente', 'service'])
             ->where('veterinarian_id', $veterinario->id)
             ->when($status, fn($q) => $q->where('status', $status))
-            ->when(!$status, fn($q) => $q->whereIn('status', ['pending', 'confirmed']))
+            ->when(!$status, fn($q) => $q->whereIn('status', ['pending', 'confirmed', 'reprogrammed']))
 
             ->when($desde, fn($q) => $q->whereDate('date', '>=', $desde))
             ->when($hasta, fn($q) => $q->whereDate('date', '<=', $hasta))

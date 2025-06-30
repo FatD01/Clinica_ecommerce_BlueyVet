@@ -3,8 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\OrderResource\Pages;
-use App\Filament\Resources\OrderResource\RelationManagers;
 use App\Models\Order;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -12,101 +12,70 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
-use Filament\Forms\Components\KeyValue; // Para payment_details
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class OrderResource extends Resource
 {
-    // Define el modelo asociado a este recurso de Filament
     protected static ?string $model = Order::class;
 
-    // Define el icono que aparecerá en la navegación del panel de Filament
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
-
-    // Define la etiqueta singular del recurso para la interfaz
-    protected static ?string $singularLabel = 'Pedido';
-
-    // Define la etiqueta plural del recurso para la interfaz
-    protected static ?string $pluralLabel = 'Pedidos';
-
-    // Define el orden de los elementos en la navegación lateral
+    protected static ?string $navigationGroup = 'Gestión de Ventas';
     protected static ?int $navigationSort = 1;
 
-    // Define el grupo de navegación, si tienes varios recursos relacionados
-   protected static ?string $navigationGroup = 'Gestión de Inventario y Ventas ';
+    protected static ?string $modelLabel = 'Orden';
+    protected static ?string $pluralModelLabel = 'Órdenes';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                // Campo para el usuario asociado al pedido.
-                // Usamos Select para buscar usuarios y auto-completar.
-                Select::make('user_id')
-                    ->relationship('user', 'name') // Asume que tienes una relación 'user' en tu modelo Order y que el campo 'name' del modelo User es el que quieres mostrar.
-                    ->searchable() // Permite buscar usuarios
-                    ->preload() // Carga algunos usuarios inicialmente
-                    ->nullable() // Permite que el campo sea nulo (para pedidos de invitados)
-                    ->label('Usuario'),
-
-                // ID de la orden de PayPal
-                TextInput::make('paypal_order_id')
-                    ->label('ID Orden PayPal')
-                    ->unique(ignoreRecord: true) // Asegura que sea único al crear y actualizar
-                    ->maxLength(255)
-                    ->nullable(),
-
-                // ID de la transacción de captura de PayPal
-                TextInput::make('paypal_payment_id')
-                    ->label('ID Pago PayPal')
-                    ->maxLength(255)
-                    ->nullable(),
-
-                // Monto total del pedido
-                TextInput::make('total_amount')
+                Forms\Components\Select::make('user_id')
+                    ->relationship('user', 'name')
+                    ->label('Cliente')
+                    ->required()
+                    ->searchable()
+                    ->preload(),
+                Forms\Components\TextInput::make('paypal_order_id')
+                    ->label('ID de Orden PayPal')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('paypal_payment_id')
+                    ->label('ID de Pago PayPal (Captura)')
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('total_amount')
                     ->label('Monto Total')
-                    ->numeric() // Solo permite números
-                    ->inputMode('decimal') // Muestra un teclado decimal en dispositivos móviles
-                    ->required() // Es un campo obligatorio
-                    ->prefix('$') // Añade un prefijo de moneda
-                    ->step(0.01), // Permite dos decimales
-
-                // Moneda del pedido (PEN, USD, EUR, etc.)
-                TextInput::make('currency')
+                    ->required()
+                    ->numeric()
+                    ->step(0.01)
+                    ->prefix('S/'),
+                Forms\Components\TextInput::make('currency')
                     ->label('Moneda')
                     ->required()
                     ->maxLength(3)
-                    ->default('PEN'), // Valor por defecto
-
-                // Estado del pedido
-                Select::make('status')
-                    ->label('Estado')
+                    ->default('PEN'),
+                Forms\Components\Select::make('status')
                     ->options([
                         'pending' => 'Pendiente',
                         'completed' => 'Completado',
-                        'cancelled' => 'Cancelado',
                         'failed' => 'Fallido',
                         'refunded' => 'Reembolsado',
+                        'cancelled' => 'Cancelado',
+                        'processing' => 'Procesando',
+                        'shipped' => 'Enviado',
                     ])
-                    ->default('pending')
+                    ->label('Estado')
                     ->required()
-                    ->native(false), // Para un estilo de selección más moderno en Filament
-
-                // Detalles del pago (JSON de PayPal)
-                // KeyValue es útil para almacenar datos JSON simples en pares clave-valor.
-                // Si la estructura JSON de PayPal es muy compleja, podrías considerar un Textarea o un campo JSON más avanzado si lo necesitas.
-                KeyValue::make('payment_details')
+                    ->default('pending'),
+                Forms\Components\Textarea::make('payment_details')
                     ->label('Detalles de Pago (JSON)')
-                    ->nullable()
-                    ->default([]) // Valor por defecto para evitar problemas si es nulo
-                    ->keyLabel('Clave') // Etiqueta para la clave
-                    ->valueLabel('Valor') // Etiqueta para el valor
-                    ->addKeyButtonLabel('Añadir detalle'), // Etiqueta para el botón de añadir
+                    ->json()
+                    ->columnSpanFull(),
+                Forms\Components\Textarea::make('customer_address')
+                    ->label('Dirección del Cliente')
+                    ->maxLength(255)
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -114,98 +83,212 @@ class OrderResource extends Resource
     {
         return $table
             ->columns([
-                // Columna para el ID del pedido
-                TextColumn::make('id')
+                Tables\Columns\TextColumn::make('id')
                     ->label('ID')
-                    ->sortable()
-                    ->searchable(),
-
-                // Columna para el nombre del usuario asociado (si existe)
-                TextColumn::make('user.name')
-                    ->label('Usuario')
-                    ->default('Invitado') // Muestra "Invitado" si user_id es nulo
-                    ->sortable()
-                    ->searchable(),
-
-                // Columna para el ID de la orden de PayPal
-                TextColumn::make('paypal_order_id')
-                    ->label('ID Orden PayPal')
-                    ->searchable(),
-
-                // Columna para el monto total y la moneda
-                TextColumn::make('total_amount')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Cliente')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('paypal_order_id')
+                    ->label('ID PayPal')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('total_amount')
                     ->label('Monto')
-                    ->money(fn ($record) => $record->currency) // Formatea como moneda usando la columna 'currency'
+                    ->money('PEN')
                     ->sortable(),
-
-                // Columna para el estado del pedido con insignias de colores
-                BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('currency')
+                    ->label('Moneda')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('status')
                     ->label('Estado')
-                    ->colors([
-                        'warning' => 'pending',
-                        'success' => 'completed',
-                        'danger' => 'cancelled',
-                        'danger' => 'failed',
-                        'info' => 'refunded',
-                    ])
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'completed' => 'success',
+                        'failed' => 'danger',
+                        'refunded' => 'info',
+                        'cancelled' => 'danger',
+                        'processing' => 'primary',
+                        'shipped' => 'secondary',
+                        default => 'gray',
+                    })
+                    ->searchable()
                     ->sortable(),
-
-                // Columna para la fecha de creación
-                TextColumn::make('created_at')
-                    ->label('Fecha Creación')
-                    ->dateTime() // Formatea como fecha y hora
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Fecha de Creación')
+                    ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true), // Oculto por defecto, pero visible al usuario
-
-                // Columna para la fecha de última actualización
-                TextColumn::make('updated_at')
+                    ->toggleable(isToggledHiddenByDefault: false),
+                Tables\Columns\TextColumn::make('updated_at')
                     ->label('Última Actualización')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
-                // Columna para la fecha de eliminación suave
-                TextColumn::make('deleted_at')
-                    ->label('Fecha Eliminación')
+                Tables\Columns\TextColumn::make('deleted_at')
+                    ->label('Fecha de Eliminación')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                // Filtro para el estado del pedido
-                SelectFilter::make('status')
+                Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\SelectFilter::make('status')
                     ->label('Filtrar por Estado')
                     ->options([
                         'pending' => 'Pendiente',
                         'completed' => 'Completado',
-                        'cancelled' => 'Cancelado',
                         'failed' => 'Fallido',
                         'refunded' => 'Reembolsado',
+                        'cancelled' => 'Cancelado',
+                        'processing' => 'Procesando',
+                        'shipped' => 'Enviado',
                     ]),
-                // Filtro para elementos eliminados suavemente
-                TrashedFilter::make(),
+                Tables\Filters\SelectFilter::make('user_id')
+                    ->relationship('user', 'name')
+                    ->label('Filtrar por Cliente')
+                    ->searchable()
+                    ->preload(),
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('created_from')->label('Desde'),
+                        Forms\Components\DatePicker::make('created_until')->label('Hasta'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['created_from'] ?? null, fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date))
+                            ->when($data['created_until'] ?? null, fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date));
+                    })
+                    ->label('Fecha de Creación'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(), // Botón para ver detalles
-                Tables\Actions\EditAction::make(), // Botón para editar
-                Tables\Actions\DeleteAction::make(), // Botón para eliminar (soft delete)
-                Tables\Actions\ForceDeleteAction::make(), // Botón para eliminar permanentemente
-                Tables\Actions\RestoreAction::make(), // Botón para restaurar elementos eliminados
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(), // Acción masiva para eliminar
-                    Tables\Actions\ForceDeleteBulkAction::make(), // Acción masiva para eliminar permanentemente
-                    Tables\Actions\RestoreBulkAction::make(), // Acción masiva para restaurar
+                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
                 ]),
+            ])
+            ->headerActions([
+                Tables\Actions\Action::make('exportPdf')
+                    ->label('Exportar Órdenes (PDF)')
+                    ->color('primary')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->action(function (Table $table) {
+                        $livewire = $table->getLivewire();
+
+                        $query = $livewire->getFilteredTableQuery()
+                            ->with(['user', 'items.product']);
+
+                        $orders = $query->get();
+
+                        $exportDate = Carbon::now('America/Lima')->format('d/m/Y H:i:s');
+                        $activeFilters = [];
+
+                        $searchTerm = $livewire->getTableSearch();
+                        if (!empty($searchTerm)) {
+                            $activeFilters[] = ['label' => 'Búsqueda Global', 'value' => $searchTerm];
+                        }
+
+                        $filamentFilters = $table->getFilters();
+                        foreach ($filamentFilters as $filter) {
+                            $filterName = $filter->getName();
+                            $filterState = $livewire->getTableFilterState($filterName);
+
+                            if (is_null($filterState) || (is_string($filterState) && strtolower($filterState) === 'all')) {
+                                continue;
+                            }
+                            if (is_array($filterState) && empty(array_filter($filterState))) {
+                                continue;
+                            }
+                            if ($filterName === 'trashed' && isset($filterState['value']) && $filterState['value'] === 'without_trashed') {
+                                continue;
+                            }
+
+                            $filterLabel = $filter->getLabel();
+                            $readableValue = '';
+
+                            if ($filter instanceof Tables\Filters\SelectFilter) {
+                                $options = $filter->getOptions();
+                                if (isset($filterState['value']) && isset($options[$filterState['value']])) {
+                                    $readableValue = $options[$filterState['value']];
+                                } elseif (is_string($filterState) && isset($options[$filterState])) {
+                                    $readableValue = $options[$filterState];
+                                } elseif (is_array($filterState)) {
+                                    $translatedValues = [];
+                                    foreach ($filterState as $val) {
+                                        $valueToUse = (is_array($val) && isset($val['value'])) ? $val['value'] : $val;
+                                        $translatedValues[] = $options[$valueToUse] ?? ucfirst(str_replace('_', ' ', $valueToUse));
+                                    }
+                                    $readableValue = implode(', ', $translatedValues);
+                                }
+                            } elseif ($filter instanceof Tables\Filters\Filter && $filterName === 'created_at') {
+                                $dateFrom = $filterState['created_from'] ?? null;
+                                $dateUntil = $filterState['created_until'] ?? null;
+                                if ($dateFrom && $dateUntil) {
+                                    $readableValue = Carbon::parse($dateFrom)->format('d/m/Y') . ' - ' . Carbon::parse($dateUntil)->format('d/m/Y');
+                                } elseif ($dateFrom) {
+                                    $readableValue = 'Desde ' . Carbon::parse($dateFrom)->format('d/m/Y');
+                                } elseif ($dateUntil) {
+                                    $readableValue = 'Hasta ' . Carbon::parse($dateUntil)->format('d/m/Y');
+                                }
+                            } elseif ($filter instanceof Tables\Filters\TrashedFilter) {
+                                if (isset($filterState['value'])) {
+                                    switch ($filterState['value']) {
+                                        case 'only_trashed':
+                                            $readableValue = 'Solo Eliminados';
+                                            break;
+                                        case 'with_trashed':
+                                            $readableValue = 'Incluir Eliminados';
+                                            break;
+                                        case 'without_trashed':
+                                        default:
+                                            continue 2;
+                                    }
+                                }
+                            } else {
+                                $valueToUse = (is_array($filterState) && isset($filterState['value'])) ? $filterState['value'] : $filterState;
+                                $readableValue = ucfirst(str_replace('_', ' ', $valueToUse));
+                            }
+
+                            if (!empty($readableValue)) {
+                                $activeFilters[] = [
+                                    'label' => $filterLabel,
+                                    'value' => $readableValue,
+                                ];
+                            }
+                        }
+
+                        $totalOrders = $orders->count();
+                        $totalAmount = $orders->sum('total_amount');
+
+                        $pdf = Pdf::loadView('pdf.PdfOrders', [
+                            'orders' => $orders,
+                            'export_date' => $exportDate,
+                            'total_orders' => $totalOrders,
+                            'total_amount' => $totalAmount,
+                            'active_filters' => $activeFilters,
+                        ]);
+
+                        $filename = 'reporte_ordenes_' . Carbon::now('America/Lima')->format('Ymd_His') . '.pdf';
+
+                        return response()->streamDownload(function () use ($pdf) {
+                            echo $pdf->stream();
+                        }, $filename);
+                    })
             ]);
     }
 
     public static function getRelations(): array
     {
-        return [
-            // Puedes añadir Relation Managers aquí si tienes relaciones complejas (ej. OrderItemRelationManager)
-        ];
+        return [];
     }
 
     public static function getPages(): array
@@ -213,18 +296,10 @@ class OrderResource extends Resource
         return [
             'index' => Pages\ListOrders::route('/'),
             'create' => Pages\CreateOrder::route('/create'),
-            // 'view' => Pages\ViewOrder::route('/{record}'), // Página de vista detallada
             'edit' => Pages\EditOrder::route('/{record}/edit'),
         ];
     }
 
-    // Define los atributos que pueden ser buscados globalmente en Filament
-    public static function getGloballySearchableAttributes(): array
-    {
-        return ['paypal_order_id', 'total_amount', 'user.name'];
-    }
-
-    // Modifica la consulta base para incluir soft deletes
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()

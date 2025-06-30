@@ -293,23 +293,36 @@ class CartController extends Controller
      */
     public function getCartComponent()
     {
-        // 1. Revalida el carrito de la sesión y calcula el total
-        $revalidatedData = $this->revalidateAndCalculateCart(session()->get('cart', []));
+       Log::info('DEBUG CART: Entrando a getCartComponent().');
 
-        // 2. Pasa el carrito revalidado y el total calculado a la vista
+        $revalidatedData = $this->revalidateAndCalculateCart(session()->get('cart', []));
         $cart = $revalidatedData['cart'];
         $total = $revalidatedData['total'];
 
+        Log::info('DEBUG CART: Carrito procesado. Items: ' . count($cart) . ', Total: ' . $total);
 
         $cliente = null;
         if (Auth::check()) {
             $user = Auth::user();
-            $cliente = $user->cliente;
+            Log::info('DEBUG CART: Usuario autenticado. User ID: ' . $user->id);
+
+            // Cargar la relación 'cliente' explícitamente
+            $user->loadMissing('cliente');
+
+            $cliente = $user->cliente; // Intentar obtener el modelo Cliente
+            if ($cliente) {
+                Log::info('DEBUG CART: Cliente asociado encontrado. Dirección: ' . $cliente->direccion);
+            } else {
+                Log::warning('DEBUG CART: Cliente asociado NO encontrado para User ID: ' . $user->id);
+            }
+        } else {
+            Log::info('DEBUG CART: No hay usuario autenticado.');
         }
 
         // 3. Renderiza la vista con los datos ya listos
         $html = view('components.cart-floating', compact('cart', 'total', 'cliente'))->render();
 
+        Log::info('DEBUG CART: Saliendo de getCartComponent().');
         return response()->json(['html' => $html]);
     }
 }

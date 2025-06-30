@@ -17,8 +17,13 @@ use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Models\ReprogrammingRequest;
 use App\Models\Specialty; // ¡IMPORTANTE! Asegúrate de que esta línea esté presente
+use App\Models\Reminder;
 use App\Notifications\ReprogramacionCitaNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Hash;
+use App\Notifications\ReminderNotification;
+use Illuminate\Support\Facades\Session;
 
 class VeterinarianController extends Controller
 {
@@ -68,42 +73,84 @@ class VeterinarianController extends Controller
      */
     public function update(Request $request)
     {
-        $request->validate([
+        $user = Auth::user(); // Obtener el usuario autenticado al principio
+
+        // Iniciar el array de reglas de validación
+        $rules = [
             'name'           => 'required|string|max:255',
             'email'          => 'required|email|max:255',
-            'license_number' => 'required|string|max:100',
-            'specialties'    => 'nullable|string', // Acepta la cadena de texto
-            // 'specialties.*' => 'exists:specialties,id', // Esta validación ahora es redundante y puede causar problemas
-            // porque specialties no es un array de IDs aquí inicialmente
-            // y ya validamos la existencia con whereIn y pluck.
-            'phone'          => 'nullable|string|max:20',
+            'license_number' => [
+                'required', // La licencia es obligatoria
+                'string',   // Debe ser una cadena
+                'digits_between:4,5',
+            ],
+            'specialties'    => 'nullable|string',
+            'phone'          => [
+                'nullable',
+                'string',
+                'regex:/^\d{3} \d{3} \d{3}$/', // Formato exacto: 3 digitos, espacio, 3 digitos, espacio, 3 digitos
+                'size:11'
+            ],
             'address'        => 'nullable|string|max:255',
             'bio'            => 'nullable|string|max:2000',
-        ]);
+        ];
 
+        // 1. Verificar si AMBOS campos de contraseña están llenos O SI SOLO UNO LO ESTÁ.
+        // Queremos forzar la validación de 'required|confirmed' si el usuario TOCA alguno de los campos de contraseña.
+        if ($request->filled('password') || $request->filled('password_confirmation')) {
+            // Si la contraseña ya fue cambiada antes, NO se permite otro cambio.
+            // Esto es lo primero que se evalúa para bloquear futuros cambios.
+            if ($user->hasPasswordChanged) {
+                return back()->with('error', 'La contraseña ya ha sido cambiada una vez. Contacta al área de administración para futuras modificaciones.');
+            } else {
+                // Si es la primera vez que se cambia, AÑADIMOS LAS REGLAS DE VALIDACIÓN.
+                // Usamos 'sometimes' para que solo se aplique si el campo está presente,
+                // pero 'required' dentro asegura que si está presente, no puede estar vacío.
+                $rules['password'] = ['sometimes', 'required', 'confirmed', Password::defaults()];
+            }
+        }
+
+        // Ejecutar TODAS las validaciones ahora.
+        // Si 'password' se marcó como 'sometimes' y se intentó rellenar (o solo su confirmación),
+        // Laravel aplicará 'required' y 'confirmed'.
+        $request->validate($rules);
+
+        // Actualizar datos del usuario (name, email)
+        $user->name  = $request->input('name');
+        $user->email = $request->input('email');
+
+
+        if ($request->filled('password') && !$user->hasPasswordChanged) {
+            // --- ¡AÑADE ESTAS DOS LÍNEAS PARA DEBUGGING! ---
+            Log::info('DEBUG: Intentando cambiar contraseña por primera vez para usuario ID: ' . $user->id);
+            Log::info('DEBUG: $user->hasPasswordChanged ANTES de asignar fecha: ' . ($user->hasPasswordChanged ? 'true' : 'false'));
+            // --- FIN DEBUGGING ---
+
+            $user->password = Hash::make($request->password);
+            $user->password_changed_at = Carbon::now();
+
+            // --- ¡AÑADE ESTA LÍNEA PARA DEBUGGING! ---
+            Log::info('DEBUG: password_changed_at asignado en memoria: ' . $user->password_changed_at);
+            // --- FIN DEBUGGING ---
+        }
+
+        // --- ¡AÑADE ESTA LÍNEA PARA DEBUGGING! ---
+        Log::info('DEBUG: Llamando a $user->save() para usuario ID: ' . $user->id);
+        // --- FIN DEBUGGING ---
+        $user->save();
         // PASO CLAVE 1: Convertir la cadena de especialidades a un array de NOMBRES
         $specialtiesString = $request->input('specialties', '');
         $specialtyNames = array_map('trim', explode(',', $specialtiesString));
-        $specialtyNames = array_filter($specialtyNames);
+        $specialtyNames = array_filter($specialtyNames); // Elimina elementos vacíos
 
         // PASO CLAVE 2: Obtener los IDs de las especialidades a partir de sus NOMBRES
         $specialtyIds = [];
         if (!empty($specialtyNames)) {
             $specialtyIds = Specialty::whereIn('name', $specialtyNames)->pluck('id')->toArray();
-            // Log::info('Specialty IDs encontrados: ', $specialtyIds); // Línea para depuración, puedes eliminarla
-        } else {
-            // Log::info('No se encontraron nombres de especialidades o la cadena estaba vacía.'); // Línea para depuración
         }
 
-        $user = Auth::user();
-
-        // Actualizar datos del usuario (name, email)
-        $user->name  = $request->input('name');
-        $user->email = $request->input('email');
-        $user->save();
-
         // Obtener o crear el perfil de veterinario
-        $veterinarian = $user->veterinarian;
+        $veterinarian = $user->veterinarian; // Asumiendo que ya tienes una instancia cargada (ej. por eager loading o ya existía)
 
         if ($veterinarian) {
             // Si el perfil ya existe, actualiza sus datos
@@ -112,10 +159,6 @@ class VeterinarianController extends Controller
             $veterinarian->address        = $request->input('address');
             $veterinarian->bio            = $request->input('bio');
             $veterinarian->save();
-
-            // **SOLUCIÓN AQUÍ:** Sincronizar las especialidades usando el array de IDs
-            // El método sync() ya maneja si el array está vacío, desasociando todo.
-            // No necesitas el if ($request->has('specialties')) alrededor del sync.
             $veterinarian->specialties()->sync($specialtyIds);
         } else {
             // Si el perfil NO existe, crea uno nuevo
@@ -125,9 +168,7 @@ class VeterinarianController extends Controller
                 'address'        => $request->input('address'),
                 'bio'            => $request->input('bio'),
             ]);
-            // **SOLUCIÓN AQUÍ:** Adjuntar especialidades al crear el perfil usando el array de IDs
-            // attach() también acepta un array vacío para no adjuntar nada.
-            if (!empty($specialtyIds)) { // Solo adjunta si hay IDs válidos
+            if (!empty($specialtyIds)) {
                 $veterinarian->specialties()->attach($specialtyIds);
             }
         }
@@ -166,36 +207,115 @@ class VeterinarianController extends Controller
     public function guardarAtencion(Request $request)
     {
         $request->validate([
-            'appointment_id'    => 'required|exists:appointments,id',
-            'diagnosis'         => 'nullable|string',
-            'treatment'         => 'nullable|string',
-            'notes'             => 'nullable|string',
-            'prescription'      => 'nullable|string',
-            'observations'      => 'nullable|string',
+            'appointment_id'        => 'required|exists:appointments,id',
+            'diagnosis'             => 'nullable|string',
+            'treatment'             => 'nullable|string',
+            'notes'                 => 'nullable|string',
+            'prescription'          => 'nullable|string',
+            'observations'          => 'nullable|string',
+
+            // Validaciones para los campos del recordatorio (si el checkbox está marcado)
+            'create_reminder'       => 'boolean',
+            'reminder_title'        => 'required_if:create_reminder,1|string|max:255',
+            'reminder_description'  => 'nullable|string',
+            'remind_at_date'        => 'required_if:create_reminder,1|date|after_or_equal:today',
+            'remind_at_time'        => 'required_if:create_reminder,1|date_format:H:i',
         ]);
 
-        $appointment = Appointment::with('mascota')->findOrFail($request->appointment_id);
-        $mascota = $appointment->mascota;
+        // Inicia una transacción de base de datos
+        DB::beginTransaction();
 
-        MedicalRecord::create([
-            'mascota_id'            => $mascota->id,
-            'veterinarian_id'       => Auth::user()->veterinarian->id,
-            'appointment_id'        => $appointment->id,
-            'reason_for_consultation' => $appointment->reason,
-            'diagnosis'             => $request->diagnosis,
-            'treatment'             => $request->treatment,
-            'notes'                 => $request->notes,
-            'prescription'          => $request->prescription,
-            'observations'          => $request->observations,
-        ]);
+        try {
+            // 1. Obtener la cita con sus relaciones necesarias
+            $appointment = Appointment::with('mascota.cliente.user')->findOrFail($request->appointment_id);
+            $mascota = $appointment->mascota;
+            $cliente = $mascota->cliente;
+            $clientUser = $cliente->user; // El objeto User del cliente
 
-        $appointment->status = 'completed';
-        $appointment->end_datetime = Carbon::now();
-        $appointment->save();
+            // dd('DEBUG 1: Datos iniciales', [
+            //     'appointment_id' => $request->appointment_id,
+            //     'mascota' => $mascota->toArray(),
+            //     'cliente' => $cliente->toArray(),
+            //     'clientUser' => $clientUser ? $clientUser->toArray() : 'NULL',
+            //     'create_reminder_checkbox' => $request->boolean('create_reminder')
+            // ]);
 
-        return redirect()->route('veterinarian.citas')->with('success', 'Atención guardada correctamente.');
+            // 2. Crear el registro médico
+            $medicalRecord = MedicalRecord::create([
+                'mascota_id'                => $mascota->id,
+                'veterinarian_id'           => Auth::user()->veterinarian->id,
+                'appointment_id'            => $appointment->id,
+                'reason_for_consultation'   => $appointment->reason,
+                'diagnosis'                 => $request->diagnosis,
+                'treatment'                 => $request->treatment,
+                'notes'                     => $request->notes,
+                'prescription'              => $request->prescription,
+                'observations'              => $request->observations,
+            ]);
+
+            // dd('DEBUG 2: Registro médico creado', $medicalRecord->toArray());
+
+            // 3. Lógica para crear un recordatorio si el checkbox fue marcado
+            if ($request->boolean('create_reminder')) {
+                $remindAtDateTime = Carbon::parse($request->remind_at_date . ' ' . $request->remind_at_time);
+
+                // dd('DEBUG 3: Intentando crear recordatorio. Fecha/Hora:', $remindAtDateTime->format('Y-m-d H:i:s'));
+
+                $reminder = Reminder::create([
+                    'cliente_id'        => $cliente->id,
+                    'mascota_id'        => $mascota->id,
+                    'related_to_type'   => 'App\\Models\\MedicalRecord',
+                    'related_to_id'     => $medicalRecord->id,
+                    'title'             => $request->reminder_title,
+                    'description'       => $request->reminder_description,
+                    'remind_at'         => $remindAtDateTime,
+                    'is_active'         => true,
+                ]);
+
+                // dd('DEBUG 4: Recordatorio creado en DB:', $reminder->toArray());
+
+                // 4. Enviar notificación al cliente
+                $reminder->save(); // Asegúrate de que el recordatorio esté guardado antes de notificar
+
+                // *** AÑADE ESTE LOG PARA VER SI LLEGAMOS ANTES DE LA CONDICIÓN ***
+                Log::info('VeterinarianController: Intentando notificar al cliente.', ['reminder_id' => $reminder->id, 'client_id_from_mascota' => $reminder->mascota->client_id ?? 'N/A']);
+
+                if ($clientUser) {
+                    // *** AÑADE ESTE LOG PARA VER SI ENTRAMOS EN LA CONDICIÓN ***
+                    Log::info('VeterinarianController: Condición $clientUser es verdadera. Notificando...', ['client_user_id' => $clientUser->id, 'client_email' => $clientUser->email]);
+
+                    $clientUser->notify(new ReminderNotification($reminder));
+                    Log::info('VeterinarianController: Llamada a notify() realizada.', ['reminder_id' => $reminder->id, 'client_user_id' => $clientUser->id]);
+                    Session::flash('success', 'Recordatorio creado exitosamente y notificación enviada.');
+                } else {
+                    // *** AÑADE ESTE LOG SI LA CONDICIÓN ES FALSA ***
+                    Log::warning('VeterinarianController: No se pudo notificar. $clientUser es nulo o falso.', ['reminder_id' => $reminder->id ?? 'N/A', 'client_user_email' => $clientUser->email ?? 'N/A']);
+                    Session::flash('warning', 'Recordatorio creado exitosamente, pero no se pudo enviar la notificación por correo.');
+                }
+            }
+
+            // 5. Actualizar el estado de la cita a 'completed'
+            $appointment->status = 'completed';
+            $appointment->end_datetime = Carbon::now();
+            $appointment->save();
+
+            // dd('DEBUG 6: Cita actualizada a completada');
+
+            // 6. Confirmar la transacción
+            DB::commit();
+
+            return redirect()->route('veterinarian.citas')->with('success', 'Atención guardada correctamente y recordatorio (si se programó) enviado.');
+        } catch (\Exception $e) {
+            // 7. Revertir la transacción si hay un error
+            DB::rollBack();
+            Log::error('Error al guardar atención médica o recordatorio: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all(),
+            ]);
+            // dd('DEBUG 7: Error atrapado', $e->getMessage(), $e->getTraceAsString());
+            return redirect()->back()->with('error', 'Ocurrió un error al procesar la atención médica. Por favor, inténtalo de nuevo.');
+        }
     }
-
     /**
      * Muestra el historial médico de una mascota específica.
      * Carga la mascota con las relaciones cliente y usuario.
@@ -273,7 +393,7 @@ class VeterinarianController extends Controller
             session()->flash('info', 'Por favor complete su perfil para configurar su información profesional.');
         }
 
-        return view('index', compact('veterinarian'));
+        return view('index', compact('user', 'veterinarian'));
     }
 
     /**
@@ -342,7 +462,7 @@ class VeterinarianController extends Controller
             ->where('appointments.veterinarian_id', $veterinario->id)
             ->where('appointments.status', 'completed')
             ->groupBy('services.name')
-            ->select('services.name as nombre', \DB::raw('COUNT(*) as total'))
+            ->select('services.name as nombre', DB::raw('COUNT(*) as total'))
             ->orderByDesc('total') // opcional: ordena de mayor a menor
             ->get();
 
@@ -418,6 +538,7 @@ class VeterinarianController extends Controller
     /**
      * Permite al veterinario proponer una reprogramación de cita al cliente.
      */
+
     public function reprogramarCita(Request $request)
     {
         $request->validate([
@@ -483,6 +604,7 @@ class VeterinarianController extends Controller
 
             // 🔔 Enviar notificación al cliente
             $cliente = $appointment->mascota->cliente->user ?? null;
+
 
             if ($cliente) {
                 // dd($reprogrammingRequest);

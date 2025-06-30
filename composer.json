@@ -18,7 +18,8 @@
         "laravel/tinker": "^2.10.1",
         "maatwebsite/excel": "^3.1",
         "paypal/paypal-checkout-sdk": "^1.0",
-        "saade/filament-fullcalendar": "*"
+        "saade/filament-fullcalendar": "*",
+        "spatie/laravel-settings": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

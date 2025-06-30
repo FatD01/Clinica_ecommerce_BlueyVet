@@ -155,12 +155,12 @@ strong {
 /* Back Button */
 .btn-outline-secondary {
     border: 2px solid #85C8F2; /* Mid blue border */
-    color: #393859; /* Dark blue text */
+    color: white; /* Dark blue text */
     padding: 10px 25px;
     border-radius: 8px;
     font-weight: 600;
     transition: all 0.3s ease;
-    background-color: transparent;
+    background-color:#fcdc3d ;       
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -169,7 +169,7 @@ strong {
 }
 
 .btn-outline-secondary:hover {
-    background-color: #85C8F2; /* Mid blue background on hover */
+    background-color: #f8cf02 ; /* Mid blue background on hover */
     color: #FFFFFF; /* White text on hover */
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -306,65 +306,96 @@ strong {
 }
 
 
-/* Responsive Adjustments */
 @media (max-width: 992px) {
     html, body {
         height: auto;
     }
 
     body {
-        flex-direction: column; /* Apila los elementos en pantallas pequeñas */
+        flex-direction: column;
         justify-content: flex-start;
         align-items: center;
         width: 100%;
     }
 
     .sidebar {
-        position: static; /* Ya no es fijo, se desplaza con el contenido */
+        position: static;
         width: 100%;
         height: auto;
         padding-bottom: 10px;
+        background-color: var(--bluey-primary, #2e86de); /* color opcional */
+        white-space: nowrap;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    
     }
 
     .sidebar nav ul {
-        margin: 0;
         display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        padding-top: 10px;
+        flex-direction: row;
+        gap: 0.75rem;
+        padding: 0.5rem 1rem;
+        margin: 0;
+       
+        white-space: nowrap;
+        list-style: none;
     }
 
     .sidebar li {
-        margin: 5px 8px;
+        flex: 0 0 auto;
+        display: inline-block;
+        margin: 0;
+    }
+
+    .sidebar li a {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+        border-radius: 8px;
+        background-color: transparent;
+        color: #fff;
+        text-decoration: none;
+        transition: background-color 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .sidebar li a:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar li a.active {
+        background-color: rgba(255, 255, 255, 0.2);
     }
 
     .brand {
         text-align: center;
-        padding-bottom: 10px;
-        border-bottom: none;
+        padding: 10px 0;
+        color: #fff;
     }
 
     .user {
-        border-top: none;
-        padding-top: 10px;
+        text-align: center;
+        padding: 10px 0;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .user strong {
+        color: #ffe082;
     }
 
     .main-content {
-        margin: 20px 20px; /* Márgenes más uniformes en móviles */
+        margin: 20px;
         padding: 2rem 1.5rem;
-        width: calc(100% - 40px); /* Ocupa casi todo el ancho */
+        width: calc(100% - 40px);
         max-width: none;
         min-width: auto;
         border-radius: 12px;
-        min-height: auto;
         height: auto;
-        overflow-y: visible; /* Elimina el scroll interno en móviles */
-        overflow-x: hidden;
+        overflow: visible;
     }
 
     .main-content::-webkit-scrollbar {
-        display: none; /* Oculta el scrollbar en móviles para .main-content */
+        display: none !important;
     }
 
     .main-content > .container {

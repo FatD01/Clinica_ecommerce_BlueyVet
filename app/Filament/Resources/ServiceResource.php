@@ -18,7 +18,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\Select; // Para el campo de selección
+use Filament\Forms\Components\FileUpload; // Importar FileUpload correctamente
 use Filament\Tables\Filters\SelectFilter; // Importar SelectFilter correctamente
+use Filament\Tables\Columns\ImageColumn; // Importar ImageColumn correctamente
 use App\Models\Specialty;
 
 class ServiceResource extends Resource
@@ -26,7 +28,7 @@ class ServiceResource extends Resource
     protected static ?string $model = Service::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-briefcase';
-          protected static ?string $navigationGroup = 'Gestión de Citas y Clínica';
+    protected static ?string $navigationGroup = 'Gestión de Citas y Clínica';
     protected static ?string $pluralLabel = 'Servicios';
     protected static ?string $singularLabel = 'Servicio';
 
@@ -72,7 +74,12 @@ class ServiceResource extends Resource
                 //     ->label('Servicio Disponible Inmediatamente')
                 //     ->default(false) // Por defecto, podría ser "pronto disponible"
                 //     ->helperText('Activa esto solo si sabes que hay veterinarios con las especialidades requeridas.'),
-
+                // FileUpload::make('image_url')
+                //     ->label('Imagen del Servicio')
+                //     ->image() // Valida que el archivo sea una imagen
+                //     ->directory('services-images') // Directorio dentro de storage/app/public (o lo que configures)
+                //     ->visibility('public') // Hace que la imagen sea accesible públicamente
+                //     ->disk('public'),
             ]);
     }
 
@@ -80,6 +87,12 @@ class ServiceResource extends Resource
     {
         return $table
             ->columns([
+
+                // ImageColumn::make('image_url')
+                //     ->label('Imagen')
+                //     ->square() // Hace la imagen cuadrada en la tabla
+                //     ->width(50)
+                //     ->height(50),
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('price')
@@ -107,11 +120,11 @@ class ServiceResource extends Resource
             ->filters([
                 TrashedFilter::make(),
                 SelectFilter::make('specialties')
-                ->relationship('specialties', 'name')
-                ->multiple()
-                ->preload()
-                ->searchable()
-                ->label('Filtrar por Especialidad Requerida'),
+                    ->relationship('specialties', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable()
+                    ->label('Filtrar por Especialidad Requerida'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

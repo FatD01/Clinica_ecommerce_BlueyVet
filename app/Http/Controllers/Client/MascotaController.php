@@ -66,6 +66,22 @@ class MascotaController extends Controller
         return view('client.mascotas.create');
     }
 
+    public function show(Mascota $mascota)
+    {
+        // Asegúrate de que la mascota pertenezca al cliente autenticado
+        // if (Auth::user()->cliente->id !== $mascota->cliente_id) {
+        //     Session::flash('error', 'Acceso no autorizado a esta mascota.');
+        //     return redirect()->route('client.mascotas.index');
+        // }
+
+        // Carga los recordatorios de la mascota
+        // Asegúrate de tener la relación 'reminders' definida en tu modelo Mascota
+        $mascota->load('reminders');
+
+        return view('client.mascotas.show', compact('mascota'));
+    }
+
+
     /**
      * Almacena una nueva mascota en la base de datos.
      *

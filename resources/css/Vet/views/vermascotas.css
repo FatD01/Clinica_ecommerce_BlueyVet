@@ -7,6 +7,17 @@ body {
     overflow-x: hidden; /* Prevent horizontal scroll from minor overflows */
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+
 /* Custom Scrollbar (for a refined look) */
 body::-webkit-scrollbar {
     width: 10px;
@@ -239,7 +250,7 @@ h2 {
 
 /* Secondary Button (e.g., Volver) */
 .btn-secondary {
-    background-color: #6c757d;
+    background-color: #132534;
     color: white;
     border: none;
     margin-top: 40px; /* More space from the content above */
@@ -250,7 +261,7 @@ h2 {
 }
 
 .btn-secondary:hover {
-    background-color: #5a6268;
+    background-color: #132534;
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
 }
@@ -321,16 +332,25 @@ h2 {
     }
 
     .sidebar nav ul {
-        margin: 0; /* Reset margin for static sidebar nav */
-        display: flex; /* Make nav items horizontal */
-        flex-wrap: wrap; /* Allow wrapping */
-        justify-content: center;
-        padding-top: 15px;
-    }
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;             /* ← importante: evita salto de línea */
+    justify-content: flex-start;   /* ← mejor alineación a la izquierda */
+    overflow-x: auto;              /* ← scroll horizontal */
+    white-space: nowrap;           /* ← no dividir texto */
+    padding: 10px 15px;
+    margin: 0;
+    list-style: none;
 
-    .sidebar li {
-        margin: 5px 10px; /* Space out horizontal nav items */
-    }
+    -webkit-overflow-scrolling: touch; /* ← suaviza scroll en iOS */
+    scrollbar-width: none;             /* ← oculta scroll en Firefox */
+    -ms-overflow-style: none;          /* ← oculta scroll en IE/Edge */
+}
+
+    .sidebar nav ul li {
+    flex: 0 0 auto; /* ← asegura que los ítems no se expandan */
+    margin: 0 10px;
+}
 
     .brand {
         text-align: center; /* Center brand for static sidebar */
@@ -397,4 +417,22 @@ h2 {
         font-size: 0.9rem;
         padding: 10px 15px;
     }
+}
+
+@media (max-width: 992px) {
+  .sidebar {
+    background: linear-gradient(135deg, var(--bluey-dark, #132534), var(--bluey-primary, #1e3a8a));
+    color: white;
+    margin: 0;
+    padding: 1rem 0;
+    border: none;
+    box-shadow: none;
+    width: 100vw;
+  }
+
+  .sidebar nav ul {
+    margin: 0;
+    padding: 0 10px;
+    background: transparent;
+  }
 }
