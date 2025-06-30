@@ -17,6 +17,7 @@ use App\Observers\ProductObserver; // Importa el observer ProductObserver
 // === NUEVOS IMPORTS PARA NOTIFICACIONES ===
 use Illuminate\Support\Facades\Auth;
 use App\Models\Appointment;
+use Illuminate\Support\Facades\URL;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -33,7 +34,11 @@ class AppServiceProvider extends ServiceProvider
      * Bootstrap any application services.
      */
     public function boot(): void
+
     {
+        if (config('app.env') === 'production') {
+            URL::forceScheme('https');
+        }
         User::observe(UserObserver::class);
 
         Product::observe(ProductObserver::class);
