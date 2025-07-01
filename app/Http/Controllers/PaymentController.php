@@ -21,6 +21,7 @@ use PayPalCheckoutSdk\Orders\OrdersGetRequest;
 use PayPalHttp\HttpException;
 
 
+
 class PaymentController extends Controller
 {
     protected $exchangeRateService;
@@ -28,6 +29,109 @@ class PaymentController extends Controller
     public function __construct(ExchangeRateService $exchangeRateService)
     {
         $this->exchangeRateService = $exchangeRateService;
+    }
+
+    public function handlePaypalWebhook(Request $request)
+    {
+        // --- PASO A: Registro para Depuración (Quitar o limitar en Producción) ---
+        Log::info('Webhook de PayPal recibido:', $request->all());
+
+        // --- PASO B: Verificación de la Autenticidad (CRÍTICO para Producción) ---
+        // Para una integración segura, DEBERÍAS enviar esta notificación de vuelta a PayPal
+        // para verificar su autenticidad. Sin esto, un atacante podría enviar solicitudes
+        // falsas a esta URL. Implementa esto ANTES de desplegar a producción.
+        // Puedes buscar "PayPal IPN Verification PHP" o usar un SDK.
+        /*
+        $raw_post_data = file_get_contents('php://input');
+        $raw_post_array = explode('&', $raw_post_data);
+        $myPost = array();
+        foreach ($raw_post_array as $keyval) {
+            $keyval = explode('=', $keyval);
+            if (count($keyval) == 2) {
+                $myPost[urldecode($keyval[0])] = urldecode($keyval[1]);
+            }
+        }
+        $req = 'cmd=_notify-validate';
+        foreach ($myPost as $key => $value) {
+            $req .= "&$key=$value";
+        }
+
+        $ch = curl_init();
+        // Para Sandbox: 'https://www.sandbox.paypal.com/cgi-bin/webscr'
+        // Para Producción: 'https://www.paypal.com/cgi-bin/webscr'
+        curl_setopt($ch, CURLOPT_URL, 'https://www.sandbox.paypal.com/cgi-bin/webscr'); // CAMBIAR PARA PRODUCCIÓN
+        curl_setopt(CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $req);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_FORBID_REUSE, 1);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Connection: Close'));
+        $res = curl_exec($ch);
+        curl_close($ch);
+
+        if (strcmp($res, "VERIFIED") == 0) {
+            Log::info('Webhook de PayPal verificado exitosamente.');
+            // Continuar con el procesamiento
+        } else if (strcmp($res, "INVALID") == 0) {
+            Log::warning('Webhook de PayPal inválido o fraudulento. Detalles: ' . json_encode($request->all()));
+            return response('Invalid Webhook', 403); // O 200 para no reintentar
+        } else {
+            Log::error('Error en la verificación del Webhook de PayPal. Detalles: ' . $res);
+            return response('Verification Error', 500);
+        }
+        */
+
+
+        // --- PASO C: Procesar los datos de la notificación ---
+        $paymentStatus = $request->input('payment_status'); // Ej: 'Completed', 'Pending', 'Refunded'
+        $transactionId = $request->input('txn_id');         // ID de transacción de PayPal
+        $payerEmail = $request->input('payer_email');       // Email del pagador
+        // Otros campos útiles: $request->input('mc_gross') (monto), $request->input('mc_currency') (moneda)
+
+        // ¡IMPORTANTE!: Recuperar el ID de tu cita/orden.
+        // Esto depende de cómo lo enviaste a PayPal inicialmente.
+        // Comprueba en tu método 'checkout' o 'purchaseService' qué campo usaste para tu ID.
+        // Los campos comunes de PayPal para IDs customizados son 'invoice', 'item_number', o 'custom'.
+        $appointmentId = $request->input('invoice') ?? $request->input('item_number') ?? $request->input('custom');
+
+
+        if ($paymentStatus === 'Completed' && $appointmentId) {
+            $appointment = Appointment::find($appointmentId);
+
+            if ($appointment) {
+                if ($appointment->status !== 'pagado') { // Evita procesar la misma notificación múltiples veces
+                    $appointment->status = 'pagado'; // Actualiza el estado de la cita
+                    $appointment->paypal_transaction_id = $transactionId; // Guarda el ID de transacción de PayPal
+                    $appointment->paid_at = now(); // O el campo que uses para la fecha de pago
+                    $appointment->save();
+
+                    Log::info("Cita {$appointment->id} marcada como pagada por Webhook de PayPal (Transacción: {$transactionId}).");
+
+                    // **OPCIONAL:** Envía un correo de confirmación final si no lo hiciste antes
+                    // Mail::to($appointment->user->email)->send(new PaymentConfirmedMail($appointment));
+                } else {
+                    Log::info("Webhook de PayPal: Cita {$appointment->id} ya estaba marcada como pagada. Ignorando duplicado.");
+                }
+            } else {
+                Log::warning("Webhook de PayPal: Cita con ID {$appointmentId} no encontrada en la base de datos.");
+                // Podrías devolver un error 404 a PayPal si el ID es crítico y no se encontró
+            }
+        } elseif ($paymentStatus === 'Pending') {
+            Log::info("Webhook de PayPal: Pago pendiente para la cita ID {$appointmentId} (Transacción: {$transactionId}).");
+            // Puedes actualizar el estado a 'pendiente' en tu DB si es necesario
+        } elseif ($paymentStatus === 'Refunded') {
+            Log::info("Webhook de PayPal: Pago reembolsado para la cita ID {$appointmentId} (Transacción: {$transactionId}).");
+            // Lógica para marcar la cita como 'reembolsada' o 'cancelada'
+        } else {
+            Log::warning("Webhook de PayPal: Estado de pago no manejado: {$paymentStatus} para transacción {$transactionId}.");
+        }
+
+        // --- PASO D: Responder con 200 OK a PayPal ---
+        // ¡CRÍTICO! Si no devuelves un 200 OK, PayPal considerará que la notificación falló
+        // y la reintentará varias veces, lo que puede causar duplicidades o problemas.
+        return response('Webhook Recibido y Procesado OK', 200);
     }
 
     private function client()

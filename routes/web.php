@@ -60,7 +60,7 @@ Route::post('/contact-us', [ContactController::class, 'store'])->name('contact.s
 // Rutas de servicios (públicas)
 Route::prefix('/servicios')->name('client.servicios.')->group(function () {
     Route::get('/', [ServicioController::class, 'index'])->name('index');
-   Route::get('/{service}', [ServicioController::class, 'show'])->name('show');
+    Route::get('/{service}', [ServicioController::class, 'show'])->name('show');
 });
 
 // Rutas del carrito de compras (aunque se interactúe con él, los productos no requieren autenticación para ver)
@@ -186,8 +186,8 @@ Route::get('/dashboard', function () {
 
 
 Route::get('/admin/orders/export-pdf', [OrderExportController::class, 'exportPdf'])
-            ->name('admin.orders.export-pdf');
-        // --- FIN DE LA RUTA DE EXPORTACIÓN ---
+    ->name('admin.orders.export-pdf');
+// --- FIN DE LA RUTA DE EXPORTACIÓN ---
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Rutas de perfil de usuario
@@ -198,9 +198,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     // --- RUTA PARA EXPORTACIÓN DE ÓRDENES DE FILAMENT A PDF ---
-        // Esta ruta debe estar dentro del middleware 'auth' y 'verified'.
-        // La lógica de autorización por rol ('Administrador') se encuentra en el controlador.
-        
+    // Esta ruta debe estar dentro del middleware 'auth' y 'verified'.
+    // La lógica de autorización por rol ('Administrador') se encuentra en el controlador.
+
 
     Route::prefix('notifications')->name('notifications.')->group(function () {
 
@@ -302,7 +302,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/download/payment/{serviceOrderId}/receipt', [PaymentController::class, 'downloadPaymentReceipt'])->name('download.payment_receipt');
     // --- FIN DE RUTAS DE DESCARGA DE PDFs ---
 
-
+    Route::post('/paypal/ipn-webhook', [App\Http\Controllers\PaymentController::class, 'handlePaypalWebhook'])->name('paypal.ipn.webhook');
 
     Route::prefix('cart-payments')->name('cart_payments.')->group(function () {
         Route::post('/pay', [ProductPaymentController::class, 'payWithPaypal'])->name('pay');
