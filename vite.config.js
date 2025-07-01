@@ -8,6 +8,10 @@ export default defineConfig({
                  'resources/css/vet/views/citasagendadas.css',
                 'resources/css/vet/views/datosestadisticos.css',
                 'resources/css/vet/views/historialmascota.css',
+                
+                'resources/css/vet/views/styles.css',         // <-- ¡AÑADIDO!
+                'resources/css/vet/views/seccionesactivas.css', // <-- ¡AÑADIDO!
+                'resources/css/vet/panel.css',
       
                 'resources/css/vet/views/info.css',            // ¡Nuevo!
                 // 'resources/css/Vet/global/filtros.css',
