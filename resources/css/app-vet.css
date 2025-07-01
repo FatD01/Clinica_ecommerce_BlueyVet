@@ -3,7 +3,7 @@
 /* Importaciones para el panel de veterinario */
 
 /* Primero tus estilos de layout (panel.css) para que Tailwind no los pise */
-@import './Vet/panel.css';
+@import './vet/panel.css';
 
 /* Ahora los de Tailwind */
 @tailwind base;
