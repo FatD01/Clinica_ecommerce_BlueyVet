@@ -20,6 +20,7 @@
 @import '~@fullcalendar/daygrid/main.css';
 /* Si usas timeGrid, weekGrid, etc. */
 @import '~@fullcalendar/timegrid/main.css';
+@import './vet/views/styles.css';     
 /* Finalmente, estilos específicos de las vistas del veterinario */
 @import './vet/views/citasagendadas.css';
 @import './vet/views/datosestadisticos.css';
