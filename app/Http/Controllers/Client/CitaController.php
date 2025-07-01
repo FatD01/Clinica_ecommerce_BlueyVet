@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Log;
 use Carbon\CarbonPeriod; // Para generar los periodos de tiempo
 use Illuminate\Support\Facades\DB; //para manejar transacciones
 
-use App\Notifications\ReprogrammingRequestStatusUpdate; // La nueva notificación
+use App\Notifications\ReprogrammingRequestStatusUpdate; // Importa la notificación correctamente
 
 
 class CitaController extends Controller
@@ -633,13 +633,13 @@ class CitaController extends Controller
             Log::info('Cita creada exitosamente y vinculada a ServiceOrder:', ['appointment_id' => $appointment->id, 'service_order_id' => $serviceOrder->id]);
             return redirect()->route('client.citas.index')->with('success', '¡Pago procesado y cita agendada exitosamente, te enviamos un email con los detalles!');
         } catch (\Exception $e) {
-            Log::error('Error al crear la cita en CitaController@completeBookingAfterPayment: ' . $e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-                'service_order_id' => $currentServiceOrderId
-            ]);
-            return redirect()->route('client.citas.create')->with('error', 'Hubo un error al agendar tu cita después del pago. Por favor, contacta a soporte.');
+            // Log::error('Error al crear la cita en CitaController@completeBookingAfterPayment: ' . $e->getMessage(), [
+            //     'file' => $e->getFile(),
+            //     'line' => $e->getLine(),
+            //     'trace' => $e->getTraceAsString(),
+            //     'service_order_id' => $currentServiceOrderId
+            // ]);
+            return redirect()->route('client.citas.create')->with('error', 'Error al agendar cita: ' . $e->getMessage()); //luego cambiar
         }
     }
 
