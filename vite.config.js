@@ -5,13 +5,13 @@ export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js',    'resources/css/app-vet.css', 'resources/js/app-vet.js',
-                 'resources/css/Vet/views/citasagendadas.css',
-                'resources/css/Vet/views/datosestadisticos.css',
-                'resources/css/Vet/views/historialmascota.css',
+                 'resources/css/vet/views/citasagendadas.css',
+                'resources/css/vet/views/datosestadisticos.css',
+                'resources/css/vet/views/historialmascota.css',
       
-                'resources/css/Vet/views/info.css',            // ¡Nuevo!
+                'resources/css/vet/views/info.css',            // ¡Nuevo!
                 // 'resources/css/Vet/global/filtros.css',
-                  'resources/css/Vet/views/vermascotas.css',
+                  'resources/css/vet/views/vermascotas.css',
             ],
             refresh: true,
         }),
