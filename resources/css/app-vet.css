@@ -1,31 +1,15 @@
-/* resources/css/app-vet.css */
-
-/* Importaciones para el panel de veterinario */
-
-/* Primero tus estilos de layout (panel.css) para que Tailwind no los pise */
 @import './vet/panel.css';
-
-/* Ahora los de Tailwind */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Bootstrap CSS */
 @import 'bootstrap/dist/css/bootstrap.min.css';
-
-/* FullCalendar CSS (¡IMPORTANTE: Debe cargarse aquí, no en el Blade!) */
-/* @import url('https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css'); */
-
 @import '~@fullcalendar/common/main.css';
 @import '~@fullcalendar/daygrid/main.css';
-/* Si usas timeGrid, weekGrid, etc. */
 @import '~@fullcalendar/timegrid/main.css';
-@import './vet/views/styles.css';     
-/* Finalmente, estilos específicos de las vistas del veterinario */
+@import './vet/views/styles.css';
 @import './vet/views/citasagendadas.css';
 @import './vet/views/datosestadisticos.css';
 @import './vet/views/historialmascota.css';
 @import './vet/views/vermascotas.css';
 @import './vet/views/info.css';
-/* @import './Vet/views/calendario.css'; */
 @import './vet/views/filtros.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
