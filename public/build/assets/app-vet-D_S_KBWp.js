@@ -1,0 +1,1 @@
+import{b as i,a}from"./bootstrap.esm-Bq4gjcYP.js";window.bootstrap=i;window.FullCalendar={Calendar,dayGridPlugin,timeGridPlugin,listPlugin,interactionPlugin};window.axios=a;window.axios.defaults.headers.common["X-Requested-With"]="XMLHttpRequest";

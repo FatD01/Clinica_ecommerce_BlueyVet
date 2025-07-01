@@ -1,0 +1,59 @@
+{
+  "_bootstrap.esm-Bq4gjcYP.js": {
+    "file": "assets/bootstrap.esm-Bq4gjcYP.js",
+    "name": "bootstrap.esm"
+  },
+  "resources/css/app-vet.css": {
+    "file": "assets/app-vet-BFbPtJh1.css",
+    "src": "resources/css/app-vet.css",
+    "isEntry": true
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-CNKU49Fp.css",
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/css/vet/views/citasagendadas.css": {
+    "file": "assets/citasagendadas-CUCXbkGP.css",
+    "src": "resources/css/vet/views/citasagendadas.css",
+    "isEntry": true
+  },
+  "resources/css/vet/views/datosestadisticos.css": {
+    "file": "assets/datosestadisticos-BC5643wO.css",
+    "src": "resources/css/vet/views/datosestadisticos.css",
+    "isEntry": true
+  },
+  "resources/css/vet/views/historialmascota.css": {
+    "file": "assets/historialmascota-Cn6gm6On.css",
+    "src": "resources/css/vet/views/historialmascota.css",
+    "isEntry": true
+  },
+  "resources/css/vet/views/info.css": {
+    "file": "assets/info-GGdgE9qc.css",
+    "src": "resources/css/vet/views/info.css",
+    "isEntry": true
+  },
+  "resources/css/vet/views/vermascotas.css": {
+    "file": "assets/vermascotas-BbPXdgNn.css",
+    "src": "resources/css/vet/views/vermascotas.css",
+    "isEntry": true
+  },
+  "resources/js/app-vet.js": {
+    "file": "assets/app-vet-D_S_KBWp.js",
+    "name": "app-vet",
+    "src": "resources/js/app-vet.js",
+    "isEntry": true,
+    "imports": [
+      "_bootstrap.esm-Bq4gjcYP.js"
+    ]
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-1ZRE6P0S.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "imports": [
+      "_bootstrap.esm-Bq4gjcYP.js"
+    ]
+  }
+}
