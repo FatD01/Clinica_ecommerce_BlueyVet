@@ -219,13 +219,16 @@ class Veterinarian_schedules extends Page implements HasTable, HasActions, HasFo
                         ->required(),
 
                     Components\TimePicker::make('start_time')
-                        ->format('H:i')
+                        ->format('H:i:s')
+                        ->displayFormat('h:i A')
                         ->label('Hora de Inicio')
                         ->seconds(false)
                         ->required(),
 
                     Components\TimePicker::make('end_time')
                         ->label('Hora de Fin')
+                        ->displayFormat('h:i A')
+                        ->format('H:i:s')
                         ->seconds(false)
                         ->required(),
 

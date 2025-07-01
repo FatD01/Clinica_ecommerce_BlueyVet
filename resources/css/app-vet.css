@@ -21,10 +21,10 @@
 /* Si usas timeGrid, weekGrid, etc. */
 @import '~@fullcalendar/timegrid/main.css';
 /* Finalmente, estilos específicos de las vistas del veterinario */
-@import './Vet/views/citasagendadas.css';
-@import './Vet/views/datosestadisticos.css';
-@import './Vet/views/historialmascota.css';
-@import './Vet/views/vermascotas.css';
-@import './Vet/views/info.css';
+@import './vet/views/citasagendadas.css';
+@import './vet/views/datosestadisticos.css';
+@import './vet/views/historialmascota.css';
+@import './vet/views/vermascotas.css';
+@import './vet/views/info.css';
 /* @import './Vet/views/calendario.css'; */
-@import './Vet/views/filtros.css';
+@import './vet/views/filtros.css';
