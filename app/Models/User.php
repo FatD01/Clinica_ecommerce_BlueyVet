@@ -62,7 +62,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         ];
     }
 
-    // --- Relaciones ---
+    //Estas son las relaciones 
     public function cliente(): HasOne
     {
         return $this->hasOne(Cliente::class);

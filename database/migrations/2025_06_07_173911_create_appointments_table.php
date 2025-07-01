@@ -13,19 +13,16 @@ return new class extends Migration
     {
         Schema::create('appointments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('mascota_id')->constrained('mascotas')->onDelete('cascade'); // Si cada cita es para una mascota
+            $table->foreignId('mascota_id')->constrained('mascotas')->onDelete('cascade'); // si es que cada cita es para una mascota
             $table->foreignId('veterinarian_id')->constrained('veterinarians')->onDelete('cascade'); // Si cada cita es con un veterinario
             $table->dateTime('date'); // Fecha y hora de la cita
             $table->string('reason')->nullable(); // Motivo de la cita
-            $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled'])->default('pending'); // Estado de la cita
+            $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled'])->default('pending'); 
             $table->timestamps();
-             $table->softDeletes(); // ¡Añade esto!
+             $table->softDeletes(); 
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('appointments');

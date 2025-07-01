@@ -3,7 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\VeterinarianSchedule;
-use App\Models\Veterinarian;
+use App\Models\Veterinarian; 
 use Filament\Pages\Page;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;

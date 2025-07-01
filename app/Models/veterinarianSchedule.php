@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 
-class veterinarianSchedule extends Model
+class VeterinarianSchedule extends Model
 {
     use HasFactory;
     protected $fillable = [

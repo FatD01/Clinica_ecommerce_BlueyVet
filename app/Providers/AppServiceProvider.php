@@ -30,16 +30,16 @@ class AppServiceProvider extends ServiceProvider
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
 
     {
+        User::observe(UserObserver::class);
+
+
         if (config('app.env') === 'production') {
             URL::forceScheme('https');
         }
-        User::observe(UserObserver::class);
+
 
         Product::observe(ProductObserver::class);
 
